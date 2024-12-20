@@ -1,11 +1,19 @@
 <template>
-  <v-container fluid>
+  <v-container fluid class="chat-view-container">
     <v-row>
       <v-col cols="3">
         <ChatList @chatSelected="handleChatSelected" />
       </v-col>
-      <v-col cols="9">
-        <Chat :messages="messages" :currentChat="currentChat" />
+      <v-col cols="9" class="chat-area">
+        <Chat 
+          v-if="currentChat" 
+          :messages="messages" 
+          :currentChat="currentChat" 
+          @updateChatName="handleUpdateChatName" 
+        />
+        <v-alert v-else type="info" class="mt-5">
+          Por favor, selecione um chat para iniciar a conversa.
+        </v-alert>
       </v-col>
     </v-row>
   </v-container>
@@ -41,7 +49,11 @@ export default defineComponent({
       messages.value = response.data;
     };
 
-    
+    const handleUpdateChatName = (newName: string) => {
+      if (currentChat.value) {
+        currentChat.value.name = newName;
+      }
+    };
 
     onMounted(() => {
       echo.channel('chat')
@@ -59,7 +71,20 @@ export default defineComponent({
       messages,
       currentChat,
       handleChatSelected,
+      handleUpdateChatName,
     };
   },
 });
 </script>
+
+<style scoped>
+.chat-view-container {
+  height: 100vh;
+}
+
+.chat-area {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+</style>

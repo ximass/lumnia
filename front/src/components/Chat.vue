@@ -1,23 +1,38 @@
 <template>
-  <v-container fluid>
-    <v-list>
-      <v-list-item v-for="(message, index) in messages" :key="index">
-        <v-list-item-content>
-          <v-list-item-title>
-            <span>{{ formatDate(message.updated_at) }}</span> - <strong>{{ message.user.name }}:</strong> {{ message.text }}
-          </v-list-item-title>
-        </v-list-item-content>
-      </v-list-item>
-    </v-list>
-
-    <v-row>
-      <v-col cols="12">
-        <v-text-field v-model="newMessage" label="Digite sua mensagem" @keyup.enter="handleSendMessage"></v-text-field>
-      </v-col>
-      <v-col cols="12" class="text-right">
-        <v-btn color="primary" @click="handleSendMessage">Enviar</v-btn>
-      </v-col>
-    </v-row>
+  <v-container fluid class="chat-container pa-4">
+    <v-card class="pa-2">
+      <v-card-title>
+        <v-text-field
+          v-model="chatName"
+          @blur="updateChatName"
+          hide-details
+          flat
+          solo
+          class="w-100"
+        ></v-text-field>
+      </v-card-title>
+      <v-card-text class="message-container ma-2">
+        <v-list>
+          <v-list-item v-for="(message, index) in messages" :key="index">
+            <v-list-item-content>
+              <v-list-item-title>
+                <span>{{ formatDate(message.updated_at) }}</span> - <strong>{{ message.user.name }}:</strong> {{ message.text }}
+              </v-list-item-title>
+            </v-list-item-content>
+          </v-list-item>
+        </v-list>
+      </v-card-text>
+      <v-card-actions class="message-input pa-2">
+        <v-text-field
+          v-model="newMessage"
+          label="Digite sua mensagem"
+          @keyup.enter="handleSendMessage"
+          append-icon=""
+          hide-details
+          class="w-100"
+        ></v-text-field>
+      </v-card-actions>
+    </v-card>
   </v-container>
 </template>
 
@@ -38,14 +53,10 @@ export default defineComponent({
       required: true,
     },
   },
-  methods: {
-    formatDate(dateString: string): string {
-      return format(new Date(dateString), 'dd/MM HH:mm');
-    }
-  },
-  emits: ['sendMessage'],
+  emits: ['sendMessage', 'updateChatName'],
   setup(props, { emit }) {
     const newMessage = ref('');
+    const chatName = ref(props.currentChat.name);
 
     const handleSendMessage = () => {
       if (newMessage.value.trim() === '') return;
@@ -70,14 +81,71 @@ export default defineComponent({
       newMessage.value = '';
     };
 
+    const updateChatName = async () => {
+      try {
+        await axios.put(`api/chats/${props.currentChat.id}`, {
+          name: chatName.value,
+        });
+        emit('updateChatName', chatName.value);
+      } catch (err) {
+        // Handle error
+      }
+    };
+
     return {
       newMessage,
       handleSendMessage,
+      chatName,
+      updateChatName,
     };
   },
-  updated() {
-    const chat = document.querySelector('.v-list');
-    chat.scrollTop = chat.scrollHeight;
+  methods: {
+    formatDate(dateString: string): string {
+      return format(new Date(dateString), 'dd/MM HH:mm');
+    }
   },
 });
 </script>
+
+<style scoped>
+.chat-container {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding: 16px; /* Adiciona padding ao contêiner */
+}
+
+.pa-4 {
+  padding: 16px;
+}
+
+.pa-2 {
+  padding: 8px;
+}
+
+.ma-2 {
+  margin: 8px;
+}
+
+.message-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px; /* Adiciona padding às mensagens */
+}
+
+.message-input {
+  padding: 16px; /* Adiciona padding ao campo de digitação */
+  position: sticky;
+  bottom: 0;
+  background-color: var(--vt-c-white-soft);
+}
+
+.v-card {
+  height: 100%;
+}
+
+.v-text-field {
+  background-color: var(--vt-c-white);
+  border-radius: 4px;
+}
+</style>
