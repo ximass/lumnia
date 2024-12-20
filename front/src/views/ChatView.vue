@@ -5,7 +5,7 @@
         <ChatList @chatSelected="handleChatSelected" />
       </v-col>
       <v-col cols="9">
-        <Chat :messages="messages" :currentChat="currentChat" @sendMessage="sendMessage" />
+        <Chat :messages="messages" :currentChat="currentChat" />
       </v-col>
     </v-row>
   </v-container>
@@ -25,8 +25,9 @@ export default defineComponent({
     Chat
   },
   setup() {
-    const messages = ref<Array<{ sender: string; text: string }>>([]);
+    const messages = ref<Array<{ sender: object; text: string }>>([]);
     const currentChat = ref<{ id: number; name: string } | null>(null);
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
 
     const handleChatSelected = (chat: any) => {
       currentChat.value = chat;
@@ -35,28 +36,19 @@ export default defineComponent({
 
     const loadMessages = async () => {
       if (!currentChat.value) return;
+
       const response = await axios.get(`api/chats/${currentChat.value.id}/messages`);
       messages.value = response.data;
     };
 
-    const sendMessage = async (text: string) => {
-      if (!currentChat.value) return;
-      messages.value.push({
-        sender: 'Você',
-        text,
-      });
-
-      await axios.post(`api/chats/${currentChat.value.id}/messages`, {
-        text,
-      });
-    };
+    
 
     onMounted(() => {
       echo.channel('chat')
         .listen('.MessageSent', (e: any) => {
           if (currentChat.value && e.chat_id === currentChat.value.id) {
             messages.value.push({
-              sender: e.sender,
+              sender: e.user,
               text: e.message,
             });
           }
@@ -67,7 +59,6 @@ export default defineComponent({
       messages,
       currentChat,
       handleChatSelected,
-      sendMessage,
     };
   },
 });

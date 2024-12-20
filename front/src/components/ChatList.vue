@@ -35,14 +35,6 @@ export default defineComponent({
 
     onMounted(() => {
       fetchChats();
-
-      echo.channel('chat')
-        .listen('.MessageSent', (e: any) => {
-          const chat = chats.value.find((c) => c.id === e.chat_id);
-          if (chat) {
-            chat.lastMessage = e.message;
-          }
-        });
     });
 
     return {

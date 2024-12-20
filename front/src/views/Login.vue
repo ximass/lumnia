@@ -46,6 +46,7 @@ export default defineComponent({
 
     const login = async () => {
       try {
+        const csrf = await axios.get('/sanctum/csrf-cookie');
         const response = await axios.post(
           '/api/login',
           { email: email.value, password: password.value },
@@ -53,10 +54,12 @@ export default defineComponent({
         );
 
         const token = response.data.token;
+        const user = response.data.user;
 
         localStorage.setItem('authToken', token);
+        localStorage.setItem('user', JSON.stringify(user));
 
-        //router.push('/');
+        router.push('/');
       } catch (err) {
         error.value = 'Login failed.';
       }

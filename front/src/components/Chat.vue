@@ -4,7 +4,7 @@
       <v-list-item v-for="(message, index) in messages" :key="index">
         <v-list-item-content>
           <v-list-item-title>
-            <strong>{{ message.sender }}:</strong> {{ message.text }}
+            <strong>{{ message.user.name }}:</strong> {{ message.text }}
           </v-list-item-title>
         </v-list-item-content>
       </v-list-item>
@@ -23,13 +23,14 @@
 
 <script lang="ts">
 import { defineComponent, ref } from 'vue';
+import axios from 'axios';
 
 export default defineComponent({
   name: 'Chat',
   props: {
     messages: {
       type: Array,
-      required: true,
+      required: false,
     },
     currentChat: {
       type: Object,
@@ -42,6 +43,22 @@ export default defineComponent({
 
     const handleSendMessage = () => {
       if (newMessage.value.trim() === '') return;
+
+      axios.post(`api/chat/${props.currentChat.id}`, {
+          text: newMessage.value
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('authToken')}`,
+          }
+        }
+      );
+
+      props.messages.push({
+        user: JSON.parse(localStorage.getItem('user') || '{}'),
+        text: newMessage.value,
+      });
+
       emit('sendMessage', newMessage.value);
       newMessage.value = '';
     };
