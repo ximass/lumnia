@@ -1,5 +1,11 @@
 module.exports = {
-    devServer: {
-        proxy: 'http://localhost:8000', // Porta do servidor Laravel
+  devServer: {
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+        pathRewrite: { '^/api': '' },
+      },
     },
-};
+  },
+};  

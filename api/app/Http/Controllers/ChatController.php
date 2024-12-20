@@ -7,6 +7,8 @@ use App\Models\Chat;
 use App\Models\Message;
 use Illuminate\Http\Request;
 
+use Illuminate\Support\Facades\Log;
+
 class ChatController extends Controller
 {
     public function createChat(Request $request)
@@ -44,12 +46,8 @@ class ChatController extends Controller
         return response()->json($chats);
     }
 
-    public function getMessages(Chat $chat)
+    public function getMessages(Request $request, Chat $chat)
     {
-        if ($chat->user_id !== $request->user()->id) {
-            return response()->json(['error' => 'Unauthorized'], 403);
-        }
-
         $messages = $chat->messages()->with('user')->get();
 
         return response()->json($messages);

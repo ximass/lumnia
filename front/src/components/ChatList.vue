@@ -21,7 +21,11 @@ export default defineComponent({
     const chats = ref<Array<{ id: number; name: string; lastMessage: string }>>([]);
 
     const fetchChats = async () => {
-      const response = await axios.get('http://127.0.0.1:8000/api/chats');
+      const response = await axios.get('/api/chats', {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('authToken')}`,
+          }
+        });
       chats.value = response.data;
     };
 
