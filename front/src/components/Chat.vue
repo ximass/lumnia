@@ -4,7 +4,7 @@
       <v-list-item v-for="(message, index) in messages" :key="index">
         <v-list-item-content>
           <v-list-item-title>
-            <strong>{{ message.user.name }}:</strong> {{ message.text }}
+            <span>{{ formatDate(message.updated_at) }}</span> - <strong>{{ message.user.name }}:</strong> {{ message.text }}
           </v-list-item-title>
         </v-list-item-content>
       </v-list-item>
@@ -24,6 +24,7 @@
 <script lang="ts">
 import { defineComponent, ref } from 'vue';
 import axios from 'axios';
+import { format } from 'date-fns';
 
 export default defineComponent({
   name: 'Chat',
@@ -36,6 +37,11 @@ export default defineComponent({
       type: Object,
       required: true,
     },
+  },
+  methods: {
+    formatDate(dateString: string): string {
+      return format(new Date(dateString), 'dd/MM HH:mm');
+    }
   },
   emits: ['sendMessage'],
   setup(props, { emit }) {
@@ -57,6 +63,7 @@ export default defineComponent({
       props.messages.push({
         user: JSON.parse(localStorage.getItem('user') || '{}'),
         text: newMessage.value,
+        updated_at: new Date().toISOString(),
       });
 
       emit('sendMessage', newMessage.value);
@@ -67,6 +74,10 @@ export default defineComponent({
       newMessage,
       handleSendMessage,
     };
+  },
+  updated() {
+    const chat = document.querySelector('.v-list');
+    chat.scrollTop = chat.scrollHeight;
   },
 });
 </script>
