@@ -1,5 +1,6 @@
 <template>
   <v-container fluid class="chat-list-container pa-4">
+    <h2>Chats</h2>
     <v-list class="chat-list">
       <v-list-item
         v-for="chat in chats"

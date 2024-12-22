@@ -21,3 +21,10 @@ Route::middleware('web')->group(function () {
 });
 
 Route::middleware('auth:sanctum')->post('/chat/{chat}', [ChatController::class, 'sendMessage']);
+
+##PUT##
+
+Route::put('/chat/{chat}', [ChatController::class, 'updateChat']);
+
+##DELETE##
+Route::delete('/chat/{chat}', [ChatController::class, 'deleteChat']);

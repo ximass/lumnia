@@ -1,6 +1,6 @@
 <template>
   <v-container fluid class="chat-container pa-4">
-    <v-card class="pa-2">
+    <v-card class="pa-2" style="display: flex; flex-direction: column; height: 100%;">
       <v-card-title>
         <v-text-field
           v-model="chatName"
@@ -11,7 +11,7 @@
           class="w-100"
         ></v-text-field>
       </v-card-title>
-      <v-card-text class="message-container ma-2">
+      <v-card-text class="message-container ma-2" style="flex: 1; overflow-y: auto;">
         <v-list>
           <v-list-item v-for="(message, index) in messages" :key="index">
             <v-list-item-content>
@@ -22,7 +22,7 @@
           </v-list-item>
         </v-list>
       </v-card-text>
-      <v-card-actions class="message-input pa-2">
+      <v-card-actions class="message-input pa-2" style="position: sticky; bottom: 0;">
         <v-text-field
           v-model="newMessage"
           label="Digite sua mensagem"
@@ -83,7 +83,7 @@ export default defineComponent({
 
     const updateChatName = async () => {
       try {
-        await axios.put(`api/chats/${props.currentChat.id}`, {
+        await axios.put(`api/chat/${props.currentChat.id}`, {
           name: chatName.value,
         });
         emit('updateChatName', chatName.value);
@@ -112,7 +112,7 @@ export default defineComponent({
   height: 100vh;
   display: flex;
   flex-direction: column;
-  padding: 16px; /* Adiciona padding ao contêiner */
+  padding: 16px;
 }
 
 .pa-4 {
@@ -130,11 +130,10 @@ export default defineComponent({
 .message-container {
   flex: 1;
   overflow-y: auto;
-  padding: 16px; /* Adiciona padding às mensagens */
+  padding: 16px;
 }
 
 .message-input {
-  padding: 16px; /* Adiciona padding ao campo de digitação */
   position: sticky;
   bottom: 0;
   background-color: var(--vt-c-white-soft);

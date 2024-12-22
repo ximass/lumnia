@@ -65,4 +65,29 @@ class ChatController extends Controller
 
         return response()->json(['status' => 'Message sent!']);
     }
+
+    public function deleteChat(Request $request, Chat $chat)
+    {
+        $chat->delete();
+
+        return response()->json(['status' => 'Chat deleted!']);
+    }
+
+    public function updateChat(Request $request, Chat $chat)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'knowledge_base_ids' => 'array',
+            'knowledge_base_ids.*' => 'exists:knowledge_bases,id',
+        ]);
+
+        $chat->update([
+            'name' => $request->input('name'),
+        ]);
+
+        $knowledgeBaseIds = $request->input('knowledge_base_ids', []);
+        $chat->knowledgeBases()->sync($knowledgeBaseIds);
+
+        return response()->json($chat);
+    }
 }
