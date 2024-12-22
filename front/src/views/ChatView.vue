@@ -35,7 +35,6 @@ export default defineComponent({
   setup() {
     const messages = ref<Array<{ sender: object; text: string }>>([]);
     const currentChat = ref<{ id: number; name: string } | null>(null);
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
 
     const handleChatSelected = (chat: any) => {
       currentChat.value = chat;

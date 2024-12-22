@@ -34,6 +34,7 @@ class ChatController extends Controller
     {
         $chats = Chat::with('lastMessage')
             ->where('user_id', $request->user()->id)
+            ->orderBy('updated_at', 'desc')
             ->get()
             ->map(function ($chat) {
                 return [

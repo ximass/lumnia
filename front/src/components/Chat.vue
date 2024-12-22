@@ -9,6 +9,7 @@
           flat
           solo
           class="w-100"
+          variant="underlined"
         ></v-text-field>
       </v-card-title>
       <v-card-text class="message-container ma-2" style="flex: 1; overflow-y: auto;">
@@ -23,21 +24,21 @@
         </v-list>
       </v-card-text>
       <v-card-actions class="message-input pa-2" style="position: sticky; bottom: 0;">
-        <v-text-field
+        <v-textarea
           v-model="newMessage"
           label="Digite sua mensagem"
           @keyup.enter="handleSendMessage"
           append-icon=""
           hide-details
           class="w-100"
-        ></v-text-field>
+        ></v-textarea>
       </v-card-actions>
     </v-card>
   </v-container>
 </template>
 
 <script lang="ts">
-import { defineComponent, ref } from 'vue';
+import { defineComponent, ref, watch } from 'vue';
 import axios from 'axios';
 import { format } from 'date-fns';
 
@@ -57,6 +58,10 @@ export default defineComponent({
   setup(props, { emit }) {
     const newMessage = ref('');
     const chatName = ref(props.currentChat.name);
+
+    watch(() => props.currentChat, (newChat) => {
+      chatName.value = newChat.name;
+    });
 
     const handleSendMessage = () => {
       if (newMessage.value.trim() === '') return;
