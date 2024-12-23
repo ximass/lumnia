@@ -1,6 +1,15 @@
 <template>
   <v-container fluid class="chat-list-container pa-4">
-    <h2>Chats</h2>
+    <v-row align="center" class="mb-4">
+      <v-col cols="8">
+        <h2>Chats</h2>
+      </v-col>
+      <v-col cols="4" class="d-flex justify-end">
+        <v-btn icon @click="openNewChatDialog">
+          <v-icon>mdi-plus</v-icon>
+        </v-btn>
+      </v-col>
+    </v-row>
     <v-list class="chat-list">
       <v-list-item
         v-for="chat in chats"
@@ -34,6 +43,11 @@
         </v-hover>
       </v-list-item>
     </v-list>
+    <NewChatDialog
+      v-if="isNewChatDialogOpen"
+      @close="isNewChatDialogOpen = false"
+      @chatCreated="handleChatCreated"
+    />
   </v-container>
 </template>
 
@@ -41,12 +55,17 @@
 import { defineComponent, ref, onMounted } from 'vue';
 import axios from 'axios';
 import echo from '@/plugins/echo';
+import NewChatDialog from '@/components/NewChatDialog.vue';
 
 export default defineComponent({
   name: 'ChatList',
+  components: {
+    NewChatDialog,
+  },
   emits: ['chatSelected'],
   setup(props, { emit }) {
     const chats = ref<Array<{ id: number; name: string; lastMessage: string }>>([]);
+    const isNewChatDialogOpen = ref(false);
 
     const fetchChats = async () => {
       const response = await axios.get('/api/chats', {
@@ -70,6 +89,15 @@ export default defineComponent({
       }
     };
 
+    const openNewChatDialog = () => {
+      isNewChatDialogOpen.value = true;
+    };
+
+    const handleChatCreated = (newChat: any) => {
+      chats.value = [newChat, ...chats.value];
+      isNewChatDialogOpen.value = false;
+    };
+
     onMounted(() => {
       fetchChats();
     });
@@ -78,6 +106,9 @@ export default defineComponent({
       chats,
       selectChat,
       deleteChat,
+      isNewChatDialogOpen,
+      openNewChatDialog,
+      handleChatCreated,
     };
   },
 });
@@ -104,5 +135,11 @@ export default defineComponent({
 
 .chat-item:hover .delete-icon {
   opacity: 1;
+}
+
+.mb-4 {
+  margin-bottom: 16px;
+  display: flex;
+  flex: 0;
 }
 </style>

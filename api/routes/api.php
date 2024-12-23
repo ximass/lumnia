@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\KnowledgeBaseController;
 
 ##GET##
 Route::get('/user', function (Request $request) {
@@ -12,6 +13,7 @@ Route::get('/user', function (Request $request) {
 
 Route::middleware('auth:sanctum')->get('/chats', [ChatController::class, 'getChats']);
 Route::get('/chats/{chat}/messages', [ChatController::class, 'getMessages']);
+Route::get('/knowledge-bases', [KnowledgeBaseController::class, 'getKnowledgeBases']);
 
 ##POST##
 Route::middleware('web')->group(function () {
@@ -21,6 +23,7 @@ Route::middleware('web')->group(function () {
 });
 
 Route::middleware('auth:sanctum')->post('/chat/{chat}', [ChatController::class, 'sendMessage']);
+Route::middleware('auth:sanctum')->post('/chat', [ChatController::class, 'createChat']);
 
 ##PUT##
 
