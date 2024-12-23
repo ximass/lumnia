@@ -15,12 +15,19 @@
       <v-card-text class="message-container ma-2" style="flex: 1; overflow-y: auto;">
         <v-list>
           <v-list-item v-for="(message, index) in messages" :key="index">
-            <v-list-item-content>
-              <v-list-item-title>
-                <span>{{ formatDate(message.updated_at) }}</span> - <strong>{{ message.user.name }}:</strong> {{ message.text }}
-              </v-list-item-title>
-            </v-list-item-content>
-          </v-list-item>
+              <v-list-item-content>
+                <v-list-item-title>
+                  <div class="d-flex flex-column">
+                    <div class="sent-message">
+                      <span>{{ formatDate(message.updated_at) }}</span> - <strong>{{ message.user.name }}:</strong> {{ message.text }}
+                    </div>
+                    <div v-if="message.answer" class="received-message mt-2">
+                      <span>{{ formatDate(message.updated_at) }}</span> - <strong>Admin:</strong> {{ message.answer }}
+                    </div>
+                  </div>
+                </v-list-item-title>
+              </v-list-item-content>
+            </v-list-item>
         </v-list>
       </v-card-text>
       <v-card-actions class="message-input pa-2" style="position: sticky; bottom: 0;">
@@ -151,5 +158,23 @@ export default defineComponent({
 .v-text-field {
   background-color: var(--vt-c-white);
   border-radius: 4px;
+}
+
+.sent-message {
+  align-self: flex-end;
+  background-color: #e0f7fa;
+  padding: 8px;
+  border-radius: 8px;
+  max-width: 70%;
+  text-align: right;
+}
+
+.received-message {
+  align-self: flex-start;
+  background-color: #f1f8e9;
+  padding: 8px;
+  border-radius: 8px;
+  max-width: 70%;
+  text-align: left;
 }
 </style>
