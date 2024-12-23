@@ -23,7 +23,7 @@
             <v-alert v-if="error" type="error" dense>{{ error }}</v-alert>
           </v-card-text>
           <v-card-actions class="justify-center">
-            <router-link to="/register">Don't have an account? Register</router-link>
+            <router-link to="/register">Não possui uma conta? Registre-se</router-link>
           </v-card-actions>
         </v-card>
       </v-col>
@@ -35,6 +35,7 @@
 import { defineComponent, ref } from 'vue';
 import axios from 'axios';
 import { useRouter } from 'vue-router';
+import { useAuth } from '@/composables/auth';
 
 export default defineComponent({
   name: 'Login',
@@ -43,6 +44,7 @@ export default defineComponent({
     const password = ref('');
     const error = ref('');
     const router = useRouter();
+    const { setAuth } = useAuth();
 
     const login = async () => {
       try {
@@ -56,8 +58,7 @@ export default defineComponent({
         const token = response.data.token;
         const user = response.data.user;
 
-        localStorage.setItem('authToken', token);
-        localStorage.setItem('user', JSON.stringify(user));
+        setAuth(token, user);
 
         router.push('/');
       } catch (err) {

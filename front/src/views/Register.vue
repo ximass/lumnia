@@ -3,11 +3,11 @@
       <v-row justify="center">
         <v-col cols="12" sm="6" md="4">
           <v-card>
-            <v-card-title class="justify-center">Register</v-card-title>
+            <v-card-title class="justify-center">Registro</v-card-title>
             <v-card-text>
               <v-form @submit.prevent="register">
                 <v-text-field
-                  label="Name"
+                  label="Nome"
                   v-model="name"
                   required
                 ></v-text-field>
@@ -18,23 +18,23 @@
                   required
                 ></v-text-field>
                 <v-text-field
-                  label="Password"
+                  label="Senha"
                   v-model="password"
                   type="password"
                   required
                 ></v-text-field>
                 <v-text-field
-                  label="Confirm Password"
+                  label="Confirme a senha"
                   v-model="password_confirmation"
                   type="password"
                   required
                 ></v-text-field>
-                <v-btn type="submit" color="primary" block>Register</v-btn>
+                <v-btn type="submit" color="primary" block>Concluir</v-btn>
               </v-form>
               <v-alert v-if="error" type="error" dense>{{ error }}</v-alert>
             </v-card-text>
             <v-card-actions class="justify-center">
-              <router-link to="/login">Already have an account? Login</router-link>
+              <router-link to="/login">Já possui uma conta? Faça login</router-link>
             </v-card-actions>
           </v-card>
         </v-col>

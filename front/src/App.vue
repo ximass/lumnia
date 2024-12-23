@@ -1,6 +1,6 @@
 <template>
   <v-app>
-    <SideMenu />
+    <SideMenu v-if="isAuthenticated" />
     <v-main>
       <router-view />
     </v-main>
@@ -8,13 +8,21 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue';
+import { defineComponent, computed } from 'vue';
 import SideMenu from './components/SideMenu.vue';
+import { useAuth } from './composables/auth';
 
 export default defineComponent({
   name: 'App',
   components: {
     SideMenu,
+  },
+  setup() {
+    const { isAuthenticated } = useAuth();
+
+    return {
+      isAuthenticated,
+    };
   },
 });
 </script>
