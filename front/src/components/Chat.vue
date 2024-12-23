@@ -172,8 +172,11 @@ export default defineComponent({
   background-color: #e0f7fa;
   padding: 8px;
   border-radius: 8px;
-  max-width: 70%;
+  max-width: 80%;
   text-align: right;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 .received-message {
@@ -181,8 +184,11 @@ export default defineComponent({
   background-color: #f1f8e9;
   padding: 8px;
   border-radius: 8px;
-  max-width: 70%;
+  max-width: 80%;
   text-align: left;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 .loading-message {
