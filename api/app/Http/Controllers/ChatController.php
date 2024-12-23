@@ -62,9 +62,19 @@ class ChatController extends Controller
             'text' => $request->input('text'),
         ]);
 
-        broadcast(new MessageSent($chat->id, $message->text));
+        broadcast(new MessageSent($chat->id, $message->text, $request->user()));
 
-        return response()->json(['status' => 'Message sent!']);
+        $answerText = $this->generateServerAnswer($message->text);
+
+        $message->update(['answer' => $answerText]);
+
+        return response()->json([
+            'status' => 'Message sent!',
+            'answer' => [
+                'text' => $answerText,
+                'updated_at' => $message->created_at->toIso8601String()
+            ],
+        ]);
     }
 
     public function deleteChat(Request $request, Chat $chat)
@@ -90,5 +100,11 @@ class ChatController extends Controller
         $chat->knowledgeBases()->sync($knowledgeBaseIds);
 
         return response()->json($chat);
+    }
+
+    private function generateServerAnswer(string $userMessage): string
+    {
+        //TODO: DINAMIZAR
+        return "Servidor respondeu: xx";
     }
 }
