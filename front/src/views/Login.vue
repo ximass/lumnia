@@ -44,7 +44,7 @@ export default defineComponent({
     const password = ref('');
     const error = ref('');
     const router = useRouter();
-    const { setAuth } = useAuth();
+    const { setAuth, user } = useAuth();
 
     const login = async () => {
       try {
@@ -56,7 +56,7 @@ export default defineComponent({
         );
 
         const token = response.data.token;
-        const user = response.data.user;
+        user.value  = response.data.user;
 
         setAuth(token, user);
 
