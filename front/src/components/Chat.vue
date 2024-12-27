@@ -12,11 +12,21 @@
               <v-list-item-title>
                 <div class="d-flex flex-column">
                   <div class="sent-message">
-                    <span>{{ formatDate(message.updated_at) }}</span> - <strong>{{ message.user.name }}:</strong> {{
-                    message.text }}
+                    <div class="message-header d-flex justify-start">
+                      <span>{{ formatDate(message.updated_at) }}</span> - <strong>{{ message.user.name }}</strong>
+                    </div>
+                    <div class="message-text">
+                      {{ message.text }}
+                    </div>
                   </div>
-                  <div v-if="message.answer" class="received-message mt-2">
-                    <span>{{ formatDate(message.updated_at) }}</span> - <strong>Admin:</strong> {{ message.answer }}
+
+                  <div v-if="message.answer" class="received-message">
+                    <div v-if="message.answer" class="message-header d-flex justify-start mt-2">
+                      <span>{{ formatDate(message.updated_at) }}</span> - <strong>IA</strong>
+                    </div>
+                    <div class="message-text">
+                      {{ message.answer }}
+                    </div>
                   </div>
                 </div>
               </v-list-item-title>
@@ -44,15 +54,17 @@ import { defineComponent, ref, watch } from 'vue';
 import axios from 'axios';
 import { format } from 'date-fns';
 
+import { type PropType } from 'vue';
+
 export default defineComponent({
   name: 'Chat',
   props: {
     messages: {
-      type: Array,
+      type: Array as PropType<Array<{ user: { name: string }, text: string, updated_at: string, answer?: string }>>,
       required: false,
     },
     currentChat: {
-      type: Object,
+      type: Object as PropType<{ id: number, name: string }>,
       required: true,
     },
   },
@@ -82,7 +94,7 @@ export default defineComponent({
           }
         );
 
-        props.messages.push({
+        props.messages?.push({
           user: JSON.parse(localStorage.getItem('user') || '{}'),
           text: newMessage.value,
           updated_at: new Date().toISOString(),
@@ -169,26 +181,37 @@ export default defineComponent({
 
 .sent-message {
   align-self: flex-end;
-  background-color: #e0f7fa;
-  padding: 8px;
-  border-radius: 8px;
-  max-width: 80%;
-  text-align: right;
-  white-space: pre-wrap;
-  word-break: break-word;
-  overflow-wrap: anywhere;
-}
-
-.received-message {
-  align-self: flex-start;
-  background-color: #f1f8e9;
-  padding: 8px;
-  border-radius: 8px;
   max-width: 80%;
   text-align: left;
   white-space: pre-wrap;
   word-break: break-word;
   overflow-wrap: anywhere;
+}
+
+.message-header {
+  font-size: 12px;
+  color: #666;
+}
+
+.sent-message .message-text {
+  background-color: #e0f7fa;
+  padding: 8px;
+  border-radius: 8px;
+}
+
+.received-message {
+  align-self: flex-start;
+  max-width: 80%;
+  text-align: left;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.received-message .message-text {
+  background-color: #f1f8e9;
+  padding: 8px;
+  border-radius: 8px;
 }
 
 .loading-message {

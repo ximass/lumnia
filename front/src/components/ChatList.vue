@@ -25,22 +25,11 @@
             </v-col>
             <v-col cols="2" class="d-flex justify-end">
               <v-list-item-action>
-                <v-icon class="delete-icon">mdi-close</v-icon>
+                <v-icon class="delete-icon" @click.stop="deleteChat(chat.id)">mdi-close</v-icon>
               </v-list-item-action>
             </v-col>
           </v-row>
         </v-list-item-content>
-        <v-hover v-slot:default="{ isHovering }">
-          <v-list-item-action>
-            <v-icon
-              v-if="isHovering"
-              @click.stop="deleteChat(chat.id)"
-              class="delete-icon"
-            >
-              mdi-close
-            </v-icon>
-          </v-list-item-action>
-        </v-hover>
       </v-list-item>
     </v-list>
     <NewChatDialog

@@ -33,7 +33,7 @@ export default defineComponent({
     Chat
   },
   setup() {
-    const messages = ref<Array<{ sender: object; text: string }>>([]);
+    const messages = ref<Array<{ user: { name: string }, text: string, updated_at: string, answer?: string }>>([]);
     const currentChat = ref<{ id: number; name: string } | null>(null);
 
     const handleChatSelected = (chat: any) => {
@@ -53,18 +53,6 @@ export default defineComponent({
         currentChat.value.name = newName;
       }
     };
-
-    onMounted(() => {
-      echo.channel('chat')
-        .listen('.MessageSent', (e: any) => {
-          if (currentChat.value && e.chat_id === currentChat.value.id) {
-            messages.value.push({
-              sender: e.user,
-              text: e.message,
-            });
-          }
-        });
-    });
 
     return {
       messages,

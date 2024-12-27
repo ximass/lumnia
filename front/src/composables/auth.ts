@@ -1,7 +1,7 @@
 import { ref } from 'vue';
 
 const isAuthenticated = ref(!!localStorage.getItem('authToken'));
-const user = ref(JSON.parse(localStorage.getItem('user') || '{}'));
+const user = JSON.parse(localStorage.getItem('user') || '{}');
 
 const setAuth = (token: string, user: any) => {
   localStorage.setItem('authToken', token);
