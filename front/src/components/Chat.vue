@@ -5,7 +5,7 @@
         <v-text-field v-model="chatName" @blur="updateChatName" hide-details flat solo class="w-100"
           variant="underlined"></v-text-field>
       </v-card-title>
-      <v-card-text class="message-container ma-2" style="flex: 1; overflow-y: auto;">
+      <v-card-text id="chat-container" class="message-container ma-2" style="flex: 1; overflow-y: auto;">
         <v-list>
           <v-list-item v-for="(message, index) in messages" :key="index">
             <v-list-item-content>
@@ -50,11 +50,20 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, watch } from 'vue';
+import { defineComponent, ref, watch, nextTick, onMounted } from 'vue';
 import axios from 'axios';
 import { format } from 'date-fns';
-
 import { type PropType } from 'vue';
+
+const scrollToBottom = async () => {
+  await nextTick();
+
+  const chatContainer = document.getElementById('chat-container');
+
+  if (chatContainer) {
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+  }
+};
 
 export default defineComponent({
   name: 'Chat',
@@ -95,7 +104,7 @@ export default defineComponent({
         );
 
         props.messages?.push({
-          user: JSON.parse(localStorage.getItem('user') || '{}'),
+          user: JSON.parse(localStorage.getItem('user') || '{}').value,
           text: newMessage.value,
           updated_at: new Date().toISOString(),
           answer: response.data.answer ? response.data.answer.text : null,
@@ -108,6 +117,7 @@ export default defineComponent({
         console.error('Error sending message:', error);
       } finally {
         isLoading.value = false;
+        scrollToBottom();
       }
     };
 
@@ -129,6 +139,9 @@ export default defineComponent({
       updateChatName,
       isLoading,
     };
+  },
+  updated() {
+    scrollToBottom();
   },
   methods: {
     formatDate(dateString: string): string {

@@ -1,5 +1,4 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router';
-import Home from '@/views/Home.vue';
 import ChatView from '@/views/ChatView.vue';
 import Login from '@/views/Login.vue';
 import Register from '@/views/Register.vue';
@@ -8,11 +7,11 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: '/',
     name: 'Home',
-    component: Home,
+    component: ChatView,
     meta: { requiresAuth: true },
   },
   {
-    path: '/chat',
+    path: '/chats',
     name: 'Chat',
     component: ChatView,
     meta: { requiresAuth: true },

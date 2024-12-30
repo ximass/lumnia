@@ -20,8 +20,7 @@
     data() {
       return {
         menuItems: [
-          { title: 'Home', route: '/' },
-          { title: 'Chat', route: '/chat' }
+          { title: 'Chats', route: '/chats' }
         ],
       };
     },
