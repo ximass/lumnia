@@ -106,5 +106,29 @@ class ChatController extends Controller
     {
         //TODO: DINAMIZAR
         return "Servidor respondeu: xx";
+
+        $command = escapeshellcmd('python C:\projetos\rugcore\scripts\test3.py ' . escapeshellarg($userMessage));
+        $output  = shell_exec($command);
+
+        Log::info($output);
+
+        if ($output === null) {
+            Log::error("Failed to execute the Python script.");
+            return "An error occurred while processing your request.";
+        }
+
+        $decodedOutput = json_decode($output);
+
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            Log::error("JSON decode error: " . json_last_error_msg());
+            return "An error occurred while processing your request.";
+        }
+
+        if (!isset($decodedOutput->choices[0]->message)) {
+            Log::error("Unexpected response structure: " . $output);
+            return "An error occurred while processing your request.";
+        }
+
+        return $decodedOutput->choices[0]->message;
     }
 }
