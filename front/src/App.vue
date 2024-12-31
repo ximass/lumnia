@@ -13,6 +13,7 @@ import { defineComponent } from 'vue';
 import TopMenu from './components/TopMenu.vue';
 import SideMenu from './components/SideMenu.vue';
 import { useAuth } from './composables/auth';
+import './assets/styles/global.css';
 
 export default defineComponent({
   name: 'App',
