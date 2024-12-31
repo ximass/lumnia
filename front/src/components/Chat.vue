@@ -153,7 +153,7 @@ export default defineComponent({
 
 <style scoped>
 .chat-container {
-  height: 100vh;
+  height: 90vh;
   display: flex;
   flex-direction: column;
   padding: 16px;
