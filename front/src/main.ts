@@ -11,9 +11,31 @@ import '@mdi/font/css/materialdesignicons.css';
 
 import router from './router';
 
+import './assets/styles/global.css';
+
+const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null;
+const isDark = savedTheme ? savedTheme === 'light' : true;
+
 const vuetify = createVuetify({
   components,
   directives,
+  theme: {
+    defaultTheme: isDark ? 'dark' : 'light',
+    themes: {
+      light: {
+        dark: false,
+        colors: {
+          background: '#ffffff',
+        },
+      },
+      dark: {
+        dark: true,
+        colors: {
+          background: '#181818',
+        },
+      },
+    },
+  },
   icons: {
     defaultSet: 'mdi',
     aliases,
