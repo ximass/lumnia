@@ -13,8 +13,10 @@ import router from './router';
 
 import './assets/styles/global.css';
 
-const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null;
+const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' ?? 'dark';
 const isDark = savedTheme ? savedTheme === 'light' : true;
+
+document.documentElement.setAttribute('data-theme', savedTheme);
 
 const vuetify = createVuetify({
   components,

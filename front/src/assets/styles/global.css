@@ -15,3 +15,11 @@
     scrollbar-width: thin;
     scrollbar-color: #c9d0d3 transparent;
 }
+
+:root {
+    --color-message-text: #000000DE;
+}
+  
+[data-theme='dark'] {
+    --color-message-text: #000000DE;
+}

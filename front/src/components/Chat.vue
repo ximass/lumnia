@@ -208,6 +208,7 @@ export default defineComponent({
 
 .sent-message .message-text {
   background-color: #e0f7fa;
+  color: var(--color-message-text);
   padding: 8px;
   border-radius: 8px;
 }
@@ -223,6 +224,7 @@ export default defineComponent({
 
 .received-message .message-text {
   background-color: #f1f8e9;
+  color: var(--color-message-text);
   padding: 8px;
   border-radius: 8px;
 }

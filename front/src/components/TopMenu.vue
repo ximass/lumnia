@@ -65,6 +65,8 @@ export default defineComponent({
         theme.global.name.value = 'light';
         localStorage.setItem('theme', 'light');
       }
+
+      document.documentElement.setAttribute('data-theme', theme.global.name.value);
     };
 
     onMounted(() => {
