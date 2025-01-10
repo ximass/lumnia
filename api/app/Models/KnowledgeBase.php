@@ -15,4 +15,9 @@ class KnowledgeBase extends Model
     {
         return $this->belongsToMany(Chat::class);
     }
+
+    public function groups()
+    {
+        return $this->belongsToMany(Group::class);
+    }
 }

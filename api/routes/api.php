@@ -5,6 +5,8 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\KnowledgeBaseController;
+use App\Http\Controllers\GroupController;
+use App\Http\Controllers\UserController;
 
 ##GET##
 Route::get('/user', function (Request $request) {
@@ -14,6 +16,8 @@ Route::get('/user', function (Request $request) {
 Route::middleware('auth:sanctum')->get('/chats', [ChatController::class, 'getChats']);
 Route::get('/chats/{chat}/messages', [ChatController::class, 'getMessages']);
 Route::get('/knowledge-bases', [KnowledgeBaseController::class, 'getKnowledgeBases']);
+Route::apiResource('/groups', GroupController::class);
+Route::get('/users/search', [UserController::class, 'search']);
 
 ##POST##
 Route::middleware('web')->group(function () {

@@ -113,6 +113,7 @@ export default defineComponent({
 .chat-list {
   flex: 1;
   overflow-y: auto;
+  border-radius: 5px;
 }
 
 .delete-icon {

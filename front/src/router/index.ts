@@ -2,6 +2,7 @@ import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 import ChatView from '@/views/ChatView.vue';
 import Login from '@/views/Login.vue';
 import Register from '@/views/Register.vue';
+import GroupView from '@/views/GroupView.vue';
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -14,6 +15,12 @@ const routes: Array<RouteRecordRaw> = [
     path: '/chats',
     name: 'Chat',
     component: ChatView,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/groups',
+    name: 'GroupView',
+    component: GroupView,
     meta: { requiresAuth: true },
   },
   {
