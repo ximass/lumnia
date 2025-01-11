@@ -23,6 +23,18 @@
             @update:search="fetchUsers"
           >
           </v-autocomplete>
+          <v-select
+            v-model="group.knowledge_base_ids"
+            :items="knowledgeBases"
+            item-text="title"
+            item-value="id"
+            label="Bases de conhecimentos"
+            multiple
+            chips
+            clearable
+            hide-selected
+            :loading="loadingKnowledgeBases"
+          ></v-select>
           <v-card-actions>
             <v-spacer></v-spacer>
             <v-btn text @click="close">Cancelar</v-btn>
@@ -53,18 +65,25 @@ export default defineComponent({
   emits: ['close', 'saved'],
   setup(props, { emit }) {
     const form = ref(null);
-    const group = ref<{ name: string; user_ids: number[] }>({ name: '', user_ids: [] });
+    const group = ref<{ name: string; user_ids: number[]; knowledge_base_ids: number[] }>({ name: '', user_ids: [], knowledge_base_ids: [] });
     const users = ref<Array<{ id: number; title: string }>>([]);
     const loadingUsers = ref(false);
+    const knowledgeBases = ref<Array<{ id: number; title: string }>>([]);
+    const loadingKnowledgeBases = ref(false);
 
     watch(() => props.groupData, (newData) => {
       if (newData) {
         group.value = {
           name: newData.name,
           user_ids: newData.users.map(user => user.id),
+          knowledge_base_ids: newData.knowledge_bases.map(kb => kb.id),
         };
       } else {
-        group.value = { name: '', user_ids: [] };
+        group.value = { 
+          name: '', 
+          user_ids: [],
+          knowledge_base_ids: [],
+        };
       }
     }, { immediate: true });
 
@@ -86,13 +105,36 @@ export default defineComponent({
       }
     };
 
+    const fetchKnowledgeBases = async () => {
+      loadingKnowledgeBases.value = true;
+
+      try {
+        const response = await axios.get('/api/knowledge-bases');
+        knowledgeBases.value = response.data.map((kb: any) => ({ id: kb.id, title: kb.title }));
+      } catch (error) {
+        console.error('Erro ao buscar bases de conhecimento:', error);
+      } finally {
+        loadingKnowledgeBases.value = false;
+      }
+    };
+
+    onMounted(() => {
+      fetchKnowledgeBases();
+    });
+
     const submitForm = async () => {
       if (form.value?.validate()) {
         try {
+          const payload = {
+            name: group.value.name,
+            user_ids: group.value.user_ids,
+            knowledge_base_ids: group.value.knowledge_base_ids,
+          };
+
           if (props.groupData) {
-            await axios.put(`/api/groups/${props.groupData.id}`, group.value);
+            await axios.put(`/api/groups/${props.groupData.id}`, payload);
           } else {
-            await axios.post('/api/groups', group.value);
+            await axios.post('/api/groups', payload);
           }
           emit('saved');
           close();
@@ -114,7 +156,10 @@ export default defineComponent({
       fetchUsers,
       submitForm,
       close,
-      isEdit: !!props.groupData
+      isEdit: !!props.groupData,
+      knowledgeBases,
+      loadingKnowledgeBases,
+      fetchKnowledgeBases,
     };
   },
 });

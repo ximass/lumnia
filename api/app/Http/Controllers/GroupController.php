@@ -18,6 +18,8 @@ class GroupController extends Controller
             'name' => 'required|string|max:255',
             'user_ids' => 'array',
             'user_ids.*' => 'exists:users,id',
+            'knowledge_base_ids' => 'array',
+            'knowledge_base_ids.*' => 'exists:knowledge_bases,id',
         ]);
 
         $group = Group::create($request->only('name'));
@@ -26,7 +28,11 @@ class GroupController extends Controller
             $group->users()->attach($request->user_ids);
         }
 
-        return response()->json($group->load('users'), 201);
+        if ($request->has('knowledge_base_ids')) {
+            $group->knowledgeBases()->attach($request->knowledge_base_ids);
+        }
+
+        return response()->json($group->load('users', 'knowledgeBases'), 201);
     }
 
     public function show(Group $group)
@@ -40,6 +46,8 @@ class GroupController extends Controller
             'name' => 'sometimes|required|string|max:255',
             'user_ids' => 'array',
             'user_ids.*' => 'exists:users,id',
+            'knowledge_base_ids' => 'array',
+            'knowledge_base_ids.*' => 'exists:knowledge_bases,id',
         ]);
 
         $group->update($request->only('name'));
@@ -48,7 +56,11 @@ class GroupController extends Controller
             $group->users()->sync($request->user_ids);
         }
 
-        return response()->json($group->load('users'));
+        if ($request->has('knowledge_base_ids')) {
+            $group->knowledgeBases()->sync($request->knowledge_base_ids);
+        }
+
+        return response()->json($group->load(['users', 'knowledgeBases']));
     }
 
     public function destroy(Group $group)
