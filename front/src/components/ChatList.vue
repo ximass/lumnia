@@ -17,22 +17,21 @@
         @click="selectChat(chat)"
         class="chat-item"
       >
-          <v-row>
-            <v-col cols="10">
-              <v-list-item-title>{{ chat.name }}</v-list-item-title>
-              <v-list-item-subtitle>{{ chat.lastMessage }}</v-list-item-subtitle>
-            </v-col>
-            <v-col cols="2" class="d-flex justify-end">
-              <v-list-item-action>
-                <v-icon class="delete-icon" @click.stop="deleteChat(chat.id)">mdi-close</v-icon>
-              </v-list-item-action>
-            </v-col>
-          </v-row>
+        <v-row>
+          <v-col cols="10">
+            <v-list-item-title>{{ chat.name }}</v-list-item-title>
+            <v-list-item-subtitle>{{ chat.lastMessage }}</v-list-item-subtitle>
+          </v-col>
+          <v-col cols="2" class="d-flex justify-end">
+            <v-list-item-action>
+              <v-icon class="delete-icon" @click.stop="deleteChat(chat.id)">mdi-close</v-icon>
+            </v-list-item-action>
+          </v-col>
+        </v-row>
       </v-list-item>
     </v-list>
     <NewChatDialog
-      v-if="isNewChatDialogOpen"
-      @close="isNewChatDialogOpen = false"
+      v-model="isNewChatDialogOpen"
       @chatCreated="handleChatCreated"
     />
   </v-container>

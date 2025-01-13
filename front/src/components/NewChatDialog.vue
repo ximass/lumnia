@@ -34,18 +34,32 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, onMounted } from 'vue';
+import { defineComponent, ref, onMounted, watch } from 'vue';
 import axios from 'axios';
 
 export default defineComponent({
   name: 'NewChatDialog',
-  emits: ['close', 'chatCreated'],
+  emits: ['chatCreated', 'update:modelValue'],
+  props: {
+    modelValue: {
+      type: Boolean,
+      required: true,
+    },
+  },
   setup(props, { emit }) {
-    const dialog = ref(true);
-    const chatName = ref(null);
+    const dialog = ref(props.modelValue);
+    const chatName = ref<string | null>(null);
     const knowledgeBases = ref<Array<{ id: number; name: string }>>([]);
     const selectedKnowledgeBases = ref<number[]>([]);
     const form = ref(null);
+
+    watch(() => props.modelValue, (newVal) => {
+      dialog.value = newVal;
+    });
+
+    watch(dialog, (newVal) => {
+      emit('update:modelValue', newVal);
+    });
 
     const fetchKnowledgeBases = async () => {
       try {
@@ -79,13 +93,14 @@ export default defineComponent({
         );
 
         emit('chatCreated', response.data);
+        dialog.value = false;
       } catch (error) {
         console.error('Erro ao criar chat:', error);
       }
     };
 
     const close = () => {
-      emit('close');
+      dialog.value = false;
     };
 
     onMounted(() => {
