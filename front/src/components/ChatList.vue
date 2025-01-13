@@ -48,12 +48,19 @@ import NewChatDialog from '@/components/NewChatDialog.vue';
 
 export default defineComponent({
   name: 'ChatList',
+  props: {
+    lastMessage: {
+      type: String,
+      required: false,
+    },
+  },
   components: {
     NewChatDialog,
   },
   emits: ['chatSelected'],
   setup(props, { emit }) {
     const chats = ref<Array<{ id: number; name: string; lastMessage: string }>>([]);
+    const currentChat = ref<{ id: number; name: string } | null>(null);
     const isNewChatDialogOpen = ref(false);
 
     const fetchChats = async () => {
@@ -66,6 +73,8 @@ export default defineComponent({
     };
 
     const selectChat = (chat: any) => {
+      currentChat.value = chat;
+
       emit('chatSelected', chat);
     };
 
@@ -93,12 +102,22 @@ export default defineComponent({
 
     return {
       chats,
+      currentChat,
       selectChat,
       deleteChat,
       isNewChatDialogOpen,
       openNewChatDialog,
       handleChatCreated,
     };
+  },
+  updated() {
+    if (this.currentChat) {
+      const chat = this.chats.find(chat => chat.id === this.currentChat.id);
+
+      if (chat && chat.lastMessage !== this.lastMessage) {
+        chat.lastMessage = this.lastMessage;
+      }
+    }
   },
 });
 </script>

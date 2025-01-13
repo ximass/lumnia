@@ -2,7 +2,7 @@
   <v-container fluid class="chat-view-container">
     <v-row>
       <v-col cols="3">
-        <ChatList @chatSelected="handleChatSelected" />
+        <ChatList @chatSelected="handleChatSelected" :lastMessage/>
       </v-col>
       <v-col cols="9" class="chat-area">
         <Chat 
@@ -10,6 +10,7 @@
           :messages="messages" 
           :currentChat="currentChat" 
           @updateChatName="handleUpdateChatName" 
+          @sendMessage="handleLastMessage"
         />
         <v-alert v-else type="info" class="mt-5">
           Por favor, selecione um chat para iniciar a conversa.
@@ -35,6 +36,7 @@ export default defineComponent({
   setup() {
     const messages = ref<Array<{ user: { name: string }, text: string, updated_at: string, answer?: string }>>([]);
     const currentChat = ref<{ id: number; name: string } | null>(null);
+    const lastMessage = ref('');
 
     const handleChatSelected = (chat: any) => {
       currentChat.value = chat;
@@ -54,11 +56,17 @@ export default defineComponent({
       }
     };
 
+    const handleLastMessage = (message: string) => {
+      lastMessage.value = message;
+    };
+
     return {
       messages,
       currentChat,
+      lastMessage,
       handleChatSelected,
       handleUpdateChatName,
+      handleLastMessage,
     };
   },
 });
