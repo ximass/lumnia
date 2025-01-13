@@ -105,6 +105,7 @@ class ChatController extends Controller
     private function generateServerAnswer(string $userMessage): string
     {
         //TODO: DINAMIZAR
+        //TODO: GERAR AS INFORMATION SOURCES
         return "Servidor respondeu: xx";
 
         $command = escapeshellcmd('python C:\projetos\rugcore\scripts\test3.py ' . escapeshellarg($userMessage));

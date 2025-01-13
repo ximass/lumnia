@@ -7,12 +7,14 @@
       </v-card-title>
       <v-card-text id="chat-container" class="message-container ma-2" style="flex: 1; overflow-y: auto;">
         <v-list>
-          <v-list-item v-for="(message, index) in messages" :key="index">
+          <v-list-item v-for="(message, index) in messages" :key="index" message>
               <v-list-item-title>
                 <div class="d-flex flex-column">
                   <div class="sent-message">
-                    <div class="message-header d-flex justify-start">
-                      <span>{{ formatDate(message.updated_at) }}</span> - <strong>{{ message.user.name }}</strong>
+                    <div class="message-header d-flex">
+                      <div>
+                        <span>{{ formatDate(message.updated_at) }}</span> - <strong>{{ message.user.name }}</strong>
+                      </div>
                     </div>
                     <div class="message-text">
                       {{ message.text }}
@@ -20,8 +22,11 @@
                   </div>
 
                   <div v-if="message.answer" class="received-message">
-                    <div v-if="message.answer" class="message-header d-flex justify-start mt-2">
-                      <span>{{ formatDate(message.updated_at) }}</span> - <strong>IA</strong>
+                    <div v-if="message.answer" class="message-header d-flex mt-2">
+                      <div>
+                        <span>{{ formatDate(message.updated_at) }}</span> - <strong>IA</strong>
+                      </div>
+                      <span class="ver-fontes" @click="openInformationSources(message.id)">Ver fonte</span>
                     </div>
                     <div class="message-text">
                       {{ message.answer }}
@@ -37,6 +42,29 @@
           </v-list-item>
         </v-list>
       </v-card-text>
+      <v-dialog v-model="isModalOpen" max-width="600px">
+        <v-card>
+          <v-card-title>Fontes de informações</v-card-title>
+          <v-card-text>
+            <div v-if="informationSources.length">
+              <ul>
+                <li v-for="source in informationSources" :key="source.id">
+                  <textarea>
+                    {{ source.content }}
+                  </textarea>
+                </li>
+              </ul>
+            </div>
+            <div v-else>
+              <p>Nenhuma fonte disponível.</p>
+            </div>
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn @click="isModalOpen = false" variant="text">Fechar</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
       <v-card-actions class="message-input pa-2" style="position: sticky; bottom: 0;">
         <v-textarea v-model="newMessage" label="Digite sua mensagem" @keyup.enter="handleSendMessage" append-icon=""
           hide-details class="w-100" :disabled="isLoading"></v-textarea>
@@ -78,6 +106,10 @@ export default defineComponent({
     const newMessage = ref('');
     const chatName = ref(props.currentChat.name);
     const isLoading = ref(false);
+
+    // Modal
+    const isModalOpen = ref(false);
+    const informationSources = ref<Array<any>>([]);
 
     watch(() => props.currentChat, (newChat) => {
       chatName.value = newChat.name;
@@ -128,12 +160,26 @@ export default defineComponent({
       }
     };
 
+    const openInformationSources = async (messageId: number) => {
+      try {
+        const response = await axios.get(`/api/message/${messageId}/information-sources`);
+
+        informationSources.value = response.data;
+        isModalOpen.value = true;
+      } catch (error) {
+        console.error('Erro ao buscar fontes de informação:', error);
+      }
+    };
+
     return {
       newMessage,
-      handleSendMessage,
       chatName,
-      updateChatName,
       isLoading,
+      isModalOpen,
+      informationSources,
+      handleSendMessage,
+      updateChatName,
+      openInformationSources,
     };
   },
   updated() {
@@ -198,6 +244,7 @@ export default defineComponent({
 }
 
 .message-header {
+  justify-content: space-between;
   font-size: 12px;
   color: #666;
 }
@@ -223,6 +270,15 @@ export default defineComponent({
   color: var(--color-message-text);
   padding: 8px;
   border-radius: 8px;
+}
+
+.ver-fontes {
+  cursor: pointer;
+  display: none;
+}
+
+[message]:hover .ver-fontes {
+  display: inline;
 }
 
 .loading-message {
