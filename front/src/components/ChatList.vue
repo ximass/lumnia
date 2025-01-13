@@ -17,7 +17,6 @@
         @click="selectChat(chat)"
         class="chat-item"
       >
-        <v-list-item-content>
           <v-row>
             <v-col cols="10">
               <v-list-item-title>{{ chat.name }}</v-list-item-title>
@@ -29,7 +28,6 @@
               </v-list-item-action>
             </v-col>
           </v-row>
-        </v-list-item-content>
       </v-list-item>
     </v-list>
     <NewChatDialog

@@ -8,7 +8,6 @@
       <v-card-text id="chat-container" class="message-container ma-2" style="flex: 1; overflow-y: auto;">
         <v-list>
           <v-list-item v-for="(message, index) in messages" :key="index">
-            <v-list-item-content>
               <v-list-item-title>
                 <div class="d-flex flex-column">
                   <div class="sent-message">
@@ -30,14 +29,11 @@
                   </div>
                 </div>
               </v-list-item-title>
-            </v-list-item-content>
           </v-list-item>
           <v-list-item v-if="isLoading" class="loading-message">
-            <v-list-item-content>
               <v-list-item-title>
                 <v-progress-circular indeterminate color="primary"></v-progress-circular>
               </v-list-item-title>
-            </v-list-item-content>
           </v-list-item>
         </v-list>
       </v-card-text>
