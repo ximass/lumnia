@@ -5,6 +5,9 @@
     <v-main>
       <router-view />
     </v-main>
+    <v-snackbar v-model="isToastVisible" timeout="3000" color="error">
+      {{ toastMessage }}
+    </v-snackbar>
   </v-app>
 </template>
 
@@ -13,6 +16,7 @@ import { defineComponent } from 'vue';
 import TopMenu from './components/TopMenu.vue';
 import SideMenu from './components/SideMenu.vue';
 import { useAuth } from './composables/auth';
+import { useToast } from './composables/useToast';
 import './assets/styles/global.css';
 
 export default defineComponent({
@@ -23,9 +27,12 @@ export default defineComponent({
   },
   setup() {
     const { isAuthenticated } = useAuth();
+    const { isToastVisible, toastMessage } = useToast();
 
     return {
       isAuthenticated,
+      isToastVisible,
+      toastMessage,
     };
   },
 });

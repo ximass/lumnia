@@ -76,6 +76,7 @@ import { defineComponent, ref, watch, nextTick, onMounted } from 'vue';
 import axios from 'axios';
 import { format } from 'date-fns';
 import { type PropType } from 'vue';
+import { useToast } from '@/composables/useToast';
 
 const scrollToBottom = async () => {
   await nextTick();
@@ -109,6 +110,8 @@ export default defineComponent({
     const isModalOpen = ref(false);
     const informationSources = ref<Array<any>>([]);
 
+    const { showToast } = useToast();
+
     watch(() => props.currentChat, (newChat) => {
       chatName.value = newChat.name;
     });
@@ -140,7 +143,8 @@ export default defineComponent({
 
         newMessage.value = '';
       } catch (error) {
-        console.error('Error sending message:', error);
+        const errorMsg = error.response?.data?.message || 'Erro ao enviar mensagem.';
+        showToast(errorMsg);
       } finally {
         isLoading.value = false;
         scrollToBottom();
@@ -153,8 +157,9 @@ export default defineComponent({
           name: chatName.value,
         });
         emit('updateChatName', chatName.value);
-      } catch (err) {
-        // Handle error
+      } catch (error) {
+        const errorMsg = error.response?.data?.message || 'Erro ao atualizar nome do chat.';
+        showToast(errorMsg);
       }
     };
 
@@ -165,7 +170,8 @@ export default defineComponent({
         informationSources.value = response.data;
         isModalOpen.value = true;
       } catch (error) {
-        console.error('Erro ao buscar fontes de informação:', error);
+        const errorMsg = error.response?.data?.message || 'Erro ao buscar fontes.';
+        showToast(errorMsg);
       }
     };
 

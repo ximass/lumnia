@@ -52,6 +52,7 @@
 import { defineComponent, ref, onMounted } from 'vue';
 import axios from 'axios';
 import GroupForm from '@/components/GroupForm.vue';
+import { useToast } from '@/composables/useToast';
 
 export default defineComponent({
   name: 'GroupView',
@@ -61,6 +62,8 @@ export default defineComponent({
     const isFormOpen = ref(false);
     const selectedGroup = ref<any>(null);
 
+    const { showToast } = useToast();
+
     const fetchGroups = async () => {
       try {
         const response = await axios.get('/api/groups');
@@ -68,7 +71,7 @@ export default defineComponent({
 
         console.log(groups.value);
       } catch (error) {
-        console.error('Erro ao buscar grupos:', error);
+        showToast('Erro ao buscar grupos');
       }
     };
 
@@ -87,7 +90,7 @@ export default defineComponent({
         await axios.delete(`/api/groups/${groupId}`);
         fetchGroups();
       } catch (error) {
-        console.error('Erro ao deletar grupo:', error);
+        showToast('Erro ao deletar grupo');
       }
     };
 

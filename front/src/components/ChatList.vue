@@ -42,6 +42,7 @@ import { defineComponent, ref, onMounted } from 'vue';
 import axios from 'axios';
 import echo from '@/plugins/echo';
 import NewChatDialog from '@/components/NewChatDialog.vue';
+import { useToast } from '@/composables/useToast';
 
 export default defineComponent({
   name: 'ChatList',
@@ -59,6 +60,8 @@ export default defineComponent({
     const chats = ref<Array<{ id: number; name: string; lastMessage: string }>>([]);
     const currentChat = ref<{ id: number; name: string } | null>(null);
     const isNewChatDialogOpen = ref(false);
+
+    const { showToast } = useToast();
 
     const fetchChats = async () => {
       const response = await axios.get('/api/chats', {
@@ -80,7 +83,8 @@ export default defineComponent({
         await axios.delete(`/api/chat/${chatId}`);
         chats.value = chats.value.filter(chat => chat.id !== chatId);
       } catch (error) {
-        console.error('Error deleting chat:', error);
+        const errorMsg = error.response?.data?.message || 'Ocorreu um erro ao excluir o chat.';
+        showToast(errorMsg);
       }
     };
 

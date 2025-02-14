@@ -49,6 +49,7 @@
 <script lang="ts">
 import { defineComponent, ref, onMounted, watch } from 'vue';
 import axios from 'axios';
+import { useToast } from '@/composables/useToast';
 
 export default defineComponent({
   name: 'GroupForm',
@@ -70,6 +71,8 @@ export default defineComponent({
     const loadingUsers = ref(false);
     const knowledgeBases = ref<Array<{ id: number; title: string }>>([]);
     const loadingKnowledgeBases = ref(false);
+
+    const { showToast } = useToast();
 
     watch(() => props.groupData, (newData) => {
       if (newData) {
@@ -99,7 +102,8 @@ export default defineComponent({
           users.value = response.data.map((user: any) => ({ id: user.id, title: user.name }));
         }
       } catch (error) {
-        console.error('Erro ao buscar usuários:', error);
+        const errorMsg = error.response?.data?.message || 'Erro ao buscar usuários';
+        showToast(errorMsg);
       } finally {
         loadingUsers.value = false;
       }
@@ -112,7 +116,8 @@ export default defineComponent({
         const response = await axios.get('/api/knowledge-bases');
         knowledgeBases.value = response.data.map((kb: any) => ({ id: kb.id, title: kb.title }));
       } catch (error) {
-        console.error('Erro ao buscar bases de conhecimento:', error);
+        const errorMsg = error.response?.data?.message || 'Erro ao buscar bases de conhecimento';
+        showToast(errorMsg);
       } finally {
         loadingKnowledgeBases.value = false;
       }
@@ -139,7 +144,8 @@ export default defineComponent({
           emit('saved');
           close();
         } catch (error) {
-          console.error('Erro ao salvar grupo:', error);
+          const errorMsg = error.response?.data?.message || 'Erro ao salvar grupo';
+          showToast(errorMsg);
         }
       }
     };

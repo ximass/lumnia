@@ -31,7 +31,6 @@
                 ></v-text-field>
                 <v-btn type="submit" color="primary" block>Concluir</v-btn>
               </v-form>
-              <v-alert v-if="error" type="error" dense>{{ error }}</v-alert>
             </v-card-text>
             <v-card-actions class="justify-center">
               <router-link to="/login">Já possui uma conta? Faça login</router-link>
@@ -46,6 +45,7 @@
   import { defineComponent, ref } from 'vue';
   import axios from 'axios';
   import { useRouter } from 'vue-router';
+  import { useToast } from '@/composables/useToast';
   
   export default defineComponent({
     name: 'Register',
@@ -54,8 +54,8 @@
       const email = ref('');
       const password = ref('');
       const password_confirmation = ref('');
-      const error = ref('');
       const router = useRouter();
+      const { showToast } = useToast();
   
       const register = async () => {
         try {
@@ -69,11 +69,11 @@
           
           router.push('/login');
         } catch (err) {
-          error.value = 'Registration failed.';
+          showToast('Erro ao se registrar:' + err.response.data.message);
         }
       };
   
-      return { name, email, password, password_confirmation, error, register };
+      return { name, email, password, password_confirmation, register };
     },
   });
   </script>

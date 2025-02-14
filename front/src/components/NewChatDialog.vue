@@ -36,6 +36,7 @@
 <script lang="ts">
 import { defineComponent, ref, onMounted, watch } from 'vue';
 import axios from 'axios';
+import { useToast } from '@/composables/useToast';
 
 export default defineComponent({
   name: 'NewChatDialog',
@@ -53,6 +54,8 @@ export default defineComponent({
     const selectedKnowledgeBases = ref<number[]>([]);
     const form = ref(null);
 
+    const { showToast } = useToast();
+
     watch(() => props.modelValue, (newVal) => {
       dialog.value = newVal;
     });
@@ -67,7 +70,7 @@ export default defineComponent({
 
         knowledgeBases.value = response.data;
       } catch (error) {
-        console.error('Erro ao buscar bases de conhecimento:', error);
+        showToast('Erro ao buscar bases de conhecimento');
       }
     };
 
@@ -95,7 +98,7 @@ export default defineComponent({
         emit('chatCreated', response.data);
         dialog.value = false;
       } catch (error) {
-        console.error('Erro ao criar chat:', error);
+        showToast('Erro ao criar chat');
       }
     };
 

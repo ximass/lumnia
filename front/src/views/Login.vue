@@ -20,7 +20,6 @@
               ></v-text-field>
               <v-btn type="submit" color="primary" block>Login</v-btn>
             </v-form>
-            <v-alert v-if="error" type="error" dense>{{ error }}</v-alert>
           </v-card-text>
           <v-card-actions class="justify-center">
             <router-link to="/register">Não possui uma conta? Registre-se</router-link>
@@ -36,15 +35,16 @@ import { defineComponent, ref } from 'vue';
 import axios from 'axios';
 import { useRouter } from 'vue-router';
 import { useAuth } from '@/composables/auth';
+import { useToast } from '@/composables/useToast';
 
 export default defineComponent({
   name: 'Login',
   setup() {
     const email = ref('');
     const password = ref('');
-    const error = ref('');
     const router = useRouter();
     const { setAuth, user } = useAuth();
+    const { showToast } = useToast();
 
     const login = async () => {
       try {
@@ -62,11 +62,11 @@ export default defineComponent({
 
         router.push('/');
       } catch (err) {
-        error.value = 'Login failed.';
+        showToast('Credenciais inválidas');
       }
     };
 
-    return { email, password, error, login };
+    return { email, password, login };
   },
 });
 </script>
