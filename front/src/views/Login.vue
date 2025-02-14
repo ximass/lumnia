@@ -1,9 +1,9 @@
 <template>
-  <v-container>
-    <v-row justify="center">
-      <v-col cols="12" sm="6" md="4">
+  <v-container class="login-bg" fluid>
+    <v-row align="center" justify="center" style="height: 100vh;">
+      <v-col cols="12" sm="6" md="4" class="offset-form">
         <v-card>
-          <v-card-title class="justify-center">Login</v-card-title>
+          <v-card-title class="justify-center">Faça login</v-card-title>
           <v-card-text>
             <v-form @submit.prevent="login">
               <v-text-field
@@ -13,12 +13,12 @@
                 required
               ></v-text-field>
               <v-text-field
-                label="Password"
+                label="Senha"
                 v-model="password"
                 type="password"
                 required
               ></v-text-field>
-              <v-btn type="submit" color="primary" block>Login</v-btn>
+              <v-btn type="submit" color="primary" block>Entrar</v-btn>
             </v-form>
           </v-card-text>
           <v-card-actions class="justify-center">
@@ -56,7 +56,7 @@ export default defineComponent({
         );
 
         const token = response.data.token;
-        user.value  = response.data.user;
+        user.value = response.data.user;
 
         setAuth(token, user);
 
@@ -70,3 +70,15 @@ export default defineComponent({
   },
 });
 </script>
+
+<style scoped>
+.login-bg {
+  background-image: url('@/assets/login-bg.jpg');
+  background-size: cover;
+  background-position: center;
+}
+
+.offset-form {
+  margin-left: 30%;
+}
+</style>
