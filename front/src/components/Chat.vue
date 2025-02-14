@@ -26,7 +26,7 @@
                       <div>
                         <span>{{ formatDate(message.updated_at) }}</span> - <strong>IA</strong>
                       </div>
-                      <span class="ver-fontes" @click="openInformationSources(message.id)">Ver fonte</span>
+                      <span class="ver-fontes" @click="openInformationSources(message.id)">ver fonte</span>
                     </div>
                     <div class="message-text">
                       {{ message.answer }}
@@ -44,16 +44,14 @@
       </v-card-text>
       <v-dialog v-model="isModalOpen" max-width="600px">
         <v-card>
-          <v-card-title>Fontes de informações</v-card-title>
+          <v-card-title>Fonte de informações</v-card-title>
           <v-card-text>
             <div v-if="informationSources.length">
-              <ul>
-                <li v-for="source in informationSources" :key="source.id">
-                  <textarea>
-                    {{ source.content }}
-                  </textarea>
-                </li>
-              </ul>
+              <v-row v-for="source in informationSources" :key="source.id">
+                <v-textarea readonly outlined :value="source.content" rows="auto">
+                  {{ source.content }}
+                </v-textarea>
+              </v-row>
             </div>
             <div v-else>
               <p>Nenhuma fonte disponível.</p>
@@ -93,7 +91,7 @@ export default defineComponent({
   name: 'Chat',
   props: {
     messages: {
-      type: Array as PropType<Array<{ user: { name: string }, text: string, updated_at: string, answer?: string }>>,
+      type: Array as PropType<Array<{ id: number; user: { name: string }, text: string, updated_at: string, answer?: string }>>,
       required: false,
     },
     currentChat: {

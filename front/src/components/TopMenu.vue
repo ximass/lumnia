@@ -1,6 +1,6 @@
 <template>
   <v-app-bar app fixed>
-    <v-toolbar-title>Rugcore ??</v-toolbar-title>
+    <v-toolbar-title>Lumnia</v-toolbar-title>
     <v-spacer></v-spacer>
     <v-menu v-model="menu" offset-y>
       <template #activator="{ props }">

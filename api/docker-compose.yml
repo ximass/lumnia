@@ -27,7 +27,7 @@ services:
   db:
     image: postgres:15
     environment:
-      POSTGRES_DB: rugcore
+      POSTGRES_DB: lumnia
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     ports:

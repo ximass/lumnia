@@ -87,7 +87,7 @@ return [
             'url' => env('DB_URL'),
             'host' => env('DB_HOST', 'localhost'),
             'port' => env('DB_PORT', '5432'),
-            'database' => env('DB_DATABASE', 'rugcore'),
+            'database' => env('DB_DATABASE', 'lumnia'),
             'username' => env('DB_USERNAME', 'postgres'),
             'password' => env('DB_PASSWORD', 'postgres'),
             'charset' => env('DB_CHARSET', 'utf8'),
