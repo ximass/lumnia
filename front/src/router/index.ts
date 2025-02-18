@@ -3,6 +3,7 @@ import ChatView from '@/views/ChatView.vue';
 import Login from '@/views/Login.vue';
 import Register from '@/views/Register.vue';
 import GroupView from '@/views/GroupView.vue';
+import UserView from '@/views/UserView.vue';
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -21,6 +22,12 @@ const routes: Array<RouteRecordRaw> = [
     path: '/groups',
     name: 'GroupView',
     component: GroupView,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/users',
+    name: 'UserView',
+    component: UserView,
     meta: { requiresAuth: true },
   },
   {

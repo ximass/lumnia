@@ -7,6 +7,11 @@ use App\Models\User;
 
 class UserController extends Controller
 {
+    public function index()
+    {
+        return response()->json(User::all());
+    }
+
     public function search(Request $request)
     {
         $request->validate([
@@ -21,5 +26,20 @@ class UserController extends Controller
                      ->get();
 
         return response()->json($users);
+    }
+
+    public function updateUser(Request $request, User $user)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|max:255'
+        ]);
+
+        $user->update([
+            'name' => $request->input('name'),
+            'email' => $request->input('email')
+        ]);
+
+        return response()->json($user);
     }
 }

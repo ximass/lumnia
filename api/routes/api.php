@@ -18,6 +18,7 @@ Route::middleware('auth:sanctum')->get('/chats', [ChatController::class, 'getCha
 Route::get('/chats/{chat}/messages', [ChatController::class, 'getMessages']);
 Route::get('/knowledge-bases', [KnowledgeBaseController::class, 'getKnowledgeBases']);
 Route::apiResource('/groups', GroupController::class);
+Route::apiResource('/users', UserController::class);
 Route::get('/users/search', [UserController::class, 'search']);
 Route::get('/message/{message}/information-sources', [MessageController::class, 'getInformationSources']);
 
@@ -34,6 +35,7 @@ Route::middleware('auth:sanctum')->post('/chat', [ChatController::class, 'create
 ##PUT##
 
 Route::put('/chat/{chat}', [ChatController::class, 'updateChat']);
+Route::put('/user/{user}', [UserController::class, 'updateUser']);
 
 ##DELETE##
 Route::delete('/chat/{chat}', [ChatController::class, 'deleteChat']);

@@ -22,6 +22,7 @@
         menuItems: [
           { title: 'Chats', route: '/chats' },
           { title: 'Grupos', route: '/groups' },
+          { title: 'Usuários', route: '/users' },
         ],
       };
     },
