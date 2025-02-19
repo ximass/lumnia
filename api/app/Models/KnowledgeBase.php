@@ -9,7 +9,14 @@ class KnowledgeBase extends Model
 {
     use HasFactory;
     
-    protected $fillable = ['title', 'content'];
+    protected $fillable = [
+        'title',
+        'content',
+        'modified_at',
+        'size',
+        'digest',
+        'details',
+    ];
 
     public function chats()
     {
