@@ -36,6 +36,7 @@ Route::middleware('auth:sanctum')->post('/chat', [ChatController::class, 'create
 
 Route::put('/chat/{chat}', [ChatController::class, 'updateChat']);
 Route::put('/user/{user}', [UserController::class, 'updateUser']);
+Route::put('/knowledge-base/{knowledgeBase}', [KnowledgeBaseController::class, 'updateKnowledgeBase']);
 
 ##DELETE##
 Route::delete('/chat/{chat}', [ChatController::class, 'deleteChat']);

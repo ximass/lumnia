@@ -23,6 +23,7 @@
           { title: 'Chats', route: '/chats' },
           { title: 'Grupos', route: '/groups' },
           { title: 'Usuários', route: '/users' },
+          { title: 'Bases de conhecimento', route: '/knowledge-bases' },
         ],
       };
     },

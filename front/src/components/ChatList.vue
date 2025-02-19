@@ -1,11 +1,11 @@
 <template>
   <v-container fluid class="chat-list-container pa-4">
-    <v-row align="center" class="mb-4">
+    <v-row align="center" class="mb-4" style="margin-bottom: 0;">
       <v-col cols="8">
         <h2>Chats</h2>
       </v-col>
       <v-col cols="4" class="d-flex justify-end">
-        <v-btn icon @click="openNewChatDialog">
+        <v-btn @click="openNewChatDialog" variant="text">
           <v-icon>mdi-plus</v-icon>
         </v-btn>
       </v-col>

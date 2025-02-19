@@ -16,4 +16,11 @@ class KnowledgeBaseController extends Controller
 
         return response()->json($knowledgeBases);
     }
+
+    public function updateKnowledgeBase(Request $request, KnowledgeBase $knowledgeBase)
+    {
+        $knowledgeBase->update($request->all());
+
+        return response()->json($knowledgeBase);
+    }
 }
