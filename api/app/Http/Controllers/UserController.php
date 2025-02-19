@@ -32,12 +32,14 @@ class UserController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|email|max:255'
+            'email' => 'required|email|max:255',
+            'admin' => 'required|boolean'
         ]);
 
         $user->update([
             'name' => $request->input('name'),
-            'email' => $request->input('email')
+            'email' => $request->input('email'),
+            'admin' => $request->input('admin')
         ]);
 
         return response()->json($user);
