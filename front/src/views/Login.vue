@@ -6,18 +6,8 @@
           <v-card-title class="justify-center">Faça login</v-card-title>
           <v-card-text>
             <v-form @submit.prevent="login">
-              <v-text-field
-                label="Email"
-                v-model="email"
-                type="email"
-                required
-              ></v-text-field>
-              <v-text-field
-                label="Senha"
-                v-model="password"
-                type="password"
-                required
-              ></v-text-field>
+              <v-text-field label="Email" v-model="email" type="email" required></v-text-field>
+              <v-text-field label="Senha" v-model="password" type="password" required></v-text-field>
               <v-btn type="submit" color="primary" block>Entrar</v-btn>
             </v-form>
           </v-card-text>
@@ -48,7 +38,7 @@ export default defineComponent({
 
     const login = async () => {
       try {
-        const csrf = await axios.get('/sanctum/csrf-cookie');
+        await axios.get('/sanctum/csrf-cookie');
         const response = await axios.post(
           '/api/login',
           { email: email.value, password: password.value },
@@ -56,10 +46,12 @@ export default defineComponent({
         );
 
         const token = response.data.token;
-        user.value = response.data.user;
+        const userData = response.data.user;
 
-        setAuth(token, user);
+        localStorage.setItem('authToken', token);
+        localStorage.setItem('user', JSON.stringify(userData));
 
+        setAuth(token, userData);
         router.push('/');
       } catch (err) {
         showToast('Credenciais inválidas');

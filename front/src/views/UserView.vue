@@ -4,6 +4,9 @@
             <h2>Usuários</h2>
         </v-row>
         <v-data-table :items="users" :headers="headers" class="elevation-1">
+            <template #item.admin="{ item }">
+                {{ item.admin ? 'Sim' : 'Não' }}
+            </template>
             <template #item.actions="{ item }">
                 <v-menu offset-y>
                     <template #activator="{ props }">
@@ -36,7 +39,7 @@ export default defineComponent({
     name: 'UserView',
     components: { UserForm },
     setup() {
-        const users = ref<Array<{ id: number; name: string; email: string }>>([]);
+        const users = ref<Array<{ id: number; name: string; email: string; admin: boolean }>>([]);
         const isFormOpen = ref(false);
         const selectedUser = ref<any>(null);
         const { showToast } = useToast();
@@ -44,6 +47,7 @@ export default defineComponent({
         const headers = [
             { title: 'Nome', value: 'name', sortable: true },
             { title: 'Email', value: 'email', sortable: true },
+            { title: 'Administrador', value: 'admin', sortable: true },
             { title: 'Ações', value: 'actions', sortable: false },
         ];
 

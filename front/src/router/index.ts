@@ -23,19 +23,19 @@ const routes: Array<RouteRecordRaw> = [
     path: '/knowledge-bases',
     name: 'KnowledgeBaseView',
     component: KnowledgeBaseView,
-    meta: { requiresAuth: true },
+    meta: { requiresAuth: true, requiresAdmin: true },
   },
   {
     path: '/groups',
     name: 'GroupView',
     component: GroupView,
-    meta: { requiresAuth: true },
+    meta: { requiresAuth: true, requiresAdmin: true },
   },
   {
     path: '/users',
     name: 'UserView',
     component: UserView,
-    meta: { requiresAuth: true },
+    meta: { requiresAuth: true, requiresAdmin: true },
   },
   {
     path: '/login',
@@ -64,14 +64,29 @@ router.beforeEach((to, from, next) => {
   const authToken = localStorage.getItem('authToken');
   const requiresAuth = to.matched.some(record => record.meta.requiresAuth);
   const requiresGuest = to.matched.some(record => record.meta.requiresGuest);
+  const requiresAdmin = to.matched.some(record => record.meta.requiresAdmin);
 
   if (requiresAuth && !authToken) {
-    next({ name: 'Login' });
-  } else if (requiresGuest && authToken) {
-    next({ name: 'Home' });
-  } else {
-    next();
+    return next({ name: 'Login' });
   }
+
+  if (requiresGuest && authToken) {
+    return next({ name: 'Home' });
+  }
+
+  if (requiresAdmin) {
+    const userStr = localStorage.getItem('user');
+    try {
+      const user = userStr ? JSON.parse(userStr) : null;
+      if (!user || !user.admin) {
+        return next({ name: 'Home' });
+      }
+    } catch (error) {
+      return next({ name: 'Home' });
+    }
+  }
+
+  next();
 });
 
 export default router;

@@ -10,6 +10,7 @@
                         required></v-text-field>
                     <v-text-field label="Email" v-model="user.email" :rules="[v => !!v || 'Email é obrigatório']"
                         required></v-text-field>
+                    <v-switch v-model="user.admin" label="Administrador"></v-switch>
                 </v-form>
             </v-card-text>
             <v-card-actions>
@@ -35,8 +36,8 @@ export default defineComponent({
     emits: ['close', 'saved'],
     setup(props, { emit }) {
         const { showToast } = useToast();
+        const user = ref({ id: 0, name: '', email: '', admin: false });
         const internalDialog = ref(props.dialog);
-        const user = ref({ id: 0, name: '', email: '' });
         const form = ref();
 
         watch(() => props.dialog, (val) => {

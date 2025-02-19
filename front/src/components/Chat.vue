@@ -105,6 +105,7 @@ export default defineComponent({
     const newMessage = ref('');
     const chatName = ref(props.currentChat.name);
     const isLoading = ref(false);
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
 
     // Modal
     const isModalOpen = ref(false);
@@ -133,7 +134,7 @@ export default defineComponent({
         );
 
         props.messages?.push({
-          user: JSON.parse(localStorage.getItem('user') || '{}').value,
+          user: user,
           text: newMessage.value,
           updated_at: new Date().toISOString(),
           answer: response.data.answer ? response.data.answer.text : null,
