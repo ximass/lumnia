@@ -6,6 +6,7 @@ use App\Events\MessageSent;
 use App\Models\Chat;
 use App\Models\Message;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 
 use Illuminate\Support\Facades\Log;
 
@@ -64,7 +65,7 @@ class ChatController extends Controller
 
         broadcast(new MessageSent($chat->id, $message->text, $request->user()));
 
-        $answerText = $this->generateServerAnswer($message->text);
+        $answerText = $this->generateServerAnswerOllama($message->text);
 
         $message->update(['answer' => $answerText]);
 
@@ -102,13 +103,9 @@ class ChatController extends Controller
         return response()->json($chat);
     }
 
-    private function generateServerAnswer(string $userMessage): string
+    private function generateServerAnswerScript(string $userMessage): string
     {
-        //TODO: DINAMIZAR
-        //TODO: GERAR AS INFORMATION SOURCES
-        return "Servidor respondeu: xx";
-
-        $command = escapeshellcmd('python C:\projetos\rugcore\scripts\test3.py ' . escapeshellarg($userMessage));
+        $command = escapeshellcmd('python C:\projetos\lumnia\scripts\test3.py ' . escapeshellarg($userMessage));
         $output  = shell_exec($command);
 
         Log::info($output);
@@ -131,5 +128,38 @@ class ChatController extends Controller
         }
 
         return $decodedOutput->choices[0]->message;
+    }
+
+    private function generateServerAnswerLLMStudio(string $userMessage): string
+    {
+        $response = Http::post(env('LLM_API_URL') . '/v1/chat/completions', [
+            'messages' => [
+                ['role' => 'user', 'content' => $userMessage]
+            ],
+            'temperature' => 0.7,
+            'max_tokens' => 1000,
+        ]);
+
+        return $response->json()['choices'][0]['message']['content'];
+    }
+
+    private function generateServerAnswerOllama(string $userMessage, $stream = false): string
+    {
+        $client = new \GuzzleHttp\Client();
+
+        $response = $client->post(env('LLM_API_URL') . '/api/generate', [
+            'json'    => [
+                'model'  => 'deepseek-r1',
+                'prompt' => $userMessage,
+                'stream' => $stream,
+            ],
+            'timeout' => 100,
+            'stream'  => $stream,
+        ]);
+
+        $content = $response->getBody()->getContents();
+        $answer = json_decode($content, true)['response'];
+
+        return $answer;
     }
 }
