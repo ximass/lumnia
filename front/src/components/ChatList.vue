@@ -82,6 +82,10 @@ export default defineComponent({
       try {
         await axios.delete(`/api/chat/${chatId}`);
         chats.value = chats.value.filter(chat => chat.id !== chatId);
+
+        if (currentChat.value?.id === chatId) {
+          selectChat(null);
+        }
       } catch (error) {
         const errorMsg = error.response?.data?.message || 'Ocorreu um erro ao excluir o chat.';
         showToast(errorMsg);
@@ -158,7 +162,7 @@ export default defineComponent({
     height: 100vh;
     padding: 8px;
   }
-  
+
   .chat-list {
     margin: 0;
   }
