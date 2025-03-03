@@ -152,4 +152,19 @@ export default defineComponent({
   display: flex;
   flex: 0;
 }
+
+@media (max-width: 600px) {
+  .chat-list-container {
+    height: 100vh;
+    padding: 8px;
+  }
+  
+  .chat-list {
+    margin: 0;
+  }
+
+  h2 {
+    font-size: 20px;
+  }
+}
 </style>

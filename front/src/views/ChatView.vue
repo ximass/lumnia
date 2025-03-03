@@ -1,10 +1,10 @@
 <template>
   <v-container fluid class="chat-view-container">
     <v-row>
-      <v-col cols="3">
+      <v-col cols="12" md="3">
         <ChatList @chatSelected="handleChatSelected" :lastMessage/>
       </v-col>
-      <v-col cols="9" class="chat-area">
+      <v-col cols="12" md="9" class="chat-area">
         <Chat 
           v-if="currentChat" 
           :messages="messages" 

@@ -291,4 +291,20 @@ export default defineComponent({
   justify-content: center;
   align-items: center;
 }
+
+@media (max-width: 600px) {
+  .chat-container {
+    height: 100vh;
+    padding: 8px;
+  }
+
+  .message-container {
+    padding: 8px;
+  }
+  
+  .v-text-field,
+  .v-textarea {
+    font-size: 14px;
+  }
+}
 </style>
