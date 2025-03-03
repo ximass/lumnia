@@ -10,12 +10,16 @@
 
 <script lang="ts">
 import { defineComponent, computed } from 'vue';
-import { useAuth } from '@/composables/auth';
 
 export default defineComponent({
   name: 'SideMenu',
-  setup() {
-    const { user } = useAuth();
+  props: {
+    user: {
+      type: Object,
+      required: true,
+    },
+  },
+  setup(props) {
     const menuItems = [
       { title: 'Chats', route: '/chats', admin: false },
       { title: 'Grupos', route: '/groups', admin: true },
@@ -26,7 +30,7 @@ export default defineComponent({
     const filteredMenuItems = computed(() => {
       return menuItems.filter(item => {
         if (item.admin) {
-          return user.value && user.value.admin;
+          return props.user && props.user.admin;
         }
         return true;
       });

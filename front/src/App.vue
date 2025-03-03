@@ -1,7 +1,7 @@
 <template>
   <v-app>
-    <TopMenu v-if="isAuthenticated" />
-    <SideMenu v-if="isAuthenticated" />
+    <TopMenu v-if="isAuthenticated" :user/>
+    <SideMenu v-if="isAuthenticated" :user/>
     <v-main>
       <router-view />
     </v-main>
@@ -26,13 +26,16 @@ export default defineComponent({
     SideMenu,
   },
   setup() {
-    const { isAuthenticated } = useAuth();
+    const { fetchUser, isAuthenticated, user } = useAuth();
     const { isToastVisible, toastMessage } = useToast();
+    
+    fetchUser();
 
     return {
       isAuthenticated,
       isToastVisible,
       toastMessage,
+      user
     };
   },
 });

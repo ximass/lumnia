@@ -5,7 +5,7 @@
         <v-card>
           <v-card-title class="justify-center">Faça login</v-card-title>
           <v-card-text>
-            <v-form @submit.prevent="login">
+            <v-form @submit.prevent="loginHandler">
               <v-text-field label="Email" v-model="email" type="email" required></v-text-field>
               <v-text-field label="Senha" v-model="password" type="password" required></v-text-field>
               <v-btn type="submit" color="primary" block>Entrar</v-btn>
@@ -22,7 +22,6 @@
 
 <script lang="ts">
 import { defineComponent, ref } from 'vue';
-import axios from 'axios';
 import { useRouter } from 'vue-router';
 import { useAuth } from '@/composables/auth';
 import { useToast } from '@/composables/useToast';
@@ -33,32 +32,19 @@ export default defineComponent({
     const email = ref('');
     const password = ref('');
     const router = useRouter();
-    const { setAuth, user } = useAuth();
+    const { login } = useAuth();
     const { showToast } = useToast();
 
-    const login = async () => {
+    const loginHandler = async () => {
       try {
-        await axios.get('/sanctum/csrf-cookie');
-        const response = await axios.post(
-          '/api/login',
-          { email: email.value, password: password.value },
-          { withCredentials: true }
-        );
-
-        const token = response.data.token;
-        const userData = response.data.user;
-
-        localStorage.setItem('authToken', token);
-        localStorage.setItem('user', JSON.stringify(userData));
-
-        setAuth(token, userData);
+        await login(email.value, password.value);
         router.push('/');
       } catch (err) {
         showToast('Credenciais inválidas');
       }
     };
 
-    return { email, password, login };
+    return { email, password, loginHandler };
   },
 });
 </script>

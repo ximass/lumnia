@@ -77,6 +77,7 @@ import axios from 'axios';
 import { format } from 'date-fns';
 import { type PropType } from 'vue';
 import { useToast } from '@/composables/useToast';
+import { useAuth } from '@/composables/auth';
 
 const scrollToBottom = async () => {
   await nextTick();
@@ -105,7 +106,7 @@ export default defineComponent({
     const newMessage = ref('');
     const chatName = ref(props.currentChat.name);
     const isLoading = ref(false);
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const { user } = useAuth();
 
     // Modal
     const isModalOpen = ref(false);
@@ -134,7 +135,7 @@ export default defineComponent({
         );
 
         props.messages?.push({
-          user: user,
+          user: user.value,
           text: newMessage.value,
           updated_at: new Date().toISOString(),
           answer: response.data.answer ? response.data.answer.text : null,

@@ -1,30 +1,58 @@
 import { ref } from 'vue';
+import axios from 'axios';
 
-const isAuthenticated = ref(!!localStorage.getItem('authToken'));
-const user = ref(JSON.parse(localStorage.getItem('user') || '{}'));
+const isAuthenticated = ref(false);
+const user = ref({});
 
-const setAuth = (token: string, newUser: any) => {
-  localStorage.setItem('authToken', token);
-  localStorage.setItem('user', JSON.stringify(newUser));
+const fetchUser = async () => {
+  try {
+    const authToken = localStorage.getItem('authToken');
+    const response = await axios.get('/api/user', {
+      headers: {
+        Authorization: `Bearer ${authToken}`,
+      },
+    });
 
-  user.value = newUser;
-  isAuthenticated.value = true;
+    user.value = response.data;
+    isAuthenticated.value = true;
+  } catch (error) {
+    user.value = {};
+    isAuthenticated.value = false;
+  }
 };
 
-const clearAuth = () => {
+const login = async (email: string, password: string) => {
+  await axios.get('/sanctum/csrf-cookie', { withCredentials: true });
+  const response = await axios.post(
+    '/api/login',
+    { email, password },
+    { withCredentials: true }
+  );
+
+  const token = response.data.token;
+
+  localStorage.setItem('authToken', token);
+
+  await fetchUser();
+};
+
+const logout = async () => {
+  await axios.post('/api/logout', {}, { withCredentials: true });
+
   localStorage.removeItem('authToken');
-  localStorage.removeItem('user');
 
   user.value = {};
-  
   isAuthenticated.value = false;
+
+  window.location.href = '/';
 };
 
 export function useAuth() {
   return {
     isAuthenticated,
     user,
-    setAuth,
-    clearAuth,
+    login,
+    logout,
+    fetchUser,
   };
 }

@@ -14,7 +14,7 @@
         <v-list-item @click="goToProfile">
           <v-list-item-title>Meu perfil</v-list-item-title>
         </v-list-item>
-        <v-list-item @click="logout">
+        <v-list-item @click="onLogout">
           <v-list-item-title>Sair</v-list-item-title>
         </v-list-item>
         <v-divider></v-divider>
@@ -41,16 +41,21 @@ import { useTheme } from 'vuetify';
 
 export default defineComponent({
   name: 'TopMenu',
+  props: {
+    user: {
+      type: Object,
+      required: true,
+    },
+  },
   setup() {
-    const { isAuthenticated, clearAuth } = useAuth();
+    const { isAuthenticated, logout } = useAuth();
     const router = useRouter();
     const menu = ref(false);
     const theme = useTheme();
     const isDark = ref(theme.global.name.value === 'dark');
 
-    const logout = () => {
-      clearAuth();
-      router.push('/login');
+    const onLogout = () => {
+      logout();
     };
 
     const goToProfile = () => {
@@ -80,7 +85,7 @@ export default defineComponent({
 
     return {
       isAuthenticated,
-      logout,
+      onLogout,
       goToProfile,
       menu,
       isDark,
