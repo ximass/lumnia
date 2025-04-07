@@ -37,7 +37,7 @@
           ></v-select>
           <v-card-actions>
             <v-spacer></v-spacer>
-            <v-btn text @click="close">Cancelar</v-btn>
+            <v-btn @click="close">Cancelar</v-btn>
             <v-btn color="primary" type="submit">Salvar</v-btn>
           </v-card-actions>
         </v-form>
@@ -65,7 +65,7 @@ export default defineComponent({
   },
   emits: ['close', 'saved'],
   setup(props, { emit }) {
-    const form = ref(null);
+    const form = ref();
     const group = ref<{ name: string; user_ids: number[]; knowledge_base_ids: number[] }>({ name: '', user_ids: [], knowledge_base_ids: [] });
     const users = ref<Array<{ id: number; title: string }>>([]);
     const loadingUsers = ref(false);
@@ -128,7 +128,9 @@ export default defineComponent({
     });
 
     const submitForm = async () => {
-      if (form.value?.validate()) {
+      const validation = await form.value?.validate();
+
+      if (validation.valid) {
         try {
           const payload = {
             name: group.value.name,
