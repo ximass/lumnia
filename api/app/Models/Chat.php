@@ -9,7 +9,7 @@ class Chat extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name', 'user_id'];
+    protected $fillable = ['name', 'user_id', 'knowledge_base_id'];
 
     public function messages()
     {
@@ -21,9 +21,9 @@ class Chat extends Model
         return $this->hasOne(Message::class)->latestOfMany();
     }
 
-    public function knowledgeBases()
+    public function knowledgeBase()
     {
-        return $this->belongsToMany(KnowledgeBase::class);
+        return $this->belongsTo(KnowledgeBase::class);
     }
 
     public function user()

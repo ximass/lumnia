@@ -16,10 +16,9 @@
             :items="knowledgeBases" 
             item-value="id"
             item-text="title"
-            v-model="selectedKnowledgeBases" 
-            label="Bases de conhecimento" 
-            multiple
-            chips 
+            v-model="selectedKnowledgeBase" 
+            :rules="[v => !!v || 'Base é obrigatória']"
+            label="Base de conhecimento" 
             required>
           </v-select>
           <v-card-actions>
@@ -50,8 +49,8 @@ export default defineComponent({
   setup(props, { emit }) {
     const dialog = ref(props.modelValue);
     const chatName = ref<string | null>(null);
-    const knowledgeBases = ref<Array<{ id: number; name: string }>>([]);
-    const selectedKnowledgeBases = ref<number[]>([]);
+    const knowledgeBases = ref<Array<{ id: number; title: string }>>([]);
+    const selectedKnowledgeBase = ref<number | null>(null);
     const form = ref(null);
 
     const { showToast } = useToast();
@@ -86,7 +85,7 @@ export default defineComponent({
           '/api/chat',
           {
             name: chatName.value,
-            knowledge_base_ids: selectedKnowledgeBases.value,
+            knowledge_base_id: selectedKnowledgeBase.value,
           },
           {
             headers: {
@@ -114,7 +113,7 @@ export default defineComponent({
       dialog,
       chatName,
       knowledgeBases,
-      selectedKnowledgeBases,
+      selectedKnowledgeBase,
       form,
       submitForm,
       close,

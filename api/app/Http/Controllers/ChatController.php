@@ -5,9 +5,11 @@ namespace App\Http\Controllers;
 use App\Events\MessageSent;
 use App\Models\Chat;
 use App\Models\Message;
+
+use LLMController;
+
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
-
 use Illuminate\Support\Facades\Log;
 
 class ChatController extends Controller
@@ -16,17 +18,14 @@ class ChatController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'knowledge_base_ids' => 'array',
-            'knowledge_base_ids.*' => 'exists:knowledge_bases,id',
+            'knowledge_base_id' => 'nullable|exists:knowledge_bases,id',
         ]);
 
         $chat = Chat::create([
             'name' => $request->input('name'),
             'user_id' => $request->user()->id,
+            'knowledge_base_id'=> $request->input('knowledge_base_id'),
         ]);
-
-        $knowledgeBaseIds = $request->input('knowledge_base_ids', []);
-        $chat->knowledgeBases()->sync($knowledgeBaseIds);
 
         return response()->json($chat);
     }
@@ -65,9 +64,7 @@ class ChatController extends Controller
 
         broadcast(new MessageSent($chat->id, $message->text, $request->user()));
 
-        $answerText = $this->generateServerAnswerOllama($message->text);
-
-        $message->update(['answer' => $answerText]);
+        $answerText = $this->generateAnswer($chat, $message->text);
 
         return response()->json([
             'status' => 'Message sent!',
@@ -89,77 +86,26 @@ class ChatController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'knowledge_base_ids' => 'array',
-            'knowledge_base_ids.*' => 'exists:knowledge_bases,id',
+            'knowledge_base_id' => 'nullable|exists:knowledge_bases,id',
         ]);
 
         $chat->update([
-            'name' => $request->input('name'),
+            'name'             => $request->input('name'),
+            'knowledge_base_id'=> $request->input('knowledge_base_id'),
         ]);
-
-        $knowledgeBaseIds = $request->input('knowledge_base_ids', []);
-        $chat->knowledgeBases()->sync($knowledgeBaseIds);
 
         return response()->json($chat);
     }
 
-    private function generateServerAnswerScript(string $userMessage): string
+    private function generateAnswer($chat, $message)
     {
-        $command = escapeshellcmd('python C:\projetos\lumnia\scripts\test3.py ' . escapeshellarg($userMessage));
-        $output  = shell_exec($command);
+        $userMessage = $message->text;
+        $knowledgeBase = $chat->knowledgeBase();
 
-        Log::info($output);
+        $answerText = LLMController::generateAnswer($userMessage, $knowledgeBase);
 
-        if ($output === null) {
-            Log::error("Failed to execute the Python script.");
-            return "An error occurred while processing your request.";
-        }
+        $message->update(['answer' => $answerText]);
 
-        $decodedOutput = json_decode($output);
-
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            Log::error("JSON decode error: " . json_last_error_msg());
-            return "An error occurred while processing your request.";
-        }
-
-        if (!isset($decodedOutput->choices[0]->message)) {
-            Log::error("Unexpected response structure: " . $output);
-            return "An error occurred while processing your request.";
-        }
-
-        return $decodedOutput->choices[0]->message;
-    }
-
-    private function generateServerAnswerLLMStudio(string $userMessage): string
-    {
-        $response = Http::post(env('LLM_API_URL') . '/v1/chat/completions', [
-            'messages' => [
-                ['role' => 'user', 'content' => $userMessage]
-            ],
-            'temperature' => 0.7,
-            'max_tokens' => 1000,
-        ]);
-
-        return $response->json()['choices'][0]['message']['content'];
-    }
-
-    private function generateServerAnswerOllama(string $userMessage, $stream = false): string
-    {
-        $client = new \GuzzleHttp\Client();
-
-        $response = $client->post(env('LLM_API_URL') . '/api/generate', [
-            'json'    => [
-                'model'  => 'deepseek-r1',
-                'prompt' => $userMessage,
-                'stream' => $stream,
-            ],
-            'timeout' => 100,
-            'stream'  => $stream,
-        ]);
-
-        $content = $response->getBody()->getContents();
-        $answer = json_decode($content, true)['response'];
-
-        return $answer;
+        return $answerText;
     }
 }

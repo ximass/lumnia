@@ -20,7 +20,7 @@ class KnowledgeBase extends Model
 
     public function chats()
     {
-        return $this->belongsToMany(Chat::class);
+        return $this->hasMany(Chat::class);
     }
 
     public function groups()

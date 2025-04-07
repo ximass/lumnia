@@ -12,6 +12,10 @@ class CreateChatsTable extends Migration
             $table->id();
             $table->string('name');
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->foreignId('knowledge_base_id')
+                  ->nullable()
+                  ->constrained('knowledge_bases')
+                  ->onDelete('set null');
             $table->timestamps();
         });
     }
