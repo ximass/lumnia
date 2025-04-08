@@ -6,7 +6,7 @@ use App\Events\MessageSent;
 use App\Models\Chat;
 use App\Models\Message;
 
-use LLMController;
+use App\Http\Controllers\LLMController;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
