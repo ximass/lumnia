@@ -66,7 +66,7 @@ class ChatController extends Controller
 
         broadcast(new MessageSent($chat->id, $message->text, $request->user()));
 
-        $answerText = $this->generateAnswer($chat, $message->text);
+        $answerText = $this->generateAnswer($chat, $message);
 
         return response()->json([
             'status' => 'Message sent!',
@@ -101,10 +101,10 @@ class ChatController extends Controller
 
     private function generateAnswer($chat, $message)
     {
-        $knowledgeBase = new KnowledgeBase($chat->knowledgeBase()->id);
+        $knowledgeBase = $chat->knowledgeBase;
         $llmController = new LLMController();
 
-        $answerText = $llmController->generateAnswer($message, $knowledgeBase);
+        $answerText = $llmController->generateAnswer($message->text, $knowledgeBase);
 
         $message->update(['answer' => $answerText]);
 
