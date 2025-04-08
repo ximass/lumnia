@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Events\MessageSent;
+
 use App\Models\Chat;
 use App\Models\Message;
+use App\Models\KnowledgeBase;
 
 use App\Http\Controllers\LLMController;
 
@@ -99,7 +101,7 @@ class ChatController extends Controller
 
     private function generateAnswer($chat, $message)
     {
-        $knowledgeBase = $chat->knowledgeBase();
+        $knowledgeBase = new KnowledgeBase($chat->knowledgeBase()->id);
         $llmController = new LLMController();
 
         $answerText = $llmController->generateAnswer($message, $knowledgeBase);
