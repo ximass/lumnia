@@ -100,8 +100,9 @@ class ChatController extends Controller
     private function generateAnswer($chat, $message)
     {
         $knowledgeBase = $chat->knowledgeBase();
+        $llmController = new LLMController();
 
-        $answerText = LLMController::generateAnswer($message, $knowledgeBase);
+        $answerText = $llmController->generateAnswer($message, $knowledgeBase);
 
         $message->update(['answer' => $answerText]);
 
