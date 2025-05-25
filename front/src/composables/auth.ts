@@ -1,8 +1,9 @@
 import { ref } from 'vue';
 import axios from 'axios';
+import type { User } from '@/types/types';
 
 const isAuthenticated = ref(false);
-const user = ref({});
+const user = ref<User | null>(null);
 
 const fetchUser = async () => {
   try {
@@ -14,9 +15,9 @@ const fetchUser = async () => {
     });
 
     user.value = response.data;
-    isAuthenticated.value = true;
+    isAuthenticated.value = true;  
   } catch (error) {
-    user.value = {};
+    user.value = null;
     isAuthenticated.value = false;
   }
 };
@@ -38,10 +39,9 @@ const login = async (email: string, password: string) => {
 
 const logout = async () => {
   await axios.post('/api/logout', {}, { withCredentials: true });
-
   localStorage.removeItem('authToken');
 
-  user.value = {};
+  user.value = null;
   isAuthenticated.value = false;
 
   window.location.href = '/';

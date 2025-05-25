@@ -86,3 +86,18 @@ export interface GroupWithKnowledgeBasesAndPivot extends Group {
 export interface KnowledgeBaseWithGroupsAndPivot extends KnowledgeBase {
   groups: (Group & { pivot: GroupKnowledgeBase })[];
 }
+
+// Chat related interfaces
+export interface ChatWithLastMessage extends Chat {
+  lastMessage: string;
+}
+
+export interface MessageWithUser extends Message {
+  user: User;
+  updated_at: string;
+}
+
+export interface InformationSource {
+  id: number;
+  content: string;
+}

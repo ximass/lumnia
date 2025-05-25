@@ -40,9 +40,9 @@
 <script lang="ts">
 import { defineComponent, ref, onMounted } from 'vue';
 import axios from 'axios';
-import echo from '@/plugins/echo';
 import NewChatDialog from '@/components/NewChatDialog.vue';
 import { useToast } from '@/composables/useToast';
+import type { ChatWithLastMessage } from '@/types/types';
 
 export default defineComponent({
   name: 'ChatList',
@@ -55,26 +55,27 @@ export default defineComponent({
   components: {
     NewChatDialog,
   },
-  emits: ['chatSelected'],
-  setup(props, { emit }) {
-    const chats = ref<Array<{ id: number; name: string; lastMessage: string }>>([]);
-    const currentChat = ref<{ id: number; name: string } | null>(null);
+  emits: ['chatSelected'],  setup(props, { emit }) {
+    const chats = ref<ChatWithLastMessage[]>([]);
+    const currentChat = ref<ChatWithLastMessage | null>(null);
     const isNewChatDialogOpen = ref(false);
 
-    const { showToast } = useToast();
-
+    const { showToast } = useToast();    
+    
     const fetchChats = async () => {
-      const response = await axios.get('/api/chats', {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('authToken')}`,
-        },
-      });
-      chats.value = response.data;
-    };
-
-    const selectChat = (chat: any) => {
+      try {
+        const response = await axios.get<ChatWithLastMessage[]>('/api/chats', {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('authToken')}`,
+          },
+        });
+        chats.value = response.data;
+      } catch (error: any) {
+        const errorMsg = error.response?.data?.message || 'Erro ao buscar chats';
+        showToast(errorMsg);
+      }
+    };    const selectChat = (chat: ChatWithLastMessage | null) => {
       currentChat.value = chat;
-
       emit('chatSelected', chat);
     };
 
@@ -85,8 +86,7 @@ export default defineComponent({
 
         if (currentChat.value?.id === chatId) {
           selectChat(null);
-        }
-      } catch (error) {
+        }      } catch (error: any) {
         const errorMsg = error.response?.data?.message || 'Ocorreu um erro ao excluir o chat.';
         showToast(errorMsg);
       }
@@ -94,9 +94,9 @@ export default defineComponent({
 
     const openNewChatDialog = () => {
       isNewChatDialogOpen.value = true;
-    };
-
-    const handleChatCreated = (newChat: any) => {
+    };    
+    
+    const handleChatCreated = (newChat: ChatWithLastMessage) => {
       chats.value = [newChat, ...chats.value];
       isNewChatDialogOpen.value = false;
     };
@@ -113,12 +113,11 @@ export default defineComponent({
       isNewChatDialogOpen,
       openNewChatDialog,
       handleChatCreated,
-    };
+    };  
   },
   updated() {
-    if (this.currentChat) {
-      const chat = this.chats.find(chat => chat.id === this.currentChat.id);
-
+    if (this.currentChat && this.lastMessage !== undefined) {
+      const chat = this.chats.find(chat => chat.id === this.currentChat?.id);
       if (chat && chat.lastMessage !== this.lastMessage) {
         chat.lastMessage = this.lastMessage;
       }

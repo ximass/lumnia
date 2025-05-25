@@ -78,6 +78,7 @@ import { format } from 'date-fns';
 import { type PropType } from 'vue';
 import { useToast } from '@/composables/useToast';
 import { useAuth } from '@/composables/auth';
+import type { MessageWithUser, ChatWithLastMessage, InformationSource } from '@/types/types';
 
 const scrollToBottom = async () => {
   await nextTick();
@@ -90,29 +91,27 @@ const scrollToBottom = async () => {
 };
 
 export default defineComponent({
-  name: 'Chat',
-  props: {
+  name: 'Chat',  props: {
     messages: {
-      type: Array as PropType<Array<{ id: number; user: { name: string }, text: string, updated_at: string, answer?: string }>>,
+      type: Array as PropType<MessageWithUser[]>,
       required: false,
     },
     currentChat: {
-      type: Object as PropType<{ id: number, name: string }>,
+      type: Object as PropType<ChatWithLastMessage>,
       required: true,
     },
   },
   emits: ['sendMessage', 'updateChatName'],
   setup(props, { emit }) {
+    const { showToast } = useToast();
+
+    const isLoading = ref(false);
+    const isModalOpen = ref(false);
+
     const newMessage = ref('');
     const chatName = ref(props.currentChat.name);
-    const isLoading = ref(false);
     const { user } = useAuth();
-
-    // Modal
-    const isModalOpen = ref(false);
-    const informationSources = ref<Array<any>>([]);
-
-    const { showToast } = useToast();
+    const informationSources = ref<InformationSource[]>([]);
 
     watch(() => props.currentChat, (newChat) => {
       chatName.value = newChat.name;
@@ -132,19 +131,24 @@ export default defineComponent({
               Authorization: `Bearer ${localStorage.getItem('authToken')}`,
             }
           }
-        );
-
-        props.messages?.push({
-          user: user.value,
-          text: newMessage.value,
-          updated_at: new Date().toISOString(),
-          answer: response.data.answer ? response.data.answer.text : null,
-        });
+        );        
+        
+        if (user.value) {
+          props.messages?.push({
+            id: Date.now(), // temporary ID
+            chat_id: props.currentChat.id,
+            user_id: user.value.id,
+            user: user.value,
+            text: newMessage.value,
+            updated_at: new Date().toISOString(),
+            answer: response.data.answer ? response.data.answer.text : '',
+          });
+        }
 
         emit('sendMessage', newMessage.value);
 
-        newMessage.value = '';
-      } catch (error) {
+        newMessage.value = '';      
+      } catch (error: any) {
         const errorMsg = error.response?.data?.message || 'Erro ao enviar mensagem.';
         showToast(errorMsg);
       } finally {
@@ -158,20 +162,18 @@ export default defineComponent({
         await axios.put(`api/chat/${props.currentChat.id}`, {
           name: chatName.value,
         });
-        emit('updateChatName', chatName.value);
-      } catch (error) {
+        emit('updateChatName', chatName.value);      } catch (error: any) {
         const errorMsg = error.response?.data?.message || 'Erro ao atualizar nome do chat.';
         showToast(errorMsg);
       }
-    };
-
+    };    
+    
     const openInformationSources = async (messageId: number) => {
       try {
-        const response = await axios.get(`/api/message/${messageId}/information-sources`);
-
+        const response = await axios.get<InformationSource[]>(`/api/message/${messageId}/information-sources`);
         informationSources.value = response.data;
         isModalOpen.value = true;
-      } catch (error) {
+      } catch (error: any) {
         const errorMsg = error.response?.data?.message || 'Erro ao buscar fontes.';
         showToast(errorMsg);
       }

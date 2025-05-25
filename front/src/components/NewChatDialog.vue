@@ -36,6 +36,7 @@
 import { defineComponent, ref, onMounted, watch } from 'vue';
 import axios from 'axios';
 import { useToast } from '@/composables/useToast';
+import type { KnowledgeBase, ChatWithLastMessage } from '@/types/types';
 
 export default defineComponent({
   name: 'NewChatDialog',
@@ -46,14 +47,13 @@ export default defineComponent({
       required: true,
     },
   },
-  setup(props, { emit }) {
-    const dialog = ref(props.modelValue);
-    const chatName = ref<string | null>(null);
-    const knowledgeBases = ref<Array<{ id: number; title: string }>>([]);
-    const selectedKnowledgeBase = ref<number | null>(null);
-    const form = ref(null);
-
+  setup(props, { emit }) {    const dialog = ref(props.modelValue);
     const { showToast } = useToast();
+    const form = ref<any>(null);
+    const chatName = ref<string>('');
+
+    const knowledgeBases = ref<KnowledgeBase[]>([]);
+    const selectedKnowledgeBase = ref<number | null>(null);
 
     watch(() => props.modelValue, (newVal) => {
       dialog.value = newVal;
@@ -61,15 +61,15 @@ export default defineComponent({
 
     watch(dialog, (newVal) => {
       emit('update:modelValue', newVal);
-    });
-
+    });    
+    
     const fetchKnowledgeBases = async () => {
       try {
-        const response = await axios.get('/api/knowledge-bases');
-
+        const response = await axios.get<KnowledgeBase[]>('/api/knowledge-bases');
         knowledgeBases.value = response.data;
-      } catch (error) {
-        showToast('Erro ao buscar bases de conhecimento');
+      } catch (error: any) {
+        const errorMsg = error.response?.data?.message || 'Erro ao buscar bases de conhecimento';
+        showToast(errorMsg);
       }
     };
 
@@ -77,11 +77,11 @@ export default defineComponent({
       if (form.value?.validate()) {
         createChat();
       }
-    };
-
+    };    
+    
     const createChat = async () => {
       try {
-        const response = await axios.post(
+        const response = await axios.post<ChatWithLastMessage>(
           '/api/chat',
           {
             name: chatName.value,
@@ -96,8 +96,9 @@ export default defineComponent({
 
         emit('chatCreated', response.data);
         dialog.value = false;
-      } catch (error) {
-        showToast('Erro ao criar chat');
+      } catch (error: any) {
+        const errorMsg = error.response?.data?.message || 'Erro ao criar chat';
+        showToast(errorMsg);
       }
     };
 
