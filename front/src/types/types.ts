@@ -5,9 +5,23 @@ export interface User {
   admin: boolean;
 }
 
+export interface UserFormData {
+  id?: number;
+  name: string;
+  email: string;
+  admin: boolean;
+}
+
 export interface Group {
   id: number;
   name: string;
+}
+
+export interface GroupFormData {
+  id?: number;
+  name: string;
+  user_ids: number[];
+  knowledge_base_ids: number[];
 }
 
 export interface GroupWithUsers extends Group {
@@ -66,14 +80,3 @@ export interface GroupWithKnowledgeBasesAndPivot extends Group {
 export interface KnowledgeBaseWithGroupsAndPivot extends KnowledgeBase {
   groups: (Group & { pivot: GroupKnowledgeBase })[];
 }
-
-// Interface para dados do formulário de grupo
-export interface GroupFormData {
-  id?: number;
-  name: string;
-  user_ids: number[];
-  knowledge_base_ids: number[];
-}
-
-
-
