@@ -51,7 +51,7 @@ export default defineComponent({
 
 <style scoped>
 .login-bg {
-  background-image: url('@/assets/login-bg.jpg');
+/*   background-image: url('@/assets/login-bg.jpg'); */
   background-size: cover;
   background-position: center;
 }

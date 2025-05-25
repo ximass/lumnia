@@ -3,10 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Events\MessageSent;
+
 use App\Models\Chat;
 use App\Models\Message;
+use App\Models\KnowledgeBase;
 
-use LLMController;
+use App\Http\Controllers\LLMController;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
@@ -64,7 +66,7 @@ class ChatController extends Controller
 
         broadcast(new MessageSent($chat->id, $message->text, $request->user()));
 
-        $answerText = $this->generateAnswer($chat, $message->text);
+        $answerText = $this->generateAnswer($chat, $message);
 
         return response()->json([
             'status' => 'Message sent!',
@@ -99,10 +101,10 @@ class ChatController extends Controller
 
     private function generateAnswer($chat, $message)
     {
-        $userMessage = $message->text;
-        $knowledgeBase = $chat->knowledgeBase();
+        $knowledgeBase = $chat->knowledgeBase;
+        $llmController = new LLMController();
 
-        $answerText = LLMController::generateAnswer($userMessage, $knowledgeBase);
+        $answerText = $llmController->generateAnswer($message->text, $knowledgeBase);
 
         $message->update(['answer' => $answerText]);
 
