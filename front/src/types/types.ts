@@ -57,6 +57,12 @@ export interface KnowledgeBase {
   modified_at: string;
 }
 
+export interface KnowledgeBaseFormData {
+  id?: number;
+  title: string;
+  content: string;
+}
+
 export interface GroupKnowledgeBase {
   id: number;
   group_id: number;
