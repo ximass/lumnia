@@ -13,12 +13,12 @@
         { title: 'Ações', value: 'actions', sortable: false }
       ]" 
       class="elevation-1"
-    >
+    >      
       <template #item.users="{ item }">
-        {{ item.users.map(user => user.name).join(', ') }}
+        {{ item.users?.map((user: User) => user.name).join(', ') || 'Nenhum usuário' }}
       </template>
       <template #item.knowledge_bases="{ item }">
-        {{ item.knowledge_bases.map(base => base.title).join(', ') }}
+        {{ item.knowledge_bases?.map((base: KnowledgeBase) => base.title).join(', ') || 'Nenhuma base' }}
       </template>
       <template #item.actions="{ item }">
         <v-menu offset-y>
@@ -53,34 +53,40 @@ import { defineComponent, ref, onMounted } from 'vue';
 import axios from 'axios';
 import GroupForm from '@/components/GroupForm.vue';
 import { useToast } from '@/composables/useToast';
+import type { 
+  GroupWithKnowledgeBases, 
+  GroupWithUsers, 
+  User, 
+  KnowledgeBase 
+} from '@/types/types';
+
+type GroupComplete = GroupWithKnowledgeBases & GroupWithUsers;
 
 export default defineComponent({
   name: 'GroupView',
-  components: { GroupForm },
-  setup() {
-    const groups = ref<Array<any>>([]);
+  components: { GroupForm },  setup() {
+    const { showToast } = useToast();    
     const isFormOpen = ref(false);
-    const selectedGroup = ref<any>(null);
 
-    const { showToast } = useToast();
-
+    const groups = ref<GroupComplete[]>([]);
+    const selectedGroup = ref<GroupComplete | null>(null);  
+    
     const fetchGroups = async () => {
       try {
-        const response = await axios.get('/api/groups');
+        const response = await axios.get<GroupComplete[]>('/api/groups');
         groups.value = response.data;
-
-        console.log(groups.value);
-      } catch (error) {
-        showToast('Erro ao buscar grupos');
+      } catch (error: any) {
+        const errorMsg = error.response?.data?.message || 'Erro ao buscar grupos';
+        showToast(errorMsg);
       }
     };
 
     const openForm = () => {
       selectedGroup.value = null;
       isFormOpen.value = true;
-    };
-
-    const editGroup = (group: any) => {
+    };    
+    
+    const editGroup = (group: GroupComplete) => {
       selectedGroup.value = group;
       isFormOpen.value = true;
     };
@@ -89,8 +95,9 @@ export default defineComponent({
       try {
         await axios.delete(`/api/groups/${groupId}`);
         fetchGroups();
-      } catch (error) {
-        showToast('Erro ao deletar grupo');
+      } catch (error: any) {
+        const errorMsg = error.response?.data?.message || 'Erro ao deletar grupo';
+        showToast(errorMsg);
       }
     };
 

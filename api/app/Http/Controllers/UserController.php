@@ -28,6 +28,11 @@ class UserController extends Controller
         return response()->json($users);
     }
 
+    public function show(User $user)
+    {
+        return response()->json($user);
+    }
+
     public function updateUser(Request $request, User $user)
     {
         $request->validate([

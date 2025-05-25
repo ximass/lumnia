@@ -8,7 +8,6 @@ export interface User {
 export interface Group {
   id: number;
   name: string;
-  user_ids: number[];
 }
 
 export interface GroupWithUsers extends Group {
@@ -42,8 +41,38 @@ export interface KnowledgeBase {
   digest: string;
   details: string;
   modified_at: string;
+}
 
-  chats: Chat[];
+export interface GroupKnowledgeBase {
+  id: number;
+  group_id: number;
+  knowledge_base_id: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface GroupWithKnowledgeBases extends Group {
+  knowledge_bases: KnowledgeBase[];
+}
+
+export interface KnowledgeBaseWithGroups extends KnowledgeBase {
+  groups: Group[];
+}
+
+export interface GroupWithKnowledgeBasesAndPivot extends Group {
+  knowledge_bases: (KnowledgeBase & { pivot: GroupKnowledgeBase })[];
+}
+
+export interface KnowledgeBaseWithGroupsAndPivot extends KnowledgeBase {
+  groups: (Group & { pivot: GroupKnowledgeBase })[];
+}
+
+// Interface para dados do formulário de grupo
+export interface GroupFormData {
+  id?: number;
+  name: string;
+  user_ids: number[];
+  knowledge_base_ids: number[];
 }
 
 

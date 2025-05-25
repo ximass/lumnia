@@ -8,11 +8,11 @@
         <v-form ref="form" @submit.prevent="submitForm">
           <v-text-field label="Nome do grupo" v-model="group.name" :rules="[v => !!v || 'Nome é obrigatório']"
             required>
-          </v-text-field>
+          </v-text-field>          
           <v-autocomplete
             v-model="group.user_ids"
             :items="users"
-            item-text="nome"
+            item-title="name"
             item-value="id"
             label="Usuários"
             multiple
@@ -26,7 +26,7 @@
           <v-select
             v-model="group.knowledge_base_ids"
             :items="knowledgeBases"
-            item-text="title"
+            item-title="title"
             item-value="id"
             label="Bases de conhecimentos"
             multiple
@@ -50,36 +50,48 @@
 import { defineComponent, ref, onMounted, watch } from 'vue';
 import axios from 'axios';
 import { useToast } from '@/composables/useToast';
+import type { 
+  User, 
+  KnowledgeBase, 
+  GroupFormData, 
+  GroupWithKnowledgeBases,
+  GroupWithUsers 
+} from '@/types/types';
 
 export default defineComponent({
-  name: 'GroupForm',
-  props: {
+  name: 'GroupForm',  props: {
     dialog: {
       type: Boolean,
       required: true,
     },
     groupData: {
-      type: Object,
+      type: Object as () => GroupWithKnowledgeBases & GroupWithUsers | null,
       default: null,
     },
   },
   emits: ['close', 'saved'],
   setup(props, { emit }) {
+    const { showToast } = useToast(); 
     const form = ref();
-    const group = ref<{ name: string; user_ids: number[]; knowledge_base_ids: number[] }>({ name: '', user_ids: [], knowledge_base_ids: [] });
-    const users = ref<Array<{ id: number; title: string }>>([]);
-    const loadingUsers = ref(false);
-    const knowledgeBases = ref<Array<{ id: number; title: string }>>([]);
-    const loadingKnowledgeBases = ref(false);
 
-    const { showToast } = useToast();
+    const loadingUsers = ref(false);
+    const loadingKnowledgeBases = ref(false);    
+
+    const group = ref<GroupFormData>({
+      name: '',
+      user_ids: [],
+      knowledge_base_ids: [],
+    });
+    const users = ref<User[]>([]);
+    const knowledgeBases = ref<KnowledgeBase[]>([]);   
 
     watch(() => props.groupData, (newData) => {
       if (newData) {
         group.value = {
+          id: newData.id,
           name: newData.name,
-          user_ids: newData.users.map(user => user.id),
-          knowledge_base_ids: newData.knowledge_bases.map(kb => kb.id),
+          user_ids: newData.users?.map((user: User) => user.id) || [],
+          knowledge_base_ids: newData.knowledge_bases?.map((kb: KnowledgeBase) => kb.id) || [],
         };
       } else {
         group.value = { 
@@ -88,34 +100,33 @@ export default defineComponent({
           knowledge_base_ids: [],
         };
       }
-    }, { immediate: true });
-
+    }, { immediate: true });    
+    
     const fetchUsers = async (search: string) => {
       if (!search) return;
 
       loadingUsers.value = true;
       try {
-        const response = await axios.get('/api/users/search', { params: { search } });
+        const response = await axios.get<User[]>('/api/users/search', { params: { search } });
 
-        if (response.data)
-        {
-          users.value = response.data.map((user: any) => ({ id: user.id, title: user.name }));
+        if (response.data) {
+          users.value = response.data;
         }
-      } catch (error) {
+      } catch (error: any) {
         const errorMsg = error.response?.data?.message || 'Erro ao buscar usuários';
         showToast(errorMsg);
       } finally {
         loadingUsers.value = false;
       }
-    };
-
+    };    
+    
     const fetchKnowledgeBases = async () => {
       loadingKnowledgeBases.value = true;
 
       try {
-        const response = await axios.get('/api/knowledge-bases');
-        knowledgeBases.value = response.data.map((kb: any) => ({ id: kb.id, title: kb.title }));
-      } catch (error) {
+        const response = await axios.get<KnowledgeBase[]>('/api/knowledge-bases');
+        knowledgeBases.value = response.data;
+      } catch (error: any) {
         const errorMsg = error.response?.data?.message || 'Erro ao buscar bases de conhecimento';
         showToast(errorMsg);
       } finally {
@@ -125,27 +136,27 @@ export default defineComponent({
 
     onMounted(() => {
       fetchKnowledgeBases();
-    });
-
+    });    
+    
     const submitForm = async () => {
       const validation = await form.value?.validate();
 
       if (validation.valid) {
         try {
-          const payload = {
+          const payload: Omit<GroupFormData, 'id'> = {
             name: group.value.name,
             user_ids: group.value.user_ids,
             knowledge_base_ids: group.value.knowledge_base_ids,
           };
 
-          if (props.groupData) {
+          if (props.groupData?.id) {
             await axios.put(`/api/groups/${props.groupData.id}`, payload);
           } else {
             await axios.post('/api/groups', payload);
           }
           emit('saved');
           close();
-        } catch (error) {
+        } catch (error: any) {
           const errorMsg = error.response?.data?.message || 'Erro ao salvar grupo';
           showToast(errorMsg);
         }
@@ -154,8 +165,8 @@ export default defineComponent({
 
     const close = () => {
       emit('close');
-    };
-
+    };    
+    
     return {
       form,
       group,
@@ -164,7 +175,7 @@ export default defineComponent({
       fetchUsers,
       submitForm,
       close,
-      isEdit: !!props.groupData,
+      isEdit: !!props.groupData?.id,
       knowledgeBases,
       loadingKnowledgeBases,
       fetchKnowledgeBases,

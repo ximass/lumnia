@@ -15,12 +15,14 @@ Route::get('/user', function (Request $request) {
 })->middleware('auth:sanctum');
 
 Route::middleware('auth:sanctum')->get('/chats', [ChatController::class, 'getChats']);
+
 Route::get('/chats/{chat}/messages', [ChatController::class, 'getMessages']);
 Route::get('/knowledge-bases', [KnowledgeBaseController::class, 'getKnowledgeBases']);
-Route::apiResource('/groups', GroupController::class);
-Route::apiResource('/users', UserController::class);
 Route::get('/users/search', [UserController::class, 'search']);
 Route::get('/message/{message}/information-sources', [MessageController::class, 'getInformationSources']);
+
+Route::apiResource('/groups', GroupController::class);
+Route::apiResource('/users', UserController::class);
 
 ##POST##
 Route::middleware('web')->group(function () {
