@@ -58,8 +58,8 @@ export default defineComponent({
       { title: 'Tela inicial', route: '/home', admin: false, icon: 'mdi-home' },
       { title: 'Chats', route: '/chats', admin: false, icon: 'mdi-message-text-outline' },
       { title: 'Bases de conhecimento', route: '/knowledge-bases', admin: true , icon: 'mdi-book-open-variant-outline' },
-      { title: 'Grupos', route: '/groups', admin: true, icon: 'mdi-account-group' },
       { title: 'Usuários', route: '/users', admin: true, icon: 'mdi-account' },
+      { title: 'Grupos', route: '/groups', admin: true, icon: 'mdi-account-group' },
     ];
 
     const filteredMenuItems = computed(() => {
