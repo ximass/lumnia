@@ -78,7 +78,7 @@ import { format } from 'date-fns';
 import { type PropType } from 'vue';
 import { useToast } from '@/composables/useToast';
 import { useAuth } from '@/composables/auth';
-import type { MessageWithUser, ChatWithLastMessage, InformationSource } from '@/types/types';
+import type { MessageWithUser, ChatWithLastMessage, InformationSource, SendMessageResponse } from '@/types/types';
 
 const scrollToBottom = async () => {
   await nextTick();
@@ -118,12 +118,15 @@ export default defineComponent({
     });
 
     const handleSendMessage = async () => {
-      if (newMessage.value.trim() === '') return;
+      if (newMessage.value.trim() === '') {
+        showToast('A mensagem não pode estar vazia.');
+        return;
+      }
 
       isLoading.value = true;
 
       try {
-        const response = await axios.post(`api/chat/${props.currentChat.id}`, {
+        const response = await axios.post<SendMessageResponse>(`api/chat/${props.currentChat.id}`, {
           text: newMessage.value
         },
           {
@@ -131,8 +134,13 @@ export default defineComponent({
               Authorization: `Bearer ${localStorage.getItem('authToken')}`,
             }
           }
-        );        
+        );
         
+        if (response.data.status === 'error') {
+          showToast(response.data.message || 'Erro ao enviar mensagem.');
+          return;
+        }
+
         if (user.value) {
           props.messages?.push({
             id: Date.now(), // temporary ID
@@ -145,12 +153,34 @@ export default defineComponent({
           });
         }
 
-        emit('sendMessage', newMessage.value);
+        if (response.data.status === 'partial_success') {
+          showToast(response.data.message || 'Mensagem enviada, mas houve erro na resposta da IA.', 'warning');
+        }
 
+        emit('sendMessage', newMessage.value);
         newMessage.value = '';      
+        
       } catch (error: any) {
-        const errorMsg = error.response?.data?.message || 'Erro ao enviar mensagem.';
-        showToast(errorMsg);
+        let errorMsg = 'Erro ao enviar mensagem.';
+        
+        if (error.response) {
+          if (error.response.status === 422) {
+            const validationErrors = error.response.data.errors;
+            if (validationErrors && validationErrors.text) {
+              errorMsg = validationErrors.text[0];
+            } else {
+              errorMsg = error.response.data.message || 'Dados inválidos.';
+            }
+          } else if (error.response.status === 500) {
+            errorMsg = 'Erro interno do servidor. Tente novamente mais tarde.';
+          } else {
+            errorMsg = error.response.data.message || errorMsg;
+          }
+        } else if (error.request) {
+          errorMsg = 'Erro de conexão. Verifique sua internet e tente novamente.';
+        }
+        
+        showToast(errorMsg, 'error');
       } finally {
         isLoading.value = false;
         scrollToBottom();

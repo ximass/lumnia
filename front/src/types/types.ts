@@ -101,3 +101,20 @@ export interface InformationSource {
   id: number;
   content: string;
 }
+
+// API Response types
+export interface ApiResponse<T = any> {
+  status: 'success' | 'error' | 'partial_success';
+  message: string;
+  data?: T;
+}
+
+export interface SendMessageResponse {
+  status: 'success' | 'error' | 'partial_success';
+  message: string;
+  answer?: {
+    text: string;
+    updated_at: string;
+  };
+  errors?: Record<string, string[]>;
+}

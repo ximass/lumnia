@@ -58,23 +58,71 @@ class ChatController extends Controller
 
     public function sendMessage(Request $request, Chat $chat)
     {
-        $message = Message::create([
-            'chat_id' => $chat->id,
-            'user_id' => $request->user()->id,
-            'text' => $request->input('text'),
+        $request->validate([
+            'text' => 'required|string|max:5000',
         ]);
 
-        broadcast(new MessageSent($chat->id, $message->text, $request->user()));
+        $userText = trim($request->input('text'));
+        
+        if (empty($userText)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'A mensagem não pode estar vazia.'
+            ], 400);
+        }
 
-        $answerText = $this->generateAnswer($chat, $message);
+        try {
+            $message = Message::create([
+                'chat_id' => $chat->id,
+                'user_id' => $request->user()->id,
+                'text' => $userText,
+            ]);
 
-        return response()->json([
-            'status' => 'Message sent!',
-            'answer' => [
-                'text' => $answerText,
-                'updated_at' => $message->created_at->toIso8601String()
-            ],
-        ]);
+            broadcast(new MessageSent($chat->id, $message->text, $request->user()));
+
+            $answerText = $this->generateAnswer($chat, $message);
+
+            if ($answerText === false || $answerText === null || empty($answerText)) {
+                Log::error('LLM failed to generate answer for message ID: ' . $message->id);
+                
+                $message->update(['answer' => 'Desculpe, ocorreu um erro ao processar sua solicitação. Tente novamente.']);
+                
+                return response()->json([
+                    'status' => 'partial_success',
+                    'message' => 'Mensagem enviada, mas houve erro na resposta da IA.',
+                    'answer' => [
+                        'text' => 'Desculpe, ocorreu um erro ao processar sua solicitação. Tente novamente.',
+                        'updated_at' => $message->created_at->toIso8601String()
+                    ],
+                ], 200);
+            }
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Mensagem enviada com sucesso!',
+                'answer' => [
+                    'text' => $answerText,
+                    'updated_at' => $message->created_at->toIso8601String()
+                ],
+            ], 200);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            Log::error('Validation error in sendMessage: ' . json_encode($e->errors()));
+
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Dados inválidos.',
+                'errors' => $e->errors()
+            ], 422);
+
+        } catch (\Exception $e) {
+            Log::error('Exception in sendMessage: ' . $e->getMessage() . ' - Line: ' . $e->getLine() . ' - File: ' . $e->getFile());
+
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Erro interno do servidor. Tente novamente mais tarde.'
+            ], 500);
+        }
     }
 
     public function deleteChat(Request $request, Chat $chat)
@@ -101,13 +149,30 @@ class ChatController extends Controller
 
     private function generateAnswer($chat, $message)
     {
-        $knowledgeBase = $chat->knowledgeBase;
-        $llmController = new LLMController();
+        try {
+            $knowledgeBase = $chat->knowledgeBase;
+            $llmController = new LLMController();
 
-        $answerText = $llmController->generateAnswer($message->text, $knowledgeBase);
+            Log::info('Generating answer for message ID: ' . $message->id . ' in chat ID: ' . $chat->id);
 
-        $message->update(['answer' => $answerText]);
+            $answerText = $llmController->generateAnswer($message->text, $knowledgeBase);
 
-        return $answerText;
+            // Verificar se a resposta é válida
+            if ($answerText === false || $answerText === null || empty(trim($answerText))) {
+                Log::error('LLM Controller returned invalid response for message ID: ' . $message->id);
+                return false;
+            }
+
+            // Atualizar a mensagem com a resposta
+            $message->update(['answer' => $answerText]);
+
+            Log::info('Answer generated successfully for message ID: ' . $message->id);
+
+            return $answerText;
+
+        } catch (\Exception $e) {
+            Log::error('Exception in generateAnswer: ' . $e->getMessage() . ' - Message ID: ' . $message->id);
+            return false;
+        }
     }
 }

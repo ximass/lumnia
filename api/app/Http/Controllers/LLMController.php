@@ -13,9 +13,10 @@ class LLMController extends Controller
 {
     public function generateAnswer($message, $knowledgeBase)
     {
-        $answer = $this->generateServerAnswerOllama($message, $knowledgeBase);
+        //$answer = $this->generateServerAnswerLLMStudio($message, $knowledgeBase);
+        $answer = $this->generateServerAnswerLLMStudio($message);
 
-        return response()->json($answer);
+        return $answer;
     }
 
     private function generateServerAnswerScript(string $userMessage): string
@@ -47,15 +48,39 @@ class LLMController extends Controller
 
     private function generateServerAnswerLLMStudio(string $userMessage): string
     {
-        $response = Http::post(env('LLM_API_URL') . '/v1/chat/completions', [
-            'messages' => [
-                ['role' => 'user', 'content' => $userMessage]
-            ],
-            'temperature' => 0.7,
-            'max_tokens' => 1000,
-        ]);
+        try {
+            $response = Http::withHeaders([
+                'Content-Type' => 'application/json',
+            ])->timeout(60)->post(env('LLM_API_URL') . '/v1/chat/completions', [
+                //'model' => 'gpt-3.5-turbo', // ou outro modelo disponível no seu LLM Studio
+                'messages' => [
+                    ['role' => 'user', 'content' => $userMessage]
+                ],
+                'temperature' => 0.7,
+                'max_tokens' => 1000,
+            ]);
 
-        return $response->json()['choices'][0]['message']['content'];
+            Log::info('LLM Studio Response Status: ' . $response->status());
+            Log::info('LLM Studio Response Body: ' . $response->body());
+
+            if (!$response->successful()) {
+                Log::error('LLM Studio API Error - Status: ' . $response->status() . ', Body: ' . $response->body());
+                return false;
+            }
+
+            $responseData = $response->json();
+
+            if (!isset($responseData['choices'][0]['message']['content'])) {
+                Log::error('Unexpected LLM Studio response structure: ' . json_encode($responseData));
+                return false;
+            }
+
+            return $responseData['choices'][0]['message']['content'];
+
+        } catch (\Exception $e) {
+            Log::error('LLM Studio Exception: ' . $e->getMessage());
+            return false;
+        }
     }
 
     private function generateServerAnswerOllama(string $userMessage, KnowledgeBase $knowledgeBase, $stream = false): string
