@@ -7,7 +7,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\KnowledgeBaseController;
 use App\Http\Controllers\GroupController;
 use App\Http\Controllers\UserController;
-use App\Http\Controllers\MessageController;
+use App\Http\Controllers\PersonaController;
 
 ##GET##
 Route::get('/user', function (Request $request) {
@@ -20,9 +20,11 @@ Route::get('/chats/{chat}/messages', [ChatController::class, 'getMessages']);
 Route::get('/knowledge-bases', [KnowledgeBaseController::class, 'getKnowledgeBases']);
 Route::get('/users/search', [UserController::class, 'search']);
 Route::get('/message/{message}/information-sources', [MessageController::class, 'getInformationSources']);
+Route::get('/personas/active', [PersonaController::class, 'getActivePersonas']);
 
 Route::apiResource('/groups', GroupController::class);
 Route::apiResource('/users', UserController::class);
+Route::apiResource('/personas', PersonaController::class);
 
 ##POST##
 Route::middleware('web')->group(function () {

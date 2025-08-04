@@ -3,6 +3,7 @@ export interface User {
   name: string;
   email: string;
   admin: boolean;
+  default_persona_id?: number;
 }
 
 export interface UserFormData {
@@ -10,6 +11,7 @@ export interface UserFormData {
   name: string;
   email: string;
   admin: boolean;
+  default_persona_id?: number;
 }
 
 export interface Group {
@@ -37,6 +39,7 @@ export interface Chat {
   name: string;
   user_id: number;
   knowledge_base_id: number;
+  persona_id?: number;
 }
 
 export interface Message {
@@ -117,4 +120,35 @@ export interface SendMessageResponse {
     updated_at: string;
   };
   errors?: Record<string, string[]>;
+}
+
+// Persona interfaces
+export interface Persona {
+  id: number;
+  name: string;
+  description: string;
+  instructions: string;
+  response_format: string | null;
+  keywords: string[] | null;
+  creativity: number;
+  active: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface PersonaFormData {
+  id?: number;
+  name: string;
+  description: string;
+  instructions: string;
+  response_format?: string;
+  keywords?: string[];
+  creativity: number;
+  active: boolean;
+}
+
+export interface ActivePersona {
+  id: number;
+  name: string;
+  description: string;
 }

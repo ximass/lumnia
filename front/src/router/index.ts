@@ -5,6 +5,7 @@ import Login from '@/views/Login.vue';
 import Register from '@/views/Register.vue';
 import GroupView from '@/views/GroupView.vue';
 import UserView from '@/views/UserView.vue';
+import PersonaView from '@/views/PersonaView.vue';
 import KnowledgeBaseView from '@/views/KnowledgeBaseView.vue';
 import { useAuth } from '@/composables/auth';
 
@@ -37,6 +38,12 @@ const routes: Array<RouteRecordRaw> = [
     path: '/users',
     name: 'UserView',
     component: UserView,
+    meta: { requiresAuth: true, requiresAdmin: true },
+  },
+  {
+    path: '/personas',
+    name: 'PersonaView',
+    component: PersonaView,
     meta: { requiresAuth: true, requiresAdmin: true },
   },
   {

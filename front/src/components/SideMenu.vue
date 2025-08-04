@@ -29,7 +29,7 @@
         :prepend-icon="item.icon" 
         :title="item.title" 
         :value="item.route"
-        @click="$router.push(item.route)"
+        @click="navigateTo(item.route)"
       >
       </v-list-item>
     </v-list>
@@ -38,6 +38,7 @@
 
 <script lang="ts">
 import { defineComponent, computed, ref } from 'vue';
+import { useRouter } from 'vue-router';
 
 export default defineComponent({
   name: 'SideMenu',
@@ -53,6 +54,7 @@ export default defineComponent({
   },
   setup(props) {
     const rail = ref(true);
+    const router = useRouter();
 
     const menuItems = [
       { title: 'Tela inicial', route: '/home', admin: false, icon: 'mdi-home' },
@@ -60,6 +62,7 @@ export default defineComponent({
       { title: 'Bases de conhecimento', route: '/knowledge-bases', admin: true , icon: 'mdi-book-open-variant-outline' },
       { title: 'Usuários', route: '/users', admin: true, icon: 'mdi-account' },
       { title: 'Grupos', route: '/groups', admin: true, icon: 'mdi-account-group' },
+      { title: 'Personas', route: '/personas', admin: true, icon: 'mdi-account-tie' },
     ];
 
     const filteredMenuItems = computed(() => {
@@ -71,9 +74,14 @@ export default defineComponent({
       });
     });
 
+    const navigateTo = (route: string) => {
+      router.push(route);
+    };
+
     return { 
       filteredMenuItems,
       rail,
+      navigateTo,
       props
     };
   },

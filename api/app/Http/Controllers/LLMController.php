@@ -8,15 +8,53 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 use App\Models\KnowledgeBase;
+use App\Models\Persona;
 
 class LLMController extends Controller
 {
-    public function generateAnswer($message, $knowledgeBase)
+    public function generateAnswer($message, $chat = null)
     {
-        //$answer = $this->generateServerAnswerLLMStudio($message, $knowledgeBase);
-        $answer = $this->generateServerAnswerLLMStudio($message);
+        $knowledgeBase = $chat->knowledgeBase;
+        $persona = $this->getEffectivePersona($chat);
+        
+        //$answer = $this->generateServerAnswerLLMStudio($message, $knowledgeBase, $persona);
+        $answer = $this->generateServerAnswerLLMStudio($message, $persona);
 
         return $answer;
+    }
+
+    private function getEffectivePersona($chat = null)
+    {
+        try {
+            if ($chat && $chat->persona_id) {
+                $persona = $chat->persona;
+                if ($persona && $persona->active) {
+                    Log::info("Using chat-specific persona: {$persona->name}");
+                    return $persona;
+                }
+            }
+
+            if ($chat && $chat->user && $chat->user->default_persona_id) {
+                $persona = $chat->user->defaultPersona;
+                if ($persona && $persona->active) {
+                    Log::info("Using user default persona: {$persona->name}");
+                    return $persona;
+                }
+            }
+
+            $defaultPersona = Persona::active()->first();
+            if ($defaultPersona) {
+                Log::info("Using system default persona: {$defaultPersona->name}");
+                return $defaultPersona;
+            }
+
+            Log::warning("No active persona found, using null");
+            return null;
+
+        } catch (\Exception $e) {
+            Log::error("Error getting effective persona: " . $e->getMessage());
+            return null;
+        }
     }
 
     private function generateServerAnswerScript(string $userMessage): string
@@ -46,17 +84,33 @@ class LLMController extends Controller
         return $decodedOutput->choices[0]->message;
     }
 
-    private function generateServerAnswerLLMStudio(string $userMessage): string
+    private function generateServerAnswerLLMStudio(string $userMessage, $persona = null): string
     {
         try {
+            $messages = [];
+            
+            if ($persona) {
+                $systemMessage = $persona->instructions;
+                
+                if ($persona->response_format) {
+                    $systemMessage .= "\n\nFormato de resposta: " . $persona->response_format;
+                }
+                
+                $messages[] = ['role' => 'system', 'content' => $systemMessage];
+                
+                Log::info("Using persona '{$persona->name}' with creativity level: {$persona->creativity}");
+            }
+            
+            $messages[] = ['role' => 'user', 'content' => $userMessage];
+            
+            $temperature = $persona ? $persona->creativity : 0.7;
+
             $response = Http::withHeaders([
                 'Content-Type' => 'application/json',
             ])->timeout(60)->post(env('LLM_API_URL') . '/v1/chat/completions', [
                 //'model' => 'gpt-3.5-turbo', // ou outro modelo disponível no seu LLM Studio
-                'messages' => [
-                    ['role' => 'user', 'content' => $userMessage]
-                ],
-                'temperature' => 0.7,
+                'messages' => $messages,
+                'temperature' => $temperature,
                 'max_tokens' => 1000,
             ]);
 

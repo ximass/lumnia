@@ -21,6 +21,23 @@
             label="Base de conhecimento" 
             required>
           </v-select>
+          
+          <v-divider class="my-4"></v-divider>
+          
+          <v-select 
+            :items="personas" 
+            item-value="id"
+            item-title="name"
+            v-model="selectedPersona" 
+            label="Persona (opcional)"
+            hint="Se não selecionada, usará sua persona padrão"
+            persistent-hint
+            clearable>
+            <template #item="{ props, item }">
+              <v-list-item v-bind="props" :title="item.raw.name" :subtitle="item.raw.description">
+              </v-list-item>
+            </template>
+          </v-select>
           <v-card-actions>
             <v-spacer></v-spacer>
             <v-btn @click="close" variant="tonal">Cancelar</v-btn>
@@ -36,7 +53,7 @@
 import { defineComponent, ref, onMounted, watch } from 'vue';
 import axios from 'axios';
 import { useToast } from '@/composables/useToast';
-import type { KnowledgeBase, ChatWithLastMessage } from '@/types/types';
+import type { KnowledgeBase, ChatWithLastMessage, ActivePersona } from '@/types/types';
 
 export default defineComponent({
   name: 'NewChatDialog',
@@ -54,6 +71,9 @@ export default defineComponent({
 
     const knowledgeBases = ref<KnowledgeBase[]>([]);
     const selectedKnowledgeBase = ref<number | null>(null);
+    
+    const personas = ref<ActivePersona[]>([]);
+    const selectedPersona = ref<number | null>(null);
 
     watch(() => props.modelValue, (newVal) => {
       dialog.value = newVal;
@@ -73,6 +93,16 @@ export default defineComponent({
       }
     };
 
+    const fetchPersonas = async () => {
+      try {
+        const response = await axios.get<ActivePersona[]>('/api/personas/active');
+        personas.value = response.data;
+      } catch (error: any) {
+        const errorMsg = error.response?.data?.message || 'Erro ao buscar personas';
+        showToast(errorMsg);
+      }
+    };
+
     const submitForm = () => {
       if (form.value?.validate()) {
         createChat();
@@ -86,6 +116,7 @@ export default defineComponent({
           {
             name: chatName.value,
             knowledge_base_id: selectedKnowledgeBase.value,
+            persona_id: selectedPersona.value,
           },
           {
             headers: {
@@ -108,6 +139,7 @@ export default defineComponent({
 
     onMounted(() => {
       fetchKnowledgeBases();
+      fetchPersonas();
     });
 
     return {
@@ -115,6 +147,8 @@ export default defineComponent({
       chatName,
       knowledgeBases,
       selectedKnowledgeBase,
+      personas,
+      selectedPersona,
       form,
       submitForm,
       close,

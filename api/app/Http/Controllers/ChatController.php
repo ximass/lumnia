@@ -21,12 +21,14 @@ class ChatController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'knowledge_base_id' => 'nullable|exists:knowledge_bases,id',
+            'persona_id' => 'nullable|exists:personas,id',
         ]);
 
         $chat = Chat::create([
             'name' => $request->input('name'),
             'user_id' => $request->user()->id,
             'knowledge_base_id'=> $request->input('knowledge_base_id'),
+            'persona_id'=> $request->input('persona_id'),
         ]);
 
         return response()->json($chat);
@@ -34,7 +36,7 @@ class ChatController extends Controller
 
     public function getChats(Request $request)
     {
-        $chats = Chat::with('lastMessage')
+        $chats = Chat::with(['lastMessage', 'persona', 'user.defaultPersona'])
             ->where('user_id', $request->user()->id)
             ->orderBy('updated_at', 'desc')
             ->get()
@@ -137,11 +139,13 @@ class ChatController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'knowledge_base_id' => 'nullable|exists:knowledge_bases,id',
+            'persona_id' => 'nullable|exists:personas,id',
         ]);
 
         $chat->update([
             'name'             => $request->input('name'),
             'knowledge_base_id'=> $request->input('knowledge_base_id'),
+            'persona_id'       => $request->input('persona_id'),
         ]);
 
         return response()->json($chat);
@@ -150,20 +154,17 @@ class ChatController extends Controller
     private function generateAnswer($chat, $message)
     {
         try {
-            $knowledgeBase = $chat->knowledgeBase;
             $llmController = new LLMController();
 
             Log::info('Generating answer for message ID: ' . $message->id . ' in chat ID: ' . $chat->id);
 
-            $answerText = $llmController->generateAnswer($message->text, $knowledgeBase);
+            $answerText = $llmController->generateAnswer($message->text, $chat);
 
-            // Verificar se a resposta é válida
             if ($answerText === false || $answerText === null || empty(trim($answerText))) {
                 Log::error('LLM Controller returned invalid response for message ID: ' . $message->id);
                 return false;
             }
 
-            // Atualizar a mensagem com a resposta
             $message->update(['answer' => $answerText]);
 
             Log::info('Answer generated successfully for message ID: ' . $message->id);
