@@ -4,6 +4,7 @@ export interface User {
   email: string;
   admin: boolean;
   default_persona_id?: number;
+  avatar?: string;
 }
 
 export interface UserFormData {
@@ -12,6 +13,14 @@ export interface UserFormData {
   email: string;
   admin: boolean;
   default_persona_id?: number;
+  avatar?: string;
+}
+
+export interface Profile {
+  id?: number;
+  name: string;
+  default_persona_id?: number;
+  avatar?: string;
 }
 
 export interface Group {
@@ -144,7 +153,7 @@ export interface PersonaFormData {
   response_format?: string;
   keywords?: string[];
   creativity: number;
-  active: boolean;
+  active?: boolean;
 }
 
 export interface ActivePersona {

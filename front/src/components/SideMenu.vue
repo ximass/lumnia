@@ -7,10 +7,19 @@
     @click="rail = false"
   >
     <v-list-item
-      :prepend-avatar="props.user?.avatar || 'mdi-account'"
       :title="props.user?.name || 'Usuário'"
       nav
     >
+      <template v-slot:prepend>
+        <v-avatar size="40">
+          <v-img 
+            v-if="props.user?.avatar" 
+            :src="`/api/avatars/${props.user.avatar.split('/').pop()}`"
+            alt="Avatar"
+          />
+          <v-icon v-else>mdi-account</v-icon>
+        </v-avatar>
+      </template>
       <template v-slot:append>
         <v-btn
           icon="mdi-chevron-left"

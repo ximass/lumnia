@@ -14,10 +14,20 @@ export function useToast() {
     }, timeout);
   }
 
+  function showSuccess(message: string, timeout = 3000) {
+    showToast(message, 'success', timeout);
+  }
+
+  function showError(message: string, timeout = 3000) {
+    showToast(message, 'error', timeout);
+  }
+
   return {
     isToastVisible,
     toastMessage,
     toastColor,
     showToast,
+    showSuccess,
+    showError,
   };
 }
