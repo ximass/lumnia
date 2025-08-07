@@ -94,18 +94,12 @@ class UserController extends Controller
 
         $request->validate([
             'name' => 'required|string|max:255',
-            'default_persona_id' => 'nullable|exists:personas,id',
             'avatar' => 'nullable|file|image|mimes:jpeg,png,jpg,gif|max:5120' // 5MB max
         ]);
 
         $updateData = [
             'name' => $request->input('name'),
         ];
-
-        // Update default_persona_id if provided
-        if ($request->has('default_persona_id')) {
-            $updateData['default_persona_id'] = $request->input('default_persona_id');
-        }
 
         // Handle avatar upload if provided
         if ($request->hasFile('avatar')) {

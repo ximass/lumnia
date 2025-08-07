@@ -3,8 +3,8 @@ export interface User {
   name: string;
   email: string;
   admin: boolean;
-  default_persona_id?: number;
   avatar?: string;
+  user_persona?: UserPersona;
 }
 
 export interface UserFormData {
@@ -12,14 +12,12 @@ export interface UserFormData {
   name: string;
   email: string;
   admin: boolean;
-  default_persona_id?: number;
   avatar?: string;
 }
 
 export interface Profile {
   id?: number;
   name: string;
-  default_persona_id?: number;
   avatar?: string;
 }
 
@@ -160,4 +158,20 @@ export interface ActivePersona {
   id: number;
   name: string;
   description: string;
+}
+
+export interface UserPersona {
+  id: number;
+  user_id: number;
+  instructions: string;
+  response_format?: string;
+  creativity: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface UserPersonaFormData {
+  instructions: string;
+  response_format?: string;
+  creativity: number;
 }

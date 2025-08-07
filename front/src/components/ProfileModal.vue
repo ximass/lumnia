@@ -56,118 +56,76 @@
             </v-form>
           </v-tabs-window-item>
 
-          <v-tabs-window-item value="personas">
+                    <v-tabs-window-item value="personas">
             <v-container>
               <v-row>
                 <v-col cols="12">
-                  <h3 class="mb-4">Persona padrão</h3>
-                  <v-select
-                    v-model="form.default_persona_id"
-                    :items="personas"
-                    item-title="name"
-                    item-value="id"
-                    label="Selecionar persona padrão"
-                    variant="outlined"
-                    clearable
-                    :loading="loadingPersonas"
-                  >
-                    <template v-slot:item="{ item, props }">
-                      <v-list-item v-bind="props">
-                        <v-list-item-title>{{ item.raw.name }}</v-list-item-title>
-                        <v-list-item-subtitle>{{ item.raw.description }}</v-list-item-subtitle>
-                      </v-list-item>
-                    </template>
-                  </v-select>
-                </v-col>
+                  <h3 class="mb-4">Persona</h3>
+                  <p class="text-body-2 mb-4">Configure sua persona personalizada para interações com a IA.</p>
+                  
+                  <v-form ref="userPersonaFormRef" v-model="userPersonaValid">
+                    <v-row>
+                      <v-col cols="12">
+                        <v-textarea
+                          v-model="userPersonaForm.instructions"
+                          label="Instruções"
+                          placeholder="Descreva como a IA deve se comportar..."
+                          variant="outlined"
+                          rows="4"
+                          :rules="userPersonaInstructionsRules"
+                          required
+                        />
+                      </v-col>
 
-                <v-col cols="12">
-                  <v-divider class="my-4" />
-                  <div class="d-flex justify-space-between align-center mb-4">
-                    <h3>Criar nova persona</h3>
-                    <v-btn
-                      color="primary"
-                      @click="showCreatePersona = !showCreatePersona"
-                      :prepend-icon="showCreatePersona ? 'mdi-chevron-up' : 'mdi-chevron-down'"
-                      variant="text"
-                    >
-                      {{ showCreatePersona ? 'Ocultar' : 'Mostrar' }} formulário
-                    </v-btn>
-                  </div>
+                      <v-col cols="12">
+                        <v-textarea
+                          v-model="userPersonaForm.response_format"
+                          label="Formato de resposta (opcional)"
+                          placeholder="Especifique o formato desejado para as respostas..."
+                          variant="outlined"
+                          rows="3"
+                          :rules="userPersonaResponseFormatRules"
+                        />
+                      </v-col>
 
-                  <v-expand-transition>
-                    <v-card v-show="showCreatePersona" variant="outlined" class="pa-4">
-                      <v-form ref="personaFormRef" v-model="personaValid">
-                        <v-row>
-                          <v-col cols="12">
+                      <v-col cols="12">
+                        <v-slider
+                          v-model="userPersonaForm.creativity"
+                          label="Criatividade"
+                          min="0"
+                          max="1"
+                          step="0.1"
+                          thumb-label
+                          show-ticks="always"
+                          tick-size="4"
+                        >
+                          <template #append>
                             <v-text-field
-                              v-model="newPersona.name"
-                              label="Nome da persona"
+                              v-model="userPersonaForm.creativity"
+                              type="number"
+                              style="width: 80px"
+                              density="compact"
                               variant="outlined"
-                              :rules="personaNameRules"
-                              required
-                            />
-                          </v-col>
-
-                          <v-col cols="12">
-                            <v-textarea
-                              v-model="newPersona.description"
-                              label="Descrição"
-                              variant="outlined"
-                              :rules="personaDescriptionRules"
-                              required
-                            />
-                          </v-col>
-
-                          <v-col cols="12">
-                            <v-textarea
-                              v-model="newPersona.instructions"
-                              label="Instruções"
-                              variant="outlined"
-                              :rules="personaInstructionsRules"
-                              required
-                            />
-                          </v-col>
-
-                          <v-col cols="12">
-                            <v-textarea
-                              v-model="newPersona.response_format"
-                              label="Formato de resposta"
-                              variant="outlined"
-                              rows="3"
-                              placeholder="Defina o formato desejado para as respostas (opcional)"
-                            />
-                          </v-col>
-
-                          <v-col cols="12" sm="6">
-                            <v-slider
-                              v-model="newPersona.creativity"
-                              label="Criatividade"
                               min="0"
                               max="1"
                               step="0.1"
-                              thumb-label
-                              :thumb-size="24"
                             />
-                            <div class="text-caption text-center">
-                              0% = Muito preciso | 100% = Muito criativo
-                            </div>
-                          </v-col>
+                          </template>
+                        </v-slider>
+                      </v-col>
 
-                          <v-col cols="12">
-                            <v-btn
-                              color="primary"
-                              @click="createPersona"
-                              :loading="creatingPersona"
-                              :disabled="!personaValid"
-                              block
-                            >
-                              Criar persona
-                            </v-btn>
-                          </v-col>
-                        </v-row>
-                      </v-form>
-                    </v-card>
-                  </v-expand-transition>
+                      <v-col cols="12" class="d-flex justify-end">
+                        <v-btn
+                          color="primary"
+                          :loading="savingUserPersona"
+                          :disabled="!userPersonaValid"
+                          @click="saveOrUpdateUserPersona"
+                        >
+                          {{ userPersona ? 'Atualizar' : 'Criar' }} persona
+                        </v-btn>
+                      </v-col>
+                    </v-row>
+                  </v-form>
                 </v-col>
               </v-row>
             </v-container>
@@ -204,7 +162,7 @@ import { defineComponent, ref, watch, computed, onMounted, nextTick } from 'vue'
 import axios from 'axios';
 import { useAuth } from '@/composables/auth';
 import { useToast } from '@/composables/useToast';
-import type { User, Profile, Persona, PersonaFormData } from '@/types/types';
+import type { User, Profile, UserPersona, UserPersonaFormData } from '@/types/types';
 
 export default defineComponent({
   name: 'ProfileModal',
@@ -222,11 +180,10 @@ export default defineComponent({
     const form = ref<Profile>({
       name: '',
       avatar: '',
-      default_persona_id: undefined,
     });
     
     const formRef = ref();
-    const personaFormRef = ref();
+    const userPersonaFormRef = ref();
     const valid = ref(false);
     const loading = ref(false);
     const selectedFile = ref<File[]>([]);
@@ -234,15 +191,13 @@ export default defineComponent({
 
     const activeTab = ref('general');
 
-    const personas = ref<Persona[]>([]);
-    const loadingPersonas = ref(false);
-    const showCreatePersona = ref(false);
-    const personaValid = ref(false);
-    const creatingPersona = ref(false);
+    const userPersona = ref<UserPersona | null>(null);
+    const loadingUserPersona = ref(false);
+    const showCreateUserPersona = ref(false);
+    const userPersonaValid = ref(false);
+    const savingUserPersona = ref(false);
 
-    const newPersona = ref<PersonaFormData>({
-      name: '',
-      description: '',
+    const userPersonaForm = ref<UserPersonaFormData>({
       instructions: '',
       response_format: '',
       creativity: 0.5,
@@ -264,15 +219,26 @@ export default defineComponent({
       
       if (user.value) {
         form.value.name = user.value.name || '';
-        form.value.default_persona_id = user.value.default_persona_id || undefined;
         form.value.avatar = user.value.avatar || '';
         
         previewImage.value = '';
         selectedFile.value = [];
-      }
-      
-      if (personas.value.length === 0) {
-        loadPersonas();
+
+        if (user.value.user_persona) {
+          userPersona.value = user.value.user_persona;
+          userPersonaForm.value = {
+            instructions: user.value.user_persona.instructions,
+            response_format: user.value.user_persona.response_format || '',
+            creativity: user.value.user_persona.creativity,
+          };
+        } else {
+          userPersona.value = null;
+          userPersonaForm.value = {
+            instructions: '',
+            response_format: '',
+            creativity: 0.5,
+          };
+        }
       }
     };
 
@@ -301,29 +267,31 @@ export default defineComponent({
       },
     ];
 
-    const personaNameRules = [
-      (v: string) => !!v || 'Nome é obrigatório',
-      (v: string) => v.length <= 255 || 'Nome deve ter no máximo 255 caracteres',
-    ];
-
-    const personaDescriptionRules = [
-      (v: string) => !!v || 'Descrição é obrigatória',
-      (v: string) => v.length <= 1000 || 'Descrição deve ter no máximo 1000 caracteres',
-    ];
-
-    const personaInstructionsRules = [
+    const userPersonaInstructionsRules = [
       (v: string) => !!v || 'Instruções são obrigatórias',
       (v: string) => v.length <= 10000 || 'Instruções devem ter no máximo 10000 caracteres',
+    ];
+
+    const userPersonaResponseFormatRules = [
+      (v: string) => !v || v.length <= 2000 || 'Formato de resposta deve ter no máximo 2000 caracteres',
     ];
 
     const loadUserData = () => {
       if (user.value) {
         form.value.name = user.value.name || '';
-        form.value.default_persona_id = user.value.default_persona_id || undefined;
         form.value.avatar = user.value.avatar || '';
 
         previewImage.value = '';
         selectedFile.value = [];
+
+        if (user.value.user_persona) {
+          userPersona.value = user.value.user_persona;
+          userPersonaForm.value = {
+            instructions: user.value.user_persona.instructions,
+            response_format: user.value.user_persona.response_format || '',
+            creativity: user.value.user_persona.creativity,
+          };
+        }
       }
     };
 
@@ -333,25 +301,43 @@ export default defineComponent({
           await fetchUser();
         }
         loadUserData();
-        loadPersonas();
       }
     });
 
-    const loadPersonas = async () => {
-      loadingPersonas.value = true;
+    const saveOrUpdateUserPersona = async () => {
+      if (!userPersonaValid.value) return;
+
+      savingUserPersona.value = true;
       try {
         const authToken = localStorage.getItem('authToken');
-        const response = await axios.get('/api/personas', {
-          headers: {
-            Authorization: `Bearer ${authToken}`,
-          },
-        });
-        personas.value = response.data;
-      } catch (error) {
-        console.error('Erro ao carregar personas:', error);
-        showError('Erro ao carregar personas');
+        
+        if (userPersona.value) {
+          await axios.put('/api/user-persona', userPersonaForm.value, {
+            headers: {
+              Authorization: `Bearer ${authToken}`,
+            },
+          });
+          showSuccess('Persona de usuário atualizada com sucesso!');
+        } else {
+          const response = await axios.post('/api/user-persona', userPersonaForm.value, {
+            headers: {
+              Authorization: `Bearer ${authToken}`,
+            },
+          });
+          userPersona.value = response.data.data;
+          showSuccess('Persona de usuário criada com sucesso!');
+        }
+
+        await fetchUser();
+      } catch (error: any) {
+        console.error('Erro ao salvar persona de usuário:', error);
+        if (error.response?.data?.message) {
+          showError(error.response.data.message);
+        } else {
+          showError('Erro ao salvar persona de usuário. Tente novamente.');
+        }
       } finally {
-        loadingPersonas.value = false;
+        savingUserPersona.value = false;
       }
     };
 
@@ -382,10 +368,6 @@ export default defineComponent({
         const formData = new FormData();
         formData.append('name', form.value.name);
 
-        if (form.value.default_persona_id) {
-          formData.append('default_persona_id', form.value.default_persona_id.toString());
-        }
-
         if (selectedFile.value && selectedFile.value.length > 0) {
           formData.append('avatar', selectedFile.value[0]);
         }
@@ -413,73 +395,34 @@ export default defineComponent({
       }
     };
 
-    const createPersona = async () => {
-      if (!personaValid.value) return;
-
-      creatingPersona.value = true;
-      try {
-        const authToken = localStorage.getItem('authToken');
-        const response = await axios.post('/api/personas', newPersona.value, {
-          headers: {
-            Authorization: `Bearer ${authToken}`,
-            'Content-Type': 'application/json',
-          },
-        });
-
-        if (response.data.status === 'success') {
-          showSuccess('Persona criada com sucesso!');
-          newPersona.value = {
-            name: '',
-            description: '',
-            instructions: '',
-            response_format: '',
-            creativity: 0.5,
-          };
-          showCreatePersona.value = false;
-          await loadPersonas();
-        }
-      } catch (error: any) {
-        console.error('Erro ao criar persona:', error);
-        if (error.response?.data?.message) {
-          showError(error.response.data.message);
-        } else {
-          showError('Erro ao criar persona. Tente novamente.');
-        }
-      } finally {
-        creatingPersona.value = false;
-      }
-    };
-
     const resetModalState = () => {
       if (formRef.value) {
         formRef.value.reset();
         formRef.value.resetValidation();
       }
       
-      if (personaFormRef.value) {
-        personaFormRef.value.reset();
-        personaFormRef.value.resetValidation();
+      if (userPersonaFormRef.value) {
+        userPersonaFormRef.value.reset();
+        userPersonaFormRef.value.resetValidation();
       }
       
       form.value = {
         name: '',
         avatar: '',
-        default_persona_id: undefined,
       };
-      previewImage.value = '';
-      selectedFile.value = [];
-      activeTab.value = 'general';
-      showCreatePersona.value = false;
-      valid.value = false;
-      personaValid.value = false;
       
-      newPersona.value = {
-        name: '',
-        description: '',
+      userPersonaForm.value = {
         instructions: '',
         response_format: '',
         creativity: 0.5,
       };
+      
+      previewImage.value = '';
+      selectedFile.value = [];
+      activeTab.value = 'general';
+      showCreateUserPersona.value = false;
+      valid.value = false;
+      userPersonaValid.value = false;
     };
 
     const closeModal = () => {
@@ -492,7 +435,7 @@ export default defineComponent({
       dialogVisible,
       form,
       formRef,
-      personaFormRef,
+      userPersonaFormRef,
       valid,
       loading,
       selectedFile,
@@ -500,18 +443,17 @@ export default defineComponent({
       nameRules,
       avatarRules,
       activeTab,
-      personas,
-      loadingPersonas,
-      showCreatePersona,
-      personaValid,
-      creatingPersona,
-      newPersona,
-      personaNameRules,
-      personaDescriptionRules,
-      personaInstructionsRules,
+      userPersona,
+      loadingUserPersona,
+      showCreateUserPersona,
+      userPersonaValid,
+      savingUserPersona,
+      userPersonaForm,
+      userPersonaInstructionsRules,
+      userPersonaResponseFormatRules,
       onFileSelected,
       updateProfile,
-      createPersona,
+      saveOrUpdateUserPersona,
       resetModalState,
       closeModal,
     };

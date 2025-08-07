@@ -23,7 +23,6 @@ class User extends Authenticatable
         'email',
         'password',
         'admin',
-        'default_persona_id',
         'avatar'
     ];
 
@@ -65,8 +64,8 @@ class User extends Authenticatable
         return $this->belongsToMany(Group::class);
     }
 
-    public function defaultPersona()
+    public function userPersona()
     {
-        return $this->belongsTo(Persona::class, 'default_persona_id');
+        return $this->hasOne(UserPersona::class);
     }
 }
