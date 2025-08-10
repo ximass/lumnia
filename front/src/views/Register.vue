@@ -1,22 +1,13 @@
 <template>
   <v-container class="login-bg" fluid>
-    <v-row align="center" justify="center" style="height: 100vh;">
+    <v-row align="center" justify="center" style="height: 100vh">
       <v-col cols="12" sm="6" md="4" class="offset-form">
         <v-card>
           <v-card-title class="justify-center">Registre-se</v-card-title>
           <v-card-text>
             <v-form @submit.prevent="register">
-              <v-text-field
-                label="Nome"
-                v-model="name"
-                required
-              ></v-text-field>
-              <v-text-field
-                label="Email"
-                v-model="email"
-                type="email"
-                required
-              ></v-text-field>
+              <v-text-field label="Nome" v-model="name" required></v-text-field>
+              <v-text-field label="Email" v-model="email" type="email" required></v-text-field>
               <v-text-field
                 label="Senha"
                 v-model="password"
@@ -42,50 +33,50 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref } from 'vue';
-import axios from 'axios';
-import { useRouter } from 'vue-router';
-import { useToast } from '@/composables/useToast';
+  import { defineComponent, ref } from 'vue'
+  import axios from 'axios'
+  import { useRouter } from 'vue-router'
+  import { useToast } from '@/composables/useToast'
 
-export default defineComponent({
-  name: 'Register',
-  setup() {
-    const name = ref('');
-    const email = ref('');
-    const password = ref('');
-    const password_confirmation = ref('');
-    const router = useRouter();
-    const { showToast } = useToast();
+  export default defineComponent({
+    name: 'Register',
+    setup() {
+      const name = ref('')
+      const email = ref('')
+      const password = ref('')
+      const password_confirmation = ref('')
+      const router = useRouter()
+      const { showToast } = useToast()
 
-    const register = async () => {
-      try {
-        await axios.get('/sanctum/csrf-cookie');
-        await axios.post('/api/register', {
-          name: name.value,
-          email: email.value,
-          password: password.value,
-          password_confirmation: password_confirmation.value,
-        });
+      const register = async () => {
+        try {
+          await axios.get('/sanctum/csrf-cookie')
+          await axios.post('/api/register', {
+            name: name.value,
+            email: email.value,
+            password: password.value,
+            password_confirmation: password_confirmation.value,
+          })
 
-        router.push('/login');
-      } catch (err: any) {
-        showToast('Erro ao se registrar: ' + err.response.data.message);
+          router.push('/login')
+        } catch (err: any) {
+          showToast('Erro ao se registrar: ' + err.response.data.message)
+        }
       }
-    };
 
-    return { name, email, password, password_confirmation, register };
-  },
-});
+      return { name, email, password, password_confirmation, register }
+    },
+  })
 </script>
 
 <style scoped>
-.login-bg {
-/*   background-image: url('@/assets/login-bg.jpg'); */
-  background-size: cover;
-  background-position: center;
-}
+  .login-bg {
+    /*   background-image: url('@/assets/login-bg.jpg'); */
+    background-size: cover;
+    background-position: center;
+  }
 
-.offset-form {
-  margin-left: 30%;
-}
+  .offset-form {
+    margin-left: 30%;
+  }
 </style>

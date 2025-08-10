@@ -1,23 +1,23 @@
-import { createApp } from 'vue';
-import App from './App.vue';
+import { createApp } from 'vue'
+import App from './App.vue'
 
-import { createVuetify } from 'vuetify';
-import * as components from 'vuetify/components';
-import * as directives from 'vuetify/directives';
+import { createVuetify } from 'vuetify'
+import * as components from 'vuetify/components'
+import * as directives from 'vuetify/directives'
 
-import 'vuetify/styles';
-import { aliases, mdi } from 'vuetify/iconsets/mdi';
-import '@mdi/font/css/materialdesignicons.css';
+import 'vuetify/styles'
+import { aliases, mdi } from 'vuetify/iconsets/mdi'
+import '@mdi/font/css/materialdesignicons.css'
 
-import router from './router';
-import './plugins/axios';
+import router from './router'
+import './plugins/axios'
 
-import './assets/styles/global.css';
+import './assets/styles/global.css'
 
-const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' ?? 'dark';
-const isDark = savedTheme ? savedTheme === 'dark' : true;
+const savedTheme = (localStorage.getItem('theme') as 'light' | 'dark') ?? 'dark'
+const isDark = savedTheme ? savedTheme === 'dark' : true
 
-document.documentElement.setAttribute('data-theme', savedTheme);
+document.documentElement.setAttribute('data-theme', savedTheme)
 
 const vuetify = createVuetify({
   components,
@@ -44,10 +44,10 @@ const vuetify = createVuetify({
     aliases,
     sets: { mdi },
   },
-});
+})
 
-const app = createApp(App);
+const app = createApp(App)
 
-app.use(vuetify);
-app.use(router);
-app.mount('#app');
+app.use(vuetify)
+app.use(router)
+app.mount('#app')

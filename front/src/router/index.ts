@@ -1,13 +1,13 @@
-import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router';
-import Home from '@/views/Home.vue';
-import ChatView from '@/views/ChatView.vue';
-import Login from '@/views/Login.vue';
-import Register from '@/views/Register.vue';
-import GroupView from '@/views/GroupView.vue';
-import UserView from '@/views/UserView.vue';
-import PersonaView from '@/views/PersonaView.vue';
-import KnowledgeBaseView from '@/views/KnowledgeBaseView.vue';
-import { useAuth } from '@/composables/auth';
+import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
+import Home from '@/views/Home.vue'
+import ChatView from '@/views/ChatView.vue'
+import Login from '@/views/Login.vue'
+import Register from '@/views/Register.vue'
+import GroupView from '@/views/GroupView.vue'
+import UserView from '@/views/UserView.vue'
+import PersonaView from '@/views/PersonaView.vue'
+import KnowledgeBaseView from '@/views/KnowledgeBaseView.vue'
+import { useAuth } from '@/composables/auth'
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -62,34 +62,34 @@ const routes: Array<RouteRecordRaw> = [
     path: '/:pathMatch(.*)*',
     redirect: '/',
   },
-];
+]
 
 const router = createRouter({
   history: createWebHistory(),
   routes,
-});
+})
 
 router.beforeEach(async (to, from, next) => {
-  const { fetchUser, user, isAuthenticated } = useAuth();
-  await fetchUser();
+  const { fetchUser, user, isAuthenticated } = useAuth()
+  await fetchUser()
 
-  const requiresAuth = to.matched.some(record => record.meta.requiresAuth);
-  const requiresGuest = to.matched.some(record => record.meta.requiresGuest);
-  const requiresAdmin = to.matched.some(record => record.meta.requiresAdmin);
+  const requiresAuth = to.matched.some(record => record.meta.requiresAuth)
+  const requiresGuest = to.matched.some(record => record.meta.requiresGuest)
+  const requiresAdmin = to.matched.some(record => record.meta.requiresAdmin)
 
   if (requiresAuth && !isAuthenticated.value) {
-    return next({ name: 'Login' });
+    return next({ name: 'Login' })
   }
 
   if (requiresGuest && isAuthenticated.value) {
-    return next({ name: 'Home' });
+    return next({ name: 'Home' })
   }
 
   if (requiresAdmin && (!user.value || !user.value.admin)) {
-    return next({ name: 'Home' });
+    return next({ name: 'Home' })
   }
 
-  next();
-});
+  next()
+})
 
-export default router;
+export default router

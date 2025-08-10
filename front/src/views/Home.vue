@@ -1,7 +1,7 @@
 <template>
   <div>
     <v-container fluid>
-      <v-row justify="center" align="center" style="height: 100vh;">
+      <v-row justify="center" align="center" style="height: 100vh">
         <v-col cols="12" md="8" lg="6">
           <v-card class="elevation-2">
             <v-card-title class="text-h5">Bem-vindo ao Lumnia</v-card-title>
@@ -19,9 +19,9 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue';
+  import { defineComponent } from 'vue'
 
-export default defineComponent({
-  name: 'Home',
-});
+  export default defineComponent({
+    name: 'Home',
+  })
 </script>

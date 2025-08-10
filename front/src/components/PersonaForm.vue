@@ -16,7 +16,6 @@
               />
             </v-col>
           </v-row>
-
           <v-row>
             <v-col cols="12">
               <v-textarea
@@ -28,7 +27,6 @@
               />
             </v-col>
           </v-row>
-
           <v-row>
             <v-col cols="12">
               <v-textarea
@@ -42,7 +40,6 @@
               />
             </v-col>
           </v-row>
-
           <v-row>
             <v-col cols="12">
               <v-textarea
@@ -53,7 +50,6 @@
               />
             </v-col>
           </v-row>
-
           <v-row>
             <v-col cols="12" md="6">
               <v-combobox
@@ -86,11 +82,7 @@
               </div>
             </v-col>
             <v-col cols="12" md="2">
-              <v-switch
-                v-model="persona.active"
-                label="Ativa"
-                color="success"
-              />
+              <v-switch v-model="persona.active" label="Ativa" color="success" />
             </v-col>
           </v-row>
         </v-form>
@@ -105,123 +97,133 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, watch } from 'vue';
-import axios from 'axios';
-import { useToast } from '@/composables/useToast';
-import type { Persona, PersonaFormData } from '@/types/types';
+  import { defineComponent, ref, watch } from 'vue'
+  import axios from 'axios'
+  import { useToast } from '@/composables/useToast'
+  import type { Persona, PersonaFormData } from '@/types/types'
 
-export default defineComponent({
-  name: 'PersonaForm',
-  props: {
-    dialog: { type: Boolean, required: true },
-    personaData: {
-      type: Object as () => Persona | null,
-      default: null
+  export default defineComponent({
+    name: 'PersonaForm',
+    props: {
+      dialog: { type: Boolean, required: true },
+      personaData: {
+        type: Object as () => Persona | null,
+        default: null,
+      },
     },
-  },
-  emits: ['close', 'saved'],
-  setup(props, { emit }) {
-    const { showToast } = useToast();
-    const internalDialog = ref(props.dialog);
-    const form = ref();
-    const loading = ref(false);
+    emits: ['close', 'saved'],
+    setup(props, { emit }) {
+      const { showToast } = useToast()
+      const internalDialog = ref(props.dialog)
+      const form = ref()
+      const loading = ref(false)
 
-    const persona = ref<PersonaFormData>({
-      name: '',
-      description: '',
-      instructions: '',
-      response_format: '',
-      keywords: [],
-      creativity: 0.7,
-      active: true
-    });
+      const persona = ref<PersonaFormData>({
+        name: '',
+        description: '',
+        instructions: '',
+        response_format: '',
+        keywords: [],
+        creativity: 0.7,
+        active: true,
+      })
 
-    watch(() => props.dialog, (val) => {
-      internalDialog.value = val;
-    });
+      watch(
+        () => props.dialog,
+        val => {
+          internalDialog.value = val
+        }
+      )
 
-    watch(() => props.personaData, (newData: Persona | null) => {
-      if (newData) {
-        persona.value = {
-          id: newData.id,
-          name: newData.name,
-          description: newData.description,
-          instructions: newData.instructions,
-          response_format: newData.response_format || '',
-          keywords: newData.keywords || [],
-          creativity: newData.creativity,
-          active: newData.active
-        };
-      } else {
-        persona.value = {
-          name: '',
-          description: '',
-          instructions: '',
-          response_format: '',
-          keywords: [],
-          creativity: 0.7,
-          active: true
-        };
+      watch(
+        () => props.personaData,
+        (newData: Persona | null) => {
+          if (newData) {
+            persona.value = {
+              id: newData.id,
+              name: newData.name,
+              description: newData.description,
+              instructions: newData.instructions,
+              response_format: newData.response_format || '',
+              keywords: newData.keywords || [],
+              creativity: newData.creativity,
+              active: newData.active,
+            }
+          } else {
+            persona.value = {
+              name: '',
+              description: '',
+              instructions: '',
+              response_format: '',
+              keywords: [],
+              creativity: 0.7,
+              active: true,
+            }
+          }
+        },
+        { immediate: true }
+      )
+
+      const close = () => {
+        emit('close')
       }
-    }, { immediate: true });
 
-    const close = () => {
-      emit('close');
-    };
+      const submitForm = async () => {
+        const validation = await form.value?.validate()
 
-    const submitForm = async () => {
-      const validation = await form.value?.validate();
-
-      if (!validation.valid) {
-        return;
-      }
-
-      loading.value = true;
-
-      try {
-        const payload: Omit<PersonaFormData, 'id'> = {
-          name: persona.value.name,
-          description: persona.value.description,
-          instructions: persona.value.instructions,
-          response_format: persona.value.response_format || undefined,
-          keywords: persona.value.keywords && persona.value.keywords.length > 0 ? persona.value.keywords : undefined,
-          creativity: persona.value.creativity,
-          active: persona.value.active
-        };
-
-        if (persona.value.id) {
-          await axios.put<Persona>(`/api/personas/${persona.value.id}`, payload);
-          showToast('Persona atualizada com sucesso!', 'success');
-        } else {
-          await axios.post<Persona>('/api/personas', payload);
-          showToast('Persona criada com sucesso!', 'success');
+        if (!validation.valid) {
+          return
         }
 
-        emit('saved');
-        close();
-      } catch (error: any) {
-        const errorMsg = error.response?.data?.message || 'Erro ao salvar persona';
-        showToast(errorMsg);
-      } finally {
-        loading.value = false;
-      }
-    };
+        loading.value = true
 
-    return {
-      internalDialog,
-      persona,
-      form,
-      loading,
-      close,
-      submitForm,
-      showToast
-    };
-  },
-});
+        try {
+          const payload: Omit<PersonaFormData, 'id'> = {
+            name: persona.value.name,
+            description: persona.value.description,
+            instructions: persona.value.instructions,
+            response_format: persona.value.response_format || undefined,
+            keywords:
+              persona.value.keywords && persona.value.keywords.length > 0
+                ? persona.value.keywords
+                : undefined,
+            creativity: persona.value.creativity,
+            active: persona.value.active,
+          }
+
+          if (persona.value.id) {
+            await axios.put<Persona>(`/api/personas/${persona.value.id}`, payload)
+            showToast('Persona atualizada com sucesso!', 'success')
+          } else {
+            await axios.post<Persona>('/api/personas', payload)
+            showToast('Persona criada com sucesso!', 'success')
+          }
+
+          emit('saved')
+          close()
+        } catch (error: any) {
+          const errorMsg = error.response?.data?.message || 'Erro ao salvar persona'
+          showToast(errorMsg)
+        } finally {
+          loading.value = false
+        }
+      }
+
+      return {
+        internalDialog,
+        persona,
+        form,
+        loading,
+        close,
+        submitForm,
+        showToast,
+      }
+    },
+  })
 </script>
 
 <style scoped>
-.v-slider {
-  padding-top: 16px;
-}
+  .v-slider {
+    padding-top: 16px;
+  }
 </style>

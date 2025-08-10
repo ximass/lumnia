@@ -1,25 +1,25 @@
-import { ref } from 'vue';
+import { ref } from 'vue'
 
-const isToastVisible = ref(false);
-const toastMessage = ref('');
-const toastColor = ref('');
+const isToastVisible = ref(false)
+const toastMessage = ref('')
+const toastColor = ref('')
 
 export function useToast() {
   function showToast(message: string, color = 'error', timeout = 3000) {
-    toastMessage.value = message;
-    toastColor.value = color;
-    isToastVisible.value = true;
+    toastMessage.value = message
+    toastColor.value = color
+    isToastVisible.value = true
     setTimeout(() => {
-      isToastVisible.value = false;
-    }, timeout);
+      isToastVisible.value = false
+    }, timeout)
   }
 
   function showSuccess(message: string, timeout = 3000) {
-    showToast(message, 'success', timeout);
+    showToast(message, 'success', timeout)
   }
 
   function showError(message: string, timeout = 3000) {
-    showToast(message, 'error', timeout);
+    showToast(message, 'error', timeout)
   }
 
   return {
@@ -29,5 +29,5 @@ export function useToast() {
     showToast,
     showSuccess,
     showError,
-  };
+  }
 }
