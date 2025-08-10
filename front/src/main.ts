@@ -10,6 +10,7 @@ import { aliases, mdi } from 'vuetify/iconsets/mdi';
 import '@mdi/font/css/materialdesignicons.css';
 
 import router from './router';
+import './plugins/axios';
 
 import './assets/styles/global.css';
 

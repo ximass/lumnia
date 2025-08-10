@@ -309,21 +309,11 @@ export default defineComponent({
 
       savingUserPersona.value = true;
       try {
-        const authToken = localStorage.getItem('authToken');
-        
         if (userPersona.value) {
-          await axios.put('/api/user-persona', userPersonaForm.value, {
-            headers: {
-              Authorization: `Bearer ${authToken}`,
-            },
-          });
+          await axios.put('/api/user-persona', userPersonaForm.value);
           showSuccess('Persona de usuário atualizada com sucesso!');
         } else {
-          const response = await axios.post('/api/user-persona', userPersonaForm.value, {
-            headers: {
-              Authorization: `Bearer ${authToken}`,
-            },
-          });
+          const response = await axios.post('/api/user-persona', userPersonaForm.value);
           userPersona.value = response.data.data;
           showSuccess('Persona de usuário criada com sucesso!');
         }

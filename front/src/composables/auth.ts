@@ -7,12 +7,7 @@ const user = ref<User | null>(null);
 
 const fetchUser = async () => {
   try {
-    const authToken = localStorage.getItem('authToken');
-    const response = await axios.get('/api/user', {
-      headers: {
-        Authorization: `Bearer ${authToken}`,
-      },
-    });
+    const response = await axios.get('/api/user');
 
     user.value = response.data;
     isAuthenticated.value = true;  
