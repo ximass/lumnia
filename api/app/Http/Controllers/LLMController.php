@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Chat;
 use Illuminate\Http\Request;
 
 use Illuminate\Support\Facades\Http;
@@ -12,7 +13,7 @@ use App\Models\Persona;
 
 class LLMController extends Controller
 {
-    public function generateAnswer($message, $chat = null)
+    public function generateAnswer($message, Chat $chat)
     {
         $knowledgeBase = $chat->knowledgeBase;
         $persona = $this->getEffectivePersona($chat);
@@ -23,7 +24,7 @@ class LLMController extends Controller
         return $answer;
     }
 
-    private function getEffectivePersona($chat = null)
+    private function getEffectivePersona(Chat $chat)
     {
         try {
             if ($chat && $chat->persona_id) {
@@ -34,18 +35,12 @@ class LLMController extends Controller
                 }
             }
 
-            if ($chat && $chat->user && $chat->user->default_persona_id) {
-                $persona = $chat->user->defaultPersona;
+            if ($chat && $chat->user && $chat->user->userPersona) {
+                $persona = $chat->user->userPersona;
                 if ($persona && $persona->active) {
                     Log::info("Using user default persona: {$persona->name}");
                     return $persona;
                 }
-            }
-
-            $defaultPersona = Persona::active()->first();
-            if ($defaultPersona) {
-                Log::info("Using system default persona: {$defaultPersona->name}");
-                return $defaultPersona;
             }
 
             Log::warning("No active persona found, using null");
@@ -107,7 +102,7 @@ class LLMController extends Controller
 
             $response = Http::withHeaders([
                 'Content-Type' => 'application/json',
-            ])->timeout(60)->post(env('LLM_API_URL') . '/v1/chat/completions', [
+            ])->timeout(120)->post(env('LLM_API_URL') . '/v1/chat/completions', [
                 //'model' => 'gpt-3.5-turbo', // ou outro modelo disponível no seu LLM Studio
                 'messages' => $messages,
                 'temperature' => $temperature,

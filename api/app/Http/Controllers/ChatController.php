@@ -36,7 +36,7 @@ class ChatController extends Controller
 
     public function getChats(Request $request)
     {
-        $chats = Chat::with(['lastMessage', 'persona', 'user.defaultPersona'])
+        $chats = Chat::with(['lastMessage', 'persona', 'user.userPersona'])
             ->where('user_id', $request->user()->id)
             ->orderBy('updated_at', 'desc')
             ->get()
@@ -60,6 +60,8 @@ class ChatController extends Controller
 
     public function sendMessage(Request $request, Chat $chat)
     {
+        set_time_limit(120);
+
         $request->validate([
             'text' => 'required|string|max:5000',
         ]);
