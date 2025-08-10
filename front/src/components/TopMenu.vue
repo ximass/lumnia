@@ -14,7 +14,7 @@
         </v-btn>
       </template>
       <v-list>
-        <v-list-item @click="goToProfile">
+        <v-list-item @click="openProfileModal">
           <v-list-item-title>Meu perfil</v-list-item-title>
         </v-list-item>
         <v-list-item @click="onLogout">
@@ -33,6 +33,9 @@
         </v-list-item>
       </v-list>
     </v-menu>
+
+    <!-- Profile Modal -->
+    <ProfileModal v-model="showProfileModal" />
   </v-app-bar>
 </template>
 
@@ -42,9 +45,13 @@ import { defineComponent, ref, onMounted } from 'vue';
 import { useAuth } from '@/composables/auth';
 import { useRouter } from 'vue-router';
 import { useTheme } from 'vuetify';
+import ProfileModal from '@/components/ProfileModal.vue';
 
 export default defineComponent({
   name: 'TopMenu',
+  components: {
+    ProfileModal,
+  },
   emits: ['toggleDrawer'],
   props: {
     user: {
@@ -56,6 +63,7 @@ export default defineComponent({
     const { isAuthenticated, logout } = useAuth();
     const router = useRouter();
     const menu = ref(false);
+    const showProfileModal = ref(false);
     const theme = useTheme();
     const isDark = ref(theme.global.name.value === 'dark');
 
@@ -67,8 +75,9 @@ export default defineComponent({
       logout();
     };
 
-    const goToProfile = () => {
-      router.push('/profile');
+    const openProfileModal = () => {
+      showProfileModal.value = true;
+      menu.value = false;
     };
 
     const toggleDarkMode = () => {
@@ -93,7 +102,8 @@ export default defineComponent({
     return {
       isAuthenticated,
       onLogout,
-      goToProfile,
+      openProfileModal,
+      showProfileModal,
       menu,
       isDark,
       toggleDarkMode,
