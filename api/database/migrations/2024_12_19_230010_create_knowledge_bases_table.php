@@ -4,20 +4,21 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CreateKnowledgeBasesTable extends Migration
+return new class extends Migration
 {
-    public function up()
+    public function up(): void
     {
         Schema::create('knowledge_bases', function (Blueprint $table) {
-            $table->id();
-            $table->string('title');
-            $table->text('content');
+            $table->uuid('id')->primary();
+            $table->string('name');
+            $table->text('description')->nullable();
+            $table->foreignId('owner_id')->constrained('users')->onDelete('cascade');
             $table->timestamps();
         });
     }
 
-    public function down()
+    public function down(): void
     {
         Schema::dropIfExists('knowledge_bases');
     }
-}
+};

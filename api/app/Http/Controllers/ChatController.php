@@ -9,6 +9,7 @@ use App\Models\Message;
 use App\Models\KnowledgeBase;
 
 use App\Http\Controllers\LLMController;
+use App\Services\RAGService;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
@@ -16,19 +17,26 @@ use Illuminate\Support\Facades\Log;
 
 class ChatController extends Controller
 {
+    protected RAGService $ragService;
+
+    public function __construct(RAGService $ragService)
+    {
+        $this->ragService = $ragService;
+    }
+
     public function createChat(Request $request)
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'knowledge_base_id' => 'nullable|exists:knowledge_bases,id',
+            'kb_id' => 'nullable|exists:knowledge_bases,id',
             'persona_id' => 'nullable|exists:personas,id',
         ]);
 
         $chat = Chat::create([
             'name' => $request->input('name'),
             'user_id' => $request->user()->id,
-            'knowledge_base_id'=> $request->input('knowledge_base_id'),
-            'persona_id'=> $request->input('persona_id'),
+            'kb_id' => $request->input('kb_id'),
+            'persona_id' => $request->input('persona_id'),
         ]);
 
         return response()->json($chat);
@@ -140,13 +148,13 @@ class ChatController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'knowledge_base_id' => 'nullable|exists:knowledge_bases,id',
+            'kb_id' => 'nullable|exists:knowledge_bases,id',
             'persona_id' => 'nullable|exists:personas,id',
         ]);
 
         $chat->update([
             'name'             => $request->input('name'),
-            'knowledge_base_id'=> $request->input('knowledge_base_id'),
+            'kb_id'            => $request->input('kb_id'),
             'persona_id'       => $request->input('persona_id'),
         ]);
 
@@ -156,7 +164,7 @@ class ChatController extends Controller
     private function generateAnswer($chat, $message)
     {
         try {
-            $llmController = new LLMController();
+            $llmController = new LLMController($this->ragService);
 
             Log::info('Generating answer for message ID: ' . $message->id . ' in chat ID: ' . $chat->id);
 

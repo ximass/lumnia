@@ -28,7 +28,7 @@
           <v-select
             v-model="group.knowledge_base_ids"
             :items="knowledgeBases"
-            item-title="title"
+            item-title="name"
             item-value="id"
             label="Bases de conhecimentos"
             multiple
@@ -36,7 +36,18 @@
             clearable
             hide-selected
             :loading="loadingKnowledgeBases"
-          ></v-select>
+          >
+            <template #chip="{ props, item }">
+              <v-chip v-bind="props" :text="item.title">{{ item.title }}</v-chip>
+            </template>
+            <template #item="{ props, item }">
+              <v-list-item
+                v-bind="props"
+                :title="item.raw.name"
+                :subtitle="item.raw.description"
+              ></v-list-item>
+            </template>
+          </v-select>
           <v-card-actions>
             <v-spacer></v-spacer>
             <v-btn @click="close">Cancelar</v-btn>
@@ -133,8 +144,8 @@
         loadingKnowledgeBases.value = true
 
         try {
-          const response = await axios.get<KnowledgeBase[]>('/api/knowledge-bases')
-          knowledgeBases.value = response.data
+          const response = await axios.get<{status: string, data: KnowledgeBase[]}>('/api/knowledge-bases')
+          knowledgeBases.value = response.data.data
         } catch (error: any) {
           const errorMsg = error.response?.data?.message || 'Erro ao buscar bases de conhecimento'
           showToast(errorMsg)

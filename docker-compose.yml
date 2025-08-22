@@ -1,0 +1,13 @@
+version: "3.8"
+services:
+  db:
+    image: ankane/pgvector
+    container_name: lumnia_db
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_DB: lumnia
+    ports:
+      - "5433:5432"
+    volumes:
+      - ./data:/var/lib/postgresql/data

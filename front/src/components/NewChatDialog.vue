@@ -13,12 +13,20 @@
           <v-select
             :items="knowledgeBases"
             item-value="id"
-            item-text="title"
+            item-title="name"
             v-model="selectedKnowledgeBase"
             :rules="[v => !!v || 'Base é obrigatória']"
             label="Base de conhecimento"
             required
-          ></v-select>
+          >
+            <template #item="{ props, item }">
+              <v-list-item
+                v-bind="props"
+                :title="item.raw.name"
+                :subtitle="item.raw.description"
+              ></v-list-item>
+            </template>
+          </v-select>
           <v-divider class="my-4"></v-divider>
           <v-select
             :items="personas"
@@ -89,8 +97,8 @@
 
       const fetchKnowledgeBases = async () => {
         try {
-          const response = await axios.get<KnowledgeBase[]>('/api/knowledge-bases')
-          knowledgeBases.value = response.data
+          const response = await axios.get<{status: string, data: KnowledgeBase[]}>(`/api/knowledge-bases`)
+          knowledgeBases.value = response.data.data
         } catch (error: any) {
           const errorMsg = error.response?.data?.message || 'Erro ao buscar bases de conhecimento'
           showToast(errorMsg)
@@ -119,7 +127,7 @@
             '/api/chat',
             {
               name: chatName.value,
-              knowledge_base_id: selectedKnowledgeBase.value,
+              kb_id: selectedKnowledgeBase.value,
               persona_id: selectedPersona.value,
             },
             {

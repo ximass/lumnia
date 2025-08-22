@@ -23,7 +23,7 @@
       </template>
       <template #item.knowledge_bases="{ item }">
         {{
-          item.knowledge_bases?.map((base: KnowledgeBase) => base.title).join(', ') ||
+          item.knowledge_bases?.map((base: KnowledgeBase) => base.name).join(', ') ||
           'Nenhuma base'
         }}
       </template>

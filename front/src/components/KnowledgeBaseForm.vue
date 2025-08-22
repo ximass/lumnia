@@ -2,12 +2,12 @@
   <v-dialog v-model="internalDialog" max-width="600px">
     <v-card>
       <v-card-title>
-        {{ formData.id ? 'Editar Base de Conhecimento' : 'Nova Base de Conhecimento' }}
+        {{ formData.id ? 'Editar base de conhecimento' : 'Nova base de conhecimento' }}
       </v-card-title>
       <v-card-text>
         <v-form ref="form" v-model="isValid">
-          <v-text-field label="Título" v-model="formData.title" :rules="titleRules" required />
-          <v-textarea label="Conteúdo" v-model="formData.content" :rules="contentRules" required />
+          <v-text-field label="Nome" v-model="formData.name" :rules="nameRules" required />
+          <v-textarea label="Descrição" v-model="formData.description" rows="3" />
         </v-form>
       </v-card-text>
       <v-card-actions>
@@ -44,7 +44,7 @@
       const isValid = ref(false)
       const internalDialog = ref(props.dialog)
 
-      const formData = ref<KnowledgeBaseFormData>({ title: '', content: '' })
+      const formData = ref<KnowledgeBaseFormData>({ name: '', description: '' })
 
       watch(
         () => props.dialog,
@@ -65,18 +65,17 @@
           if (newVal) {
             formData.value = {
               id: newVal.id,
-              title: newVal.title,
-              content: newVal.content,
+              name: newVal.name,
+              description: newVal.description || '',
             }
           } else {
-            formData.value = { title: '', content: '' }
+            formData.value = { name: '', description: '' }
           }
         },
         { immediate: true }
       )
 
-      const titleRules = [(v: string) => !!v || 'Título é obrigatório']
-      const contentRules = [(v: string) => !!v || 'Conteúdo é obrigatório']
+      const nameRules = [(v: string) => !!v || 'Nome é obrigatório']
 
       const save = async () => {
         const validation = await form.value?.validate()
@@ -87,17 +86,18 @@
 
         try {
           const payload: Omit<KnowledgeBaseFormData, 'id'> = {
-            title: formData.value.title,
-            content: formData.value.content,
+            name: formData.value.name,
+            description: formData.value.description,
           }
 
           if (formData.value.id) {
-            await axios.put<KnowledgeBase>(`/api/knowledge-base/${formData.value.id}`, payload)
+            await axios.put<KnowledgeBase>(`/api/knowledge-bases/${formData.value.id}`, payload)
             showToast('Base de conhecimento atualizada com sucesso!', 'success')
           } else {
             await axios.post<KnowledgeBase>('/api/knowledge-bases', payload)
             showToast('Base de conhecimento criada com sucesso!', 'success')
           }
+
           internalDialog.value = false
           emit('saved')
         } catch (error: any) {
@@ -115,8 +115,7 @@
         formData,
         form,
         isValid,
-        titleRules,
-        contentRules,
+        nameRules,
         save,
         handleClose,
       }

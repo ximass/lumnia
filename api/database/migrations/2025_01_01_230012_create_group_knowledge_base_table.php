@@ -10,8 +10,9 @@ class CreateGroupKnowledgeBaseTable extends Migration
     {
         Schema::create('group_knowledge_base', function (Blueprint $table) {
             $table->id();
+            $table->uuid('kb_id');
             $table->foreignId('group_id')->constrained()->onDelete('cascade');
-            $table->foreignId('knowledge_base_id')->constrained()->onDelete('cascade');
+            $table->foreign('kb_id')->references('id')->on('knowledge_bases')->onDelete('cascade');
             $table->timestamps();
         });
     }

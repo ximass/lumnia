@@ -4,19 +4,35 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 
 class KnowledgeBase extends Model
 {
-    use HasFactory;
+    use HasFactory, HasUuids;
     
     protected $fillable = [
-        'title',
-        'content',
-        'modified_at',
-        'size',
-        'digest',
-        'details',
+        'name',
+        'description',
+        'owner_id',
     ];
+
+    protected $keyType = 'string';
+    public $incrementing = false;
+
+    public function owner()
+    {
+        return $this->belongsTo(User::class, 'owner_id');
+    }
+
+    public function sources()
+    {
+        return $this->hasMany(Source::class, 'kb_id');
+    }
+
+    public function chunks()
+    {
+        return $this->hasMany(Chunk::class, 'kb_id');
+    }
 
     public function chats()
     {

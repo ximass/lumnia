@@ -45,7 +45,7 @@ export interface Chat {
   id: number
   name: string
   user_id: number
-  knowledge_base_id: number
+  kb_id: string
   persona_id?: number
 }
 
@@ -58,25 +58,27 @@ export interface Message {
 }
 
 export interface KnowledgeBase {
-  id: number
-  title: string
-  content: string
-  size: number
-  digest: string
-  details: string
-  modified_at: string
+  id: string
+  name: string
+  description?: string
+  owner_id: number
+  created_at?: string
+  updated_at?: string
+  sources?: Source[]
+  chunks?: Chunk[]
 }
 
 export interface KnowledgeBaseFormData {
-  id?: number
-  title: string
-  content: string
+  id?: string
+  name: string
+  description?: string
+  owner_id: number
 }
 
 export interface GroupKnowledgeBase {
   id: number
   group_id: number
-  knowledge_base_id: number
+  knowledge_base_id: string
   created_at?: string
   updated_at?: string
 }
@@ -95,6 +97,49 @@ export interface GroupWithKnowledgeBasesAndPivot extends Group {
 
 export interface KnowledgeBaseWithGroupsAndPivot extends KnowledgeBase {
   groups: (Group & { pivot: GroupKnowledgeBase })[]
+}
+
+// Source interfaces
+export interface Source {
+  id: string
+  kb_id: string
+  source_type: string
+  source_identifier: string
+  content_hash: string
+  status: string
+  metadata?: Record<string, any>
+  created_at?: string
+  updated_at?: string
+}
+
+export interface SourceFormData {
+  kb_id: string
+  source_type: string
+  source_identifier: string
+  content_hash: string
+  status: string
+  metadata?: Record<string, any>
+}
+
+// Chunk interfaces
+export interface Chunk {
+  id: string
+  source_id: string
+  kb_id: string
+  chunk_index: number
+  text: string
+  metadata?: Record<string, any>
+  created_at?: string
+  updated_at?: string
+}
+
+export interface ChunkFormData {
+  id: string
+  source_id: string
+  kb_id: string
+  chunk_index: number
+  text: string
+  metadata?: Record<string, any>
 }
 
 // Chat related interfaces

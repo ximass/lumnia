@@ -7,6 +7,7 @@ import GroupView from '@/views/GroupView.vue'
 import UserView from '@/views/UserView.vue'
 import PersonaView from '@/views/PersonaView.vue'
 import KnowledgeBaseView from '@/views/KnowledgeBaseView.vue'
+import KnowledgeBaseForm from '@/views/KnowledgeBaseForm.vue'
 import { useAuth } from '@/composables/auth'
 
 const routes: Array<RouteRecordRaw> = [
@@ -26,6 +27,18 @@ const routes: Array<RouteRecordRaw> = [
     path: '/knowledge-bases',
     name: 'KnowledgeBaseView',
     component: KnowledgeBaseView,
+    meta: { requiresAuth: true, requiresAdmin: true },
+  },
+  {
+    path: '/knowledge-bases/create',
+    name: 'KnowledgeBaseCreate',
+    component: KnowledgeBaseForm,
+    meta: { requiresAuth: true, requiresAdmin: true },
+  },
+  {
+    path: '/knowledge-bases/:id/edit',
+    name: 'KnowledgeBaseEdit',
+    component: KnowledgeBaseForm,
     meta: { requiresAuth: true, requiresAdmin: true },
   },
   {
@@ -60,7 +73,7 @@ const routes: Array<RouteRecordRaw> = [
   },
   {
     path: '/:pathMatch(.*)*',
-    redirect: '/',
+    redirect: '/login',
   },
 ]
 
@@ -70,8 +83,11 @@ const router = createRouter({
 })
 
 router.beforeEach(async (to, from, next) => {
-  const { fetchUser, user, isAuthenticated } = useAuth()
-  await fetchUser()
+  const { fetchUser, user, isAuthenticated, isUserFetched } = useAuth();
+  
+  if (!isUserFetched.value) {
+    await fetchUser();
+  }
 
   const requiresAuth = to.matched.some(record => record.meta.requiresAuth)
   const requiresGuest = to.matched.some(record => record.meta.requiresGuest)
