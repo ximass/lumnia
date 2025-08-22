@@ -134,12 +134,12 @@ class SearchController extends Controller
                     -- Normalized BM25 score using ts_rank_cd
                     ts_rank_cd(
                         tsv, 
-                        plainto_tsquery('english', ?),
+                        plainto_tsquery(?, ?),
                         32 -- normalization flag: divide by document length
                     ) AS lexical_score
                 FROM chunks 
                 WHERE kb_id = ? 
-                    AND tsv @@ plainto_tsquery('english', ?)
+                    AND tsv @@ plainto_tsquery(?, ?)
                 ORDER BY lexical_score DESC
                 LIMIT ?
             ),
@@ -175,8 +175,10 @@ class SearchController extends Controller
             $kbId,              // semantic search kb_id
             $embeddingStr,      // semantic search embedding 2 (for ORDER BY)
             $maxChunks,         // semantic search limit
+            config('search.language'), // lexical search language 1
             $query,             // lexical search query 1
             $kbId,              // lexical search kb_id
+            config('search.language'), // lexical search language 2
             $query,             // lexical search query 2
             $maxChunks,         // lexical search limit
             $semanticWeight,    // alpha weight

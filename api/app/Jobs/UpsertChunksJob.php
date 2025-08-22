@@ -104,8 +104,8 @@ class UpsertChunksJob implements ShouldQueue
     private function updateTsVector(string $chunkId, string $text): void
     {
         DB::statement(
-            'UPDATE chunks SET tsv = to_tsvector(\'english\', ?) WHERE id = ?',
-            [$text, $chunkId]
+            'UPDATE chunks SET tsv = to_tsvector(?, ?) WHERE id = ?',
+            [config('search.language'), $text, $chunkId]
         );
     }
 

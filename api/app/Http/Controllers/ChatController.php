@@ -90,8 +90,6 @@ class ChatController extends Controller
                 'text' => $userText,
             ]);
 
-            broadcast(new MessageSent($chat->id, $message->text, $request->user()));
-
             $answerText = $this->generateAnswer($chat, $message);
 
             if ($answerText === false || $answerText === null || empty($answerText)) {

@@ -109,7 +109,7 @@ class LLMController extends Controller
             $response = Http::withHeaders([
                 'Content-Type' => 'application/json',
             ])->timeout(120)->post(env('LLM_API_URL') . '/v1/chat/completions', [
-                'model' => 'deepseek-r1-distill-llama-8b',
+                'model' => 'gemma-3-1b-it-qat',
                 'messages' => $messages,
                 'temperature' => $temperature,
                 'max_tokens' => 1000,
@@ -174,6 +174,7 @@ class LLMController extends Controller
             );
 
             Log::info('Built RAG prompt', [
+                'prompt' => $ragPrompt,
                 'prompt_length' => strlen($ragPrompt),
                 'has_context' => !empty($relevantChunks),
                 'chat_id' => $chat->id

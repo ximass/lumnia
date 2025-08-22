@@ -52,7 +52,7 @@ class ChunkController extends Controller
         $chunk = Chunk::create($validated);
         
         // Update tsvector for full-text search
-        DB::statement('UPDATE chunks SET tsv = to_tsvector(\'english\', text) WHERE id = ?', [$chunk->id]);
+        DB::statement('UPDATE chunks SET tsv = to_tsvector(?, text) WHERE id = ?', [config('search.language'), $chunk->id]);
         
         $chunk->load(['source', 'knowledgeBase']);
 
@@ -92,7 +92,7 @@ class ChunkController extends Controller
         
         // Update tsvector if text was changed
         if (isset($validated['text'])) {
-            DB::statement('UPDATE chunks SET tsv = to_tsvector(\'english\', text) WHERE id = ?', [$chunk->id]);
+            DB::statement('UPDATE chunks SET tsv = to_tsvector(?, text) WHERE id = ?', [config('search.language'), $chunk->id]);
         }
         
         $chunk->load(['source', 'knowledgeBase']);
@@ -128,8 +128,8 @@ class ChunkController extends Controller
         $limit = $validated['limit'] ?? 10;
 
         $chunksQuery = Chunk::with(['source', 'knowledgeBase'])
-            ->whereRaw('tsv @@ plainto_tsquery(\'english\', ?)', [$query])
-            ->orderByRaw('ts_rank(tsv, plainto_tsquery(\'english\', ?)) DESC', [$query]);
+            ->whereRaw('tsv @@ plainto_tsquery(?, ?)', [config('search.language'), $query])
+            ->orderByRaw('ts_rank(tsv, plainto_tsquery(?, ?)) DESC', [config('search.language'), $query]);
 
         if ($kbId) {
             $chunksQuery->where('kb_id', $kbId);

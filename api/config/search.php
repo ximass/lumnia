@@ -10,6 +10,9 @@ return [
     |
     */
 
+    // Language for full-text search (PostgreSQL text search configuration)
+    'language' => env('SEARCH_LANGUAGE', 'portuguese'),
+
     'scoring' => [
         // Alpha weight for semantic search (0.0 to 1.0)
         'semantic_weight' => env('SEARCH_SEMANTIC_WEIGHT', 0.7),
