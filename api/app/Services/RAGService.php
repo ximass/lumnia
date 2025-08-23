@@ -78,19 +78,20 @@ class RAGService
         $prompt = '';
 
         if ($personaInstructions) {
-            $prompt .= $personaInstructions . "\n\n";
+            $prompt .= '--INICIO-DAS-INSTRUÇÕES--' . "\n\n" . $personaInstructions . "\n\n" . '--FIM-DAS-INSTRUÇÕES--' . "\n\n";
         }
 
         if (!empty($chunks)) {
-            $prompt .= "Contexto relevante:\n\n";
+            $prompt .= "--INICIO-DO-CONTEXTO--\n\n";
             foreach ($chunks as $i => $chunk) {
                 $prompt .= "[" . ($i + 1) . "] " . $chunk->text . "\n\n";
             }
-            $prompt .= "---\n\n";
+            $prompt .= "--FIM-DO-CONTEXTO--\n\n";
         }
 
         $prompt .= "Pergunta do usuário: " . $userMessage . "\n\n";
-        
+        $prompt .= "--ATENÇÃO--" . "\n\n";
+
         if (!empty($chunks)) {
             $prompt .= "Responda à pergunta baseando-se principalmente no contexto fornecido acima. ";
             $prompt .= "Se a informação não estiver disponível no contexto, informe que não possui informações suficientes para responder adequadamente.";
