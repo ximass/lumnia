@@ -220,3 +220,19 @@ export interface UserPersonaFormData {
   response_format?: string
   creativity: number
 }
+
+export interface ChatContextInfo {
+  context_enabled: boolean
+  context_limit: number
+  max_tokens: number
+  total_messages: number
+  context_messages: number
+}
+
+export interface ClearContextResponse {
+  status: 'success' | 'error'
+  message: string
+  data?: {
+    messages_deleted: number
+  }
+}

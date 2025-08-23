@@ -15,17 +15,21 @@ use App\Models\Persona;
 class LLMController extends Controller
 {
     protected RAGService $ragService;
+    protected string $defaultProvider;
+    protected array $providerConfig;
 
     public function __construct(RAGService $ragService)
     {
         $this->ragService = $ragService;
+        $this->defaultProvider = config('chat.llm.default_provider', 'llm_studio');
+        $this->providerConfig = config('chat.providers', []);
     }
 
     public function generateAnswer($message, Chat $chat)
     {
         $persona = $this->getEffectivePersona($chat);
         
-        $answer = $this->generateServerAnswerWithRAG($message, $chat, $persona);
+        $answer = $this->generateAnswerWithRAG($message, $chat, $persona);
 
         return $answer;
     }
@@ -58,48 +62,90 @@ class LLMController extends Controller
         }
     }
 
-    private function generateServerAnswerScript(string $userMessage): string
+    private function generateAnswerWithRAG(string $userMessage, Chat $chat, $persona = null): string
     {
-        $command = escapeshellcmd('python C:\projetos\lumnia\scripts\test3.py ' . escapeshellarg($userMessage));
-        $output  = shell_exec($command);
+        Log::info('Generating answer with RAG', [
+            'chat_id' => $chat->id,
+            'kb_id' => $chat->kb_id,
+            'has_persona' => !is_null($persona),
+            'provider' => $this->defaultProvider
+        ]);
 
-        Log::info($output);
+        $relevantChunks = $this->ragService->retrieveRelevantChunks(
+            $userMessage, 
+            $chat->kb_id, 
+            5, // topK chunks
+            0.3 // threshold
+        );
 
-        if ($output === null) {
-            Log::error("Failed to execute the Python script.");
-            return "An error occurred while processing your request.";
+        Log::info('Retrieved chunks for RAG', [
+            'chunks_count' => count($relevantChunks),
+            'chat_id' => $chat->id
+        ]);
+
+        $personaInstructions = $this->buildPersonaInstructions($persona);
+        $conversationHistory = $this->getConversationHistory($chat);
+
+        if (!empty($relevantChunks)) {
+            $ragPrompt = $this->ragService->buildRAGPrompt(
+                $userMessage, 
+                $relevantChunks, 
+                $personaInstructions
+            );
+
+            Log::info('Built RAG prompt', [
+                'prompt'        => $ragPrompt,
+                'prompt_length' => strlen($ragPrompt),
+                'has_context'   => !empty($relevantChunks),
+                'has_history'   => !empty($conversationHistory),
+                'chat_id'       => $chat->id
+            ]);
+
+            return $this->generateLLMResponse($ragPrompt, $persona, $conversationHistory);
         }
 
-        $decodedOutput = json_decode($output);
-
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            Log::error("JSON decode error: " . json_last_error_msg());
-            return "An error occurred while processing your request.";
-        }
-
-        if (!isset($decodedOutput->choices[0]->message)) {
-            Log::error("Unexpected response structure: " . $output);
-            return "An error occurred while processing your request.";
-        }
-
-        return $decodedOutput->choices[0]->message;
+        return $this->generateLLMResponse($userMessage, $persona, $conversationHistory);
     }
 
-    private function generateServerAnswerLLMStudio(string $userMessage, $persona = null, bool $isRAG = false): string
+    private function generateLLMResponse(string $message, $persona = null, array $conversationHistory = []): string
+    {
+        $provider = $this->getProviderConfig($this->defaultProvider);
+        
+        if (!$provider) {
+            Log::error("Provider configuration not found: {$this->defaultProvider}");
+            return "Erro de configuração do provedor LLM.";
+        }
+
+        switch ($provider['type']) {
+            case 'openai_compatible':
+                return $this->generateOpenAICompatibleResponse($message, $persona, $conversationHistory, $provider);
+            
+            case 'ollama':
+                return $this->generateOllamaResponse($message, $persona, $conversationHistory, $provider);
+            
+            default:
+                Log::error("Unknown provider type: {$provider['type']}");
+                return "Tipo de provedor LLM não suportado.";
+        }
+    }
+
+    private function generateOpenAICompatibleResponse(string $userMessage, $persona, array $conversationHistory, array $providerConfig): string
     {
         try {
             $messages = [];
             
             if ($persona) {
-                $systemMessage = $persona->instructions;
-                
-                if ($persona->response_format) {
-                    $systemMessage .= "\n\nFormato de resposta: " . $persona->response_format;
-                }
-                
+                $systemMessage = $this->buildPersonaInstructions($persona);
                 $messages[] = ['role' => 'system', 'content' => $systemMessage];
                 
-                Log::info("Using persona '{$persona->name}' with creativity level: {$persona->creativity}");
+                Log::info("Using persona with creativity level: {$persona->creativity}");
+            }
+            
+            foreach ($conversationHistory as $historyMessage) {
+                $messages[] = ['role' => 'user', 'content' => $historyMessage['text']];
+                if (!empty($historyMessage['answer'])) {
+                    $messages[] = ['role' => 'assistant', 'content' => $historyMessage['answer']];
+                }
             }
             
             $messages[] = ['role' => 'user', 'content' => $userMessage];
@@ -108,107 +154,180 @@ class LLMController extends Controller
 
             $response = Http::withHeaders([
                 'Content-Type' => 'application/json',
-            ])->timeout(120)->post(env('LLM_API_URL') . '/v1/chat/completions', [
-                'model' => 'gemma-3-1b-it-qat',
+            ])->timeout($providerConfig['timeout'] ?? 120)
+              ->post($providerConfig['endpoint'], [
+                'model' => $providerConfig['model'],
                 'messages' => $messages,
                 'temperature' => $temperature,
-                'max_tokens' => 1000,
+                'max_tokens' => $providerConfig['max_tokens'] ?? 1000,
             ]);
 
-            Log::info('LLM Studio Response Status: ' . $response->status());
-            Log::info('LLM Studio Response Body: ' . $response->body());
+            Log::info('OpenAI Compatible Response', [
+                'status' => $response->status(),
+                'provider' => $this->defaultProvider
+            ]);
 
             if (!$response->successful()) {
-                Log::error('LLM Studio API Error - Status: ' . $response->status() . ', Body: ' . $response->body());
+                Log::error('OpenAI Compatible API Error', [
+                    'status' => $response->status(),
+                    'body' => $response->body(),
+                    'provider' => $this->defaultProvider
+                ]);
                 return false;
             }
 
             $responseData = $response->json();
 
             if (!isset($responseData['choices'][0]['message']['content'])) {
-                Log::error('Unexpected LLM Studio response structure: ' . json_encode($responseData));
+                Log::error('Unexpected OpenAI Compatible response structure', [
+                    'response' => $responseData,
+                    'provider' => $this->defaultProvider
+                ]);
                 return false;
             }
 
             return $responseData['choices'][0]['message']['content'];
 
         } catch (\Exception $e) {
-            Log::error('LLM Studio Exception: ' . $e->getMessage());
+            Log::error('OpenAI Compatible Exception', [
+                'error' => $e->getMessage(),
+                'provider' => $this->defaultProvider
+            ]);
             return false;
         }
     }
 
-    private function generateServerAnswerWithRAG(string $userMessage, Chat $chat, $persona = null): string
+    private function generateOllamaResponse(string $userMessage, $persona, array $conversationHistory, array $providerConfig): string
     {
         try {
-            Log::info('Generating answer with RAG', [
-                'chat_id' => $chat->id,
-                'kb_id' => $chat->kb_id,
-                'has_persona' => !is_null($persona)
+            $client = new \GuzzleHttp\Client();
+            
+            $fullPrompt = $this->buildOllamaPrompt($userMessage, $conversationHistory, $persona);
+            
+            Log::info('Ollama prompt built', [
+                'history_count' => count($conversationHistory),
+                'prompt_length' => strlen($fullPrompt)
             ]);
 
-            $relevantChunks = $this->ragService->retrieveRelevantChunks(
-                $userMessage, 
-                $chat->kb_id, 
-                5, // topK chunks
-                0.3 // threshold
-            );
-
-            Log::info('Retrieved chunks for RAG', [
-                'chunks_count' => count($relevantChunks),
-                'chat_id' => $chat->id
+            $response = $client->post($providerConfig['endpoint'], [
+                'json' => [
+                    'model' => $providerConfig['model'],
+                    'prompt' => $fullPrompt,
+                    'stream' => false,
+                ],
+                'timeout' => $providerConfig['timeout'] ?? 100,
             ]);
 
-            $personaInstructions = null;
-            if ($persona) {
-                $personaInstructions = $persona->instructions;
-                if ($persona->response_format) {
-                    $personaInstructions .= "\n\nFormato de resposta: " . $persona->response_format;
-                }
+            $content = $response->getBody()->getContents();
+            $data = json_decode($content, true);
+
+            if (!isset($data['response'])) {
+                Log::error('Unexpected Ollama response structure', [
+                    'response' => $data
+                ]);
+                return false;
             }
 
-            $ragPrompt = $this->ragService->buildRAGPrompt(
-                $userMessage, 
-                $relevantChunks, 
-                $personaInstructions
-            );
-
-            Log::info('Built RAG prompt', [
-                'prompt' => $ragPrompt,
-                'prompt_length' => strlen($ragPrompt),
-                'has_context' => !empty($relevantChunks),
-                'chat_id' => $chat->id
-            ]);
-
-            return $this->generateServerAnswerLLMStudio($ragPrompt, $persona, true);
+            return $data['response'];
 
         } catch (\Exception $e) {
-            Log::error('RAG generation failed, falling back to basic LLM', [
-                'error' => $e->getMessage(),
-                'chat_id' => $chat->id
+            Log::error('Ollama Exception', [
+                'error' => $e->getMessage()
             ]);
-            
-            return $this->generateServerAnswerLLMStudio($userMessage, $persona);
+            return false;
         }
     }
 
-    private function generateServerAnswerOllama(string $userMessage, $stream = false): string
+    private function buildOllamaPrompt(string $userMessage, array $conversationHistory, $persona = null): string
     {
-        $client = new \GuzzleHttp\Client();
+        $prompt = "";
+        
+        if ($persona) {
+            $prompt .= "Instruções do sistema: " . $this->buildPersonaInstructions($persona);
+            $prompt .= "\n\n";
+        }
+        
+        if (!empty($conversationHistory)) {
+            $prompt .= "Histórico da conversa:\n\n";
+            foreach ($conversationHistory as $message) {
+                $prompt .= "Usuário: " . $message['text'] . "\n";
+                if (!empty($message['answer'])) {
+                    $prompt .= "Assistente: " . $message['answer'] . "\n\n";
+                }
+            }
+        }
+        
+        $prompt .= "Usuário: " . $userMessage . "\nAssistente: ";
+        
+        return $prompt;
+    }
 
-        $response = $client->post(env('LLM_API_URL') . '/api/generate', [
-            'json'    => [
-                'model'  => env('LLM_DEFAULT_MODEL', 'llama2'),
-                'prompt' => $userMessage,
-                'stream' => $stream,
-            ],
-            'timeout' => 100,
-            'stream'  => $stream,
+    private function buildPersonaInstructions($persona): ?string
+    {
+        if (!$persona) {
+            return null;
+        }
+
+        $instructions = $persona->instructions;
+        
+        if ($persona->response_format) {
+            $instructions .= "\n\nFormato de resposta: " . $persona->response_format;
+        }
+        
+        return $instructions;
+    }
+
+    private function getProviderConfig(string $provider): ?array
+    {
+        return $this->providerConfig[$provider] ?? null;
+    }
+
+    private function getConversationHistory(Chat $chat): array
+    {
+        if (!config('chat.context.enabled', true)) {
+            return [];
+        }
+        
+        $contextLimit = config('chat.context.limit', 10);
+        
+        $messages = $chat->messages()
+            ->orderBy('created_at', 'desc')
+            ->limit($contextLimit)
+            ->get(['text', 'answer', 'created_at'])
+            ->reverse()
+            ->values()
+            ->toArray();
+
+        $optimizedMessages = $this->optimizeContextByTokens($messages);
+
+        Log::info('Retrieved conversation history', [
+            'chat_id' => $chat->id,
+            'messages_count' => count($messages),
+            'optimized_count' => count($optimizedMessages),
+            'context_limit' => $contextLimit,
+            'context_enabled' => config('chat.context.enabled', true)
         ]);
 
-        $content = $response->getBody()->getContents();
-        $answer = json_decode($content, true)['response'];
+        return $optimizedMessages;
+    }
 
-        return $answer;
+    private function optimizeContextByTokens(array $messages): array
+    {
+        $maxTokens = config('chat.context.max_tokens', 4000);
+        $currentTokens = 0;
+        $optimizedMessages = [];
+        
+        foreach ($messages as $message) {
+            $messageTokens = (strlen($message['text']) + strlen($message['answer'] ?? '')) / 4;
+            
+            if ($currentTokens + $messageTokens > $maxTokens) {
+                break;
+            }
+            
+            $optimizedMessages[] = $message;
+            $currentTokens += $messageTokens;
+        }
+        
+        return $optimizedMessages;
     }
 }
