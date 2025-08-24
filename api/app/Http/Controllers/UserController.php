@@ -12,6 +12,30 @@ class UserController extends Controller
         return response()->json(User::all());
     }
 
+    public function store(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'sometimes|email|max:255|unique:users,email',
+            'admin' => 'sometimes|boolean'
+        ]);
+
+        // Update email only if provided
+        if ($request->has('email')) {
+            $updateData['email'] = $request->input('email');
+        }
+
+        // Update admin only if provided
+        if ($request->has('admin')) {
+            $updateData['admin'] = $request->input('admin');
+        }
+
+        $user = User::create($request->all());
+
+        return response()->json($user, 200);
+        
+    }
+
     public function search(Request $request)
     {
         $request->validate([

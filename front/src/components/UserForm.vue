@@ -22,6 +22,16 @@
             type="email"
             required
           ></v-text-field>
+          <v-text-field
+            label="Senha"
+            v-model="user.password"
+            :disabled="!!user.id"
+            :rules="[
+              v => !!v || 'Senha é obrigatória',
+            ]"
+            type="password"
+            required
+          ></v-text-field>
           <v-switch v-model="user.admin" label="Administrador"></v-switch>
         </v-form>
       </v-card-text>
@@ -55,7 +65,7 @@
       const internalDialog = ref(props.dialog)
       const form = ref()
 
-      const user = ref<UserFormData>({ name: '', email: '', admin: false })
+      const user = ref<UserFormData>({ name: '', email: '', password: '', admin: false })
 
       watch(
         () => props.dialog,
@@ -72,6 +82,7 @@
               id: newData.id,
               name: newData.name,
               email: newData.email,
+              password: newData.password,
               admin: newData.admin,
             }
           } else {
@@ -96,6 +107,7 @@
           const payload: Omit<UserFormData, 'id'> = {
             name: user.value.name,
             email: user.value.email,
+            password: user.value.password,
             admin: user.value.admin,
           }
 

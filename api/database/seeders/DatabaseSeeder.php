@@ -22,9 +22,9 @@ class DatabaseSeeder extends Seeder
         //KnowledgeBase::factory(10)->create();
 
         User::factory()->create([
-            'name' => 'Mateus Schmitz',
-            'email' => 'mateus.schmitz@univates.br',
-            'password' => bcrypt('123456'),
+            'name' => 'Admin',
+            'email' => 'admin@admin.com',
+            'password' => bcrypt('admin'),
             'admin' => true,
         ]);
 
