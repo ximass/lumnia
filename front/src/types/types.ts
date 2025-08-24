@@ -2,6 +2,7 @@ export interface User {
   id: number
   name: string
   email: string
+  password: string
   admin: boolean
   avatar?: string
   user_persona?: UserPersona
@@ -11,6 +12,7 @@ export interface UserFormData {
   id?: number
   name: string
   email: string
+  password?: string
   admin: boolean
   avatar?: string
 }
