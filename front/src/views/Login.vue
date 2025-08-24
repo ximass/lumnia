@@ -13,7 +13,10 @@
                 type="password"
                 required
               ></v-text-field>
-              <v-btn type="submit" color="primary" block>Entrar</v-btn>
+              <v-btn :loading="loading" type="submit" color="primary" block>Entrar</v-btn>
+              <v-overlay :model-value="loading" class="align-center justify-center" persistent>
+                <v-progress-circular indeterminate color="primary" size="64" />
+              </v-overlay>
             </v-form>
           </v-card-text>
           <v-card-actions class="justify-center">
@@ -37,19 +40,26 @@
       const email = ref('')
       const password = ref('')
       const router = useRouter()
+      const loading = ref(false)
+
       const { login } = useAuth()
       const { showToast } = useToast()
 
       const loginHandler = async () => {
         try {
+          loading.value = true
           await login(email.value, password.value)
           router.push('/')
         } catch (err) {
           showToast('Credenciais inválidas')
         }
+          
+        
       }
+      
+      loading.value = false
 
-      return { email, password, loginHandler }
+      return { email, password, loading, loginHandler }
     },
   })
 </script>
