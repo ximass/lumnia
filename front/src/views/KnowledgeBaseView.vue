@@ -161,16 +161,6 @@
               icon
               variant="text"
               size="small"
-              @click="viewDetails(item)"
-              color="info"
-            >
-              <v-icon>mdi-eye</v-icon>
-              <v-tooltip activator="parent">Ver detalhes</v-tooltip>
-            </v-btn>
-            <v-btn
-              icon
-              variant="text"
-              size="small"
               @click="editKnowledgeBase(item)"
               color="primary"
             >
@@ -328,11 +318,6 @@ export default defineComponent({
       router.push(`/knowledge-bases/${knowledgeBase.id}/edit`)
     }
 
-    const viewDetails = (knowledgeBase: KnowledgeBase) => {
-      // For now, redirect to edit view as details view
-      router.push(`/knowledge-bases/${knowledgeBase.id}/edit`)
-    }
-
     const confirmDelete = (knowledgeBase: KnowledgeBase) => {
       selectedKnowledgeBase.value = knowledgeBase
       deleteDialog.value = true
@@ -448,7 +433,6 @@ export default defineComponent({
       fetchKnowledgeBases,
       createKnowledgeBase,
       editKnowledgeBase,
-      viewDetails,
       confirmDelete,
       deleteKnowledgeBase,
       getOverallStatusText,

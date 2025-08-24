@@ -29,14 +29,4 @@ return [
         // Enable cross-encoder reranking
         'enable_reranking' => env('SEARCH_ENABLE_RERANKING', false),
     ],
-
-    'reranker' => [
-        'provider' => env('RERANKER_PROVIDER', 'local'),
-        'local_url' => env('RERANKER_LOCAL_URL', 'http://127.0.0.1:1234'),
-        'remote_url' => env('RERANKER_REMOTE_URL', 'https://api.openai.com'),
-        'api_key' => env('RERANKER_API_KEY'),
-        'model' => env('RERANKER_MODEL', 'ms-marco-MiniLM-L-6-v2'),
-        'max_retries' => env('RERANKER_MAX_RETRIES', 3),
-        'retry_delay' => env('RERANKER_RETRY_DELAY', 1),
-    ],
 ];

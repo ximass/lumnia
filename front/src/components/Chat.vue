@@ -53,6 +53,17 @@
           <v-list-item v-if="isLoading" class="loading-message">
             <v-list-item-title>
               <v-progress-circular indeterminate color="primary"></v-progress-circular>
+              <span class="ml-2">Aguardando resposta...</span>
+            </v-list-item-title>
+          </v-list-item>
+          <v-list-item v-if="currentStreamingMessage" class="streaming-message">
+            <v-list-item-title>
+              <div class="received-message">
+                <div class="message-text">
+                  {{ currentStreamingMessage }}
+                  <span class="blinking-cursor">|</span>
+                </div>
+              </div>
             </v-list-item-title>
           </v-list-item>
         </v-list>
@@ -83,12 +94,23 @@
         <v-textarea
           v-model="newMessage"
           label="Digite sua mensagem"
-          @keyup.enter="handleSendMessage"
+          @keydown.enter="handleEnterKey"
           append-icon=""
-          hide-details
           class="w-100"
           :disabled="isLoading"
+          rows="1"
+          auto-grow
+          max-rows="4"
+          persistent-hint
+          hint="Enter para enviar, Shift+Enter para nova linha"
         ></v-textarea>
+        <v-btn
+          @click="handleSendMessage"
+          :disabled="isLoading || !newMessage.trim()"
+          color="primary"
+          icon="mdi-send"
+          class="ml-2"
+        ></v-btn>
       </v-card-actions>
     </v-card>
   </v-container>
@@ -141,6 +163,7 @@
       const chatName = ref(props.currentChat.name)
       const { user } = useAuth()
       const informationSources = ref<InformationSource[]>([])
+      const currentStreamingMessage = ref('')
 
       watch(
         () => props.currentChat,
@@ -156,46 +179,147 @@
         }
 
         isLoading.value = true
+        currentStreamingMessage.value = ''
 
         try {
-          const response = await axios.post<SendMessageResponse>(
-            `api/chat/${props.currentChat.id}`,
-            {
-              text: newMessage.value,
-            },
-            {
-              headers: {
-                Authorization: `Bearer ${localStorage.getItem('authToken')}`,
-              },
-            }
-          )
-
-          if (response.data.status === 'error') {
-            showToast(response.data.message || 'Erro ao enviar mensagem.')
-            return
-          }
-
+          // Add user message immediately
           if (user.value) {
-            props.messages?.push({
-              id: Date.now(), // temporary ID
+            const userMessage: MessageWithUser = {
+              id: Date.now(),
               chat_id: props.currentChat.id,
               user_id: user.value.id,
               user: user.value,
               text: newMessage.value,
               updated_at: new Date().toISOString(),
-              answer: response.data.answer ? response.data.answer.text : '',
-            })
+              answer: '',
+            }
+            props.messages?.push(userMessage)
           }
 
-          if (response.data.status === 'partial_success') {
-            showToast(
-              response.data.message || 'Mensagem enviada, mas houve erro na resposta da IA.',
-              'warning'
-            )
-          }
-
-          emit('sendMessage', newMessage.value)
+          const messageText = newMessage.value
           newMessage.value = ''
+          emit('sendMessage', messageText)
+
+          // Try streaming first (if enabled by backend config)
+          try {
+            await fetch(`/api/chat/${props.currentChat.id}`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+                'Accept': 'text/event-stream',
+              },
+              body: JSON.stringify({
+                text: messageText,
+              }),
+            }).then(response => {
+              // Check if response is streaming (event-stream)
+              const contentType = response.headers.get('content-type')
+              
+              if (contentType && contentType.includes('text/event-stream')) {
+                // Handle as stream
+                if (!response.ok) {
+                  throw new Error(`HTTP error! status: ${response.status}`)
+                }
+
+                const reader = response.body?.getReader()
+                if (!reader) {
+                  throw new Error('Response body is not readable')
+                }
+
+                let streamingAnswer = ''
+                const decoder = new TextDecoder()
+
+                const readStream = async () => {
+                  try {
+                    while (true) {
+                      const { done, value } = await reader.read()
+                      
+                      if (done) break
+
+                      const chunk = decoder.decode(value, { stream: true })
+                      const lines = chunk.split('\n')
+
+                      for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                          try {
+                            const data = JSON.parse(line.slice(6))
+                            
+                            switch (data.type) {
+                              case 'start':
+                                currentStreamingMessage.value = ''
+                                break
+
+                              case 'chunk':
+                                streamingAnswer += data.content
+                                currentStreamingMessage.value = streamingAnswer
+                                
+                                // Update the last message in real-time
+                                if (props.messages && props.messages.length > 0) {
+                                  const lastMessage = props.messages[props.messages.length - 1]
+                                  lastMessage.answer = streamingAnswer
+                                }
+                                scrollToBottom()
+                                break
+
+                              case 'complete':
+                                currentStreamingMessage.value = ''
+                                if (props.messages && props.messages.length > 0) {
+                                  const lastMessage = props.messages[props.messages.length - 1]
+                                  lastMessage.answer = streamingAnswer
+                                  lastMessage.updated_at = data.updated_at
+                                }
+                                isLoading.value = false
+                                return
+                                
+                              case 'error':
+                                showToast(data.message || 'Erro ao processar mensagem', 'error')
+                                isLoading.value = false
+                                return
+                            }
+                          } catch (parseError) {
+                            console.error('Error parsing stream data:', parseError)
+                          }
+                        }
+                      }
+                    }
+                  } finally {
+                    reader.releaseLock()
+                    isLoading.value = false
+                  }
+                }
+
+                readStream()
+              } else {
+                // Handle as regular JSON response
+                return response.json().then(data => {
+                  if (data.status === 'error') {
+                    showToast(data.message || 'Erro ao enviar mensagem.')
+                    return
+                  }
+
+                  if (props.messages && props.messages.length > 0) {
+                    const lastMessage = props.messages[props.messages.length - 1]
+                    lastMessage.answer = data.answer ? data.answer.text : ''
+                    lastMessage.updated_at = data.answer ? data.answer.updated_at : new Date().toISOString()
+                  }
+
+                  if (data.status === 'partial_success') {
+                    showToast(
+                      data.message || 'Mensagem enviada, mas houve erro na resposta da IA.',
+                      'warning'
+                    )
+                  }
+
+                  isLoading.value = false
+                })
+              }
+            })
+          } catch (streamError) {
+            console.error('Stream error:', streamError)
+            throw streamError
+          }
+
         } catch (error: any) {
           let errorMsg = 'Erro ao enviar mensagem.'
 
@@ -217,10 +341,21 @@
           }
 
           showToast(errorMsg, 'error')
-        } finally {
           isLoading.value = false
+        } finally {
           scrollToBottom()
         }
+      }
+
+      const handleEnterKey = (event: KeyboardEvent) => {
+        // Se Shift+Enter, permite quebra de linha
+        if (event.shiftKey) {
+          return
+        }
+        
+        // Se apenas Enter, previne quebra de linha e envia mensagem
+        event.preventDefault()
+        handleSendMessage()
       }
 
       const updateChatName = async () => {
@@ -254,7 +389,9 @@
         isLoading,
         isModalOpen,
         informationSources,
+        currentStreamingMessage,
         handleSendMessage,
+        handleEnterKey,
         updateChatName,
         openInformationSources,
       }
@@ -361,6 +498,20 @@
   .loading-message {
     justify-content: center;
     align-items: center;
+  }
+
+  .streaming-message {
+    justify-content: flex-start;
+  }
+
+  .blinking-cursor {
+    animation: blink 1s infinite;
+    font-weight: bold;
+  }
+
+  @keyframes blink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0; }
   }
 
   @media (max-width: 600px) {
