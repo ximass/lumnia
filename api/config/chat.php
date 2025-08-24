@@ -50,6 +50,31 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Streaming Configuration
+    |--------------------------------------------------------------------------
+    |
+    | Configuration for chat streaming functionality. When enabled, responses
+    | will be delivered in real-time chunks instead of waiting for the complete
+    | response.
+    |
+    */
+
+    'streaming' => [
+        /*
+        |--------------------------------------------------------------------------
+        | Enable Streaming
+        |--------------------------------------------------------------------------
+        |
+        | This value determines whether streaming responses should be used
+        | by default for all chat interactions. Set to false to disable
+        | streaming and use traditional request-response pattern.
+        |
+        */
+        'enabled' => env('CHAT_STREAMING_ENABLED', true),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | LLM Provider Configuration
     |--------------------------------------------------------------------------
     |

@@ -37,7 +37,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/chats/{chat}/messages', [ChatController::class, 'getMessages']);
     Route::get('/chats/{chat}/context', [ChatController::class, 'getContextInfo']);
     Route::post('/chat', [ChatController::class, 'createChat']);
-    Route::post('/chat/{chat}', [ChatController::class, 'sendMessage']);
+    Route::post('/chat/{chat}', [ChatController::class, 'sendMessage'])
+        ->middleware(\App\Http\Middleware\DisableBuffering::class);
     Route::put('/chat/{chat}', [ChatController::class, 'updateChat']);
     Route::delete('/chat/{chat}', [ChatController::class, 'deleteChat']);
     Route::delete('/chat/{chat}/context', [ChatController::class, 'clearContext']);
