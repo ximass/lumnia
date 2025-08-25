@@ -1,39 +1,32 @@
-FROM php:8.2-fpm
+FROM php:8.2-apache
 
-# Install necessary dependencies
-RUN apt-get update && apt-get install -y \
-    libpq-dev \
-    unzip \
-    curl \
-    && docker-php-ext-install pdo pdo_pgsql
-
-# Install Composer
-COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
-
-# Set working directory
 WORKDIR /var/www/html
 
-# Copy project files
+# Copia o código do projeto Laravel
 COPY . .
 
-# Install Laravel dependencies
-RUN composer install
+# Copia configuração do Apache (ajuste o caminho se necessário)
+COPY ./apache.conf /etc/apache2/sites-available/000-default.conf
 
-COPY .env .env
+RUN apt-get update && apt-get install -y \
+    unzip \
+    libpng-dev \
+    libjpeg-dev \
+    libfreetype6-dev \
+    libpq-dev \
+    git \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install pdo pdo_pgsql pgsql \
+    && rm -rf /var/lib/apt/lists/*
 
-# Adjust permissions
-RUN chmod -R 775 storage bootstrap/cache
-RUN chown -R www-data:www-data storage bootstrap/cache
+# Instala o Composer
+RUN curl -sS https://getcomposer.org/installer -o composer-setup.php \
+    && php composer-setup.php --install-dir=/usr/local/bin --filename=composer \
+    && rm composer-setup.php
 
-# Expose port and start PHP-FPM
-EXPOSE 9000
-CMD ["php-fpm"]
+# Instala dependências do Laravel
+RUN composer install --no-interaction --prefer-dist --optimize-autoloader
 
-# Copy entrypoint script
-COPY entrypoint.sh /usr/local/bin/
+RUN a2enmod rewrite
 
-# Make the script executable
-RUN chmod +x /usr/local/bin/entrypoint.sh
-
-# Set the entrypoint
-ENTRYPOINT ["entrypoint.sh"]
+CMD ["/var/www/html/afterbuild.sh"]
