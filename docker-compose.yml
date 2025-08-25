@@ -11,3 +11,22 @@ services:
       - "5433:5432"
     volumes:
       - ./data:/var/lib/postgresql/data
+    networks:
+      - lumnia
+
+  api:
+    container_name: api
+    restart: always
+    build:
+      context: ./api
+      dockerfile: ./Dockerfile
+    volumes:
+      - ./api:/var/www/html
+    ports:
+      - "8000:80"
+    networks:
+      - lumnia
+
+networks:
+  lumnia:
+    driver: bridge
