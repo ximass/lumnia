@@ -1,5 +1,5 @@
 <template>
-  <v-dialog v-model="internalDialog" max-width="500px">
+  <v-dialog v-model="dialog" max-width="500px">
     <v-card>
       <v-card-title>
         <span class="text-h5">{{ user.id ? 'Editar usuário' : 'Novo usuário' }}</span>
@@ -26,12 +26,20 @@
             label="Senha"
             v-model="user.password"
             :disabled="!!user.id"
-            :rules="[
-              v => !!v || 'Senha é obrigatória',
-            ]"
             type="password"
-            required
           ></v-text-field>
+            <v-autocomplete
+              v-model="user.groups_ids"
+              :items="groups"
+              item-title="name"
+              item-value="id"
+              label="Grupos"
+              multiple
+              chips
+              clearable
+              hide-selected
+              :loading="loadingGroups"
+            ></v-autocomplete>
           <v-switch v-model="user.admin" label="Administrador"></v-switch>
         </v-form>
       </v-card-text>
@@ -45,56 +53,82 @@
 </template>
 
 <script lang="ts">
-  import { defineComponent, ref, watch } from 'vue'
+  import { defineComponent, ref, onMounted, watch } from 'vue'
   import axios from 'axios'
   import { useToast } from '@/composables/useToast'
-  import type { User, UserFormData } from '@/types/types'
+  import type { Group, User, UserFormData, UserWithGroups } from '@/types/types'
 
   export default defineComponent({
     name: 'UserForm',
     props: {
-      dialog: { type: Boolean, required: true },
+      dialog: { 
+        type: Boolean, 
+        required: true 
+      },
       userData: {
-        type: Object as () => User | null,
+        type: Object as () => UserWithGroups | null,
         default: null,
       },
     },
     emits: ['close', 'saved'],
     setup(props, { emit }) {
       const { showToast } = useToast()
-      const internalDialog = ref(props.dialog)
       const form = ref()
 
-      const user = ref<UserFormData>({ name: '', email: '', password: '', admin: false })
+      const loadingGroups = ref(false)
 
-      watch(
-        () => props.dialog,
-        val => {
-          internalDialog.value = val
-        }
-      )
+      const user = ref<UserFormData>({ 
+        name: '', 
+        email: '', 
+        password: '', 
+        groups_ids: [], 
+        admin: false 
+      })
 
+      const groups = ref<Group[]>([])
+
+      // Estado auxiliar para guardar os grupos_ids caso os grupos ainda não estejam carregados
       watch(
         () => props.userData,
-        (newData: User | null) => {
+        newData => {
           if (newData) {
             user.value = {
               id: newData.id,
               name: newData.name,
               email: newData.email,
-              password: newData.password,
+              password: '',
+              groups_ids: newData.groups?.map((group: Group) => group.id) || [],
               admin: newData.admin,
             }
           } else {
-            user.value = { name: '', email: '', admin: false }
+            user.value = { 
+              name: '', 
+              email: '', 
+              password: '', 
+              groups_ids: [], 
+              admin: false 
+            }
           }
         },
         { immediate: true }
       )
 
-      const close = () => {
-        emit('close')
+      const fetchGroups = async () => {
+        loadingGroups.value = true
+        try {
+          const response = await axios.get<Group[]>('/api/groups')
+          groups.value = response.data
+        } catch (error: any) {
+          const errorMsg = error.response?.data?.message || 'Erro ao buscar grupos'
+          showToast(errorMsg)
+        } finally {
+          loadingGroups.value = false
+        }
       }
+
+      onMounted(() => {
+        fetchGroups()
+      })
 
       const submitForm = async () => {
         const validation = await form.value?.validate()
@@ -108,6 +142,7 @@
             name: user.value.name,
             email: user.value.email,
             password: user.value.password,
+            groups_ids: user.value.groups_ids,
             admin: user.value.admin,
           }
 
@@ -125,9 +160,11 @@
         }
       }
 
-      return { internalDialog, user, form, close, submitForm, showToast }
+      const close = () => {
+        emit('close')
+      }
+
+      return { user, loadingGroups, fetchGroups, form, close, submitForm, showToast, groups }
     },
   })
 </script>
-
-<style scoped></style>

@@ -31,7 +31,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', function (Request $request) {
         return $request->user()->load('userPersona');
     });
-    
+
     // Chat routes
     Route::get('/chats', [ChatController::class, 'getChats']);
     Route::get('/chats/{chat}/messages', [ChatController::class, 'getMessages']);
@@ -42,30 +42,33 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/chat/{chat}', [ChatController::class, 'updateChat']);
     Route::delete('/chat/{chat}', [ChatController::class, 'deleteChat']);
     Route::delete('/chat/{chat}/context', [ChatController::class, 'clearContext']);
-    
+
     // User Persona routes
     Route::get('/user-persona', [UserPersonaController::class, 'show']);
     Route::post('/user-persona', [UserPersonaController::class, 'store']);
     Route::put('/user-persona', [UserPersonaController::class, 'update']);
     Route::delete('/user-persona', [UserPersonaController::class, 'destroy']);
-    
+
     // User management routes
     Route::get('/users/search', [UserController::class, 'search']);
     Route::put('/user/{user}', [UserController::class, 'updateUser']);
     Route::post('/user/{user}/profile', [UserController::class, 'updateProfile']);
-    
+
+    // Group routes
+    Route::get('/groups/search', [GroupController::class, 'search']);
+
     // Knowledge Base routes
     Route::put('/knowledge-base/{knowledgeBase}', [KnowledgeBaseController::class, 'updateKnowledgeBase']);
-    
+
     // Source processing routes
     Route::post('/sources/upload', [SourceProcessingController::class, 'uploadAndProcess']);
     Route::post('/sources/{source}/process', [SourceProcessingController::class, 'processExisting']);
     Route::get('/sources/{source}/status', [SourceProcessingController::class, 'getStatus']);
     Route::post('/sources/{source}/retry', [SourceProcessingController::class, 'retry']);
-    
+
     // Search route
     Route::post('/search', [SearchController::class, 'search']);
-    
+
     // Resource routes (CRUD completo)
     Route::apiResource('/groups', GroupController::class);
     Route::apiResource('/users', UserController::class);
