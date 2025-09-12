@@ -9,30 +9,24 @@ class GroupController extends Controller
 {
     public function index()
     {
-        return response()->json(Group::with(['users', 'knowledgeBases'])->get());
+        return response()->json(Group::with([ 'knowledgeBases'])->get());
     }
 
     public function store(Request $request)
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'user_ids' => 'array',
-            'user_ids.*' => 'exists:users,id',
             'knowledge_base_ids' => 'array',
             'knowledge_base_ids.*' => 'exists:knowledge_bases,id',
         ]);
 
         $group = Group::create($request->only('name'));
-        
-        if ($request->has('user_ids')) {
-            $group->users()->attach($request->user_ids);
-        }
 
-        if ($request->has('knowledge_base_ids')) {
+        if ($request->has(key: 'knowledge_base_ids')) {
             $group->knowledgeBases()->attach($request->knowledge_base_ids);
         }
 
-        return response()->json($group->load('users', 'knowledgeBases'), 201);
+        return response()->json($group->load(['knowledgeBases']), 201);
     }
 
     public function show(Group $group)
@@ -44,23 +38,17 @@ class GroupController extends Controller
     {
         $request->validate([
             'name' => 'sometimes|required|string|max:255',
-            'user_ids' => 'array',
-            'user_ids.*' => 'exists:users,id',
             'knowledge_base_ids' => 'array',
             'knowledge_base_ids.*' => 'exists:knowledge_bases,id',
         ]);
 
         $group->update($request->only('name'));
 
-        if ($request->has('user_ids')) {
-            $group->users()->sync($request->user_ids);
-        }
-
         if ($request->has('knowledge_base_ids')) {
             $group->knowledgeBases()->sync($request->knowledge_base_ids);
         }
 
-        return response()->json($group->load(['users', 'knowledgeBases']));
+        return response()->json($group->load(['knowledgeBases']));
     }
 
     public function destroy(Group $group)
@@ -68,5 +56,18 @@ class GroupController extends Controller
         $group->delete();
 
         return response()->json(['message' => 'Group deleted successfully']);
+    }
+
+    public function search(Request $request)
+    {
+
+        $search = $request->query('search', '');
+
+        $groups = Group::where('name', 'ILIKE', "%{$search}%")
+                     ->select('id', 'name')
+                     ->limit(10)
+                     ->get();
+
+        return response()->json($groups);
     }
 }

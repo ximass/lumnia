@@ -20,7 +20,17 @@ class KnowledgeBaseController extends Controller
 
     public function getKnowledgeBases(Request $request)
     {
-        $knowledgeBases = KnowledgeBase::with(['owner', 'sources', 'chunks'])->get();
+        $userId = $request->input('user_id');
+        $knowledgeBases = [];
+        if ($userId) {
+            // Buscar apenas as bases de conhecimento vinculadas a grupos nos quais o usuário está cadastrado
+            $knowledgeBases = KnowledgeBase::with(['owner', 'sources', 'chunks'])
+                ->whereHas('groups.users', function ($q) use ($userId) {
+                    $q->where('users.id', $userId);
+                })
+                ->get();
+        }
+
         return response()->json([
             'status' => 'success',
             'data' => $knowledgeBases
@@ -54,7 +64,7 @@ class KnowledgeBaseController extends Controller
     public function show(KnowledgeBase $knowledgeBase)
     {
         $knowledgeBase->load(['owner', 'sources', 'chunks']);
-        
+
         return response()->json([
             'status' => 'success',
             'data' => $knowledgeBase
@@ -86,7 +96,7 @@ class KnowledgeBaseController extends Controller
     public function destroy(KnowledgeBase $knowledgeBase)
     {
         $knowledgeBase->delete();
-        
+
         return response()->json([
             'status' => 'success',
             'message' => 'Knowledge base deleted successfully'

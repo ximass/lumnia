@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 class KnowledgeBase extends Model
 {
     use HasFactory, HasUuids;
-    
+
     protected $fillable = [
         'name',
         'description',
@@ -41,6 +41,11 @@ class KnowledgeBase extends Model
 
     public function groups()
     {
-        return $this->belongsToMany(Group::class);
+        return $this->belongsToMany(
+            Group::class,
+            'group_knowledge_base', // pivot table
+            'kb_id', // current model FK on pivot
+            'group_id' // related model FK on pivot
+        );
     }
 }

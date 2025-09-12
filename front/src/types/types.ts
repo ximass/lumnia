@@ -13,6 +13,7 @@ export interface UserFormData {
   name: string
   email: string
   password?: string
+  groups_ids: number[]
   admin: boolean
   avatar?: string
 }
@@ -31,7 +32,6 @@ export interface Group {
 export interface GroupFormData {
   id?: number
   name: string
-  user_ids: number[]
   knowledge_base_ids: number[]
 }
 
