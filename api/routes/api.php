@@ -14,6 +14,11 @@ use App\Http\Controllers\ChunkController;
 use App\Http\Controllers\SourceProcessingController;
 use App\Http\Controllers\SearchController;
 
+Route::get('/status', function () {
+    return response()->json(['message' => 'API is running']);
+});
+
+
 Route::middleware('web')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
     Route::post('/logout', [AuthController::class, 'logout']);
@@ -21,7 +26,6 @@ Route::middleware('web')->group(function () {
 });
 
 Route::get('/avatars/{filename}', [UserController::class, 'serveAvatar']);
-Route::get('/knowledge-bases', [KnowledgeBaseController::class, 'getKnowledgeBases']);
 Route::get('/personas/active', [PersonaController::class, 'getActivePersonas']);
 Route::post('/chunks/search', [ChunkController::class, 'search']);
 
@@ -59,6 +63,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Knowledge Base routes
     Route::put('/knowledge-base/{knowledgeBase}', [KnowledgeBaseController::class, 'updateKnowledgeBase']);
+    Route::get('/knowledge-bases-user', [KnowledgeBaseController::class, 'getKnowledgeBases']);
 
     // Source processing routes
     Route::post('/sources/upload', [SourceProcessingController::class, 'uploadAndProcess']);

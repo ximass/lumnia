@@ -20,4 +20,9 @@ class Group extends Model
             'kb_id' // related model FK on pivot (db uses kb_id)
         );
     }
+
+    public function users()
+    {
+        return $this->belongsToMany(User::class);
+    }
 }

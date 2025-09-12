@@ -45,16 +45,18 @@
       const { login } = useAuth()
       const { showToast } = useToast()
 
+      const { user } = useAuth()
       const loginHandler = async () => {
         try {
           loading.value = true
           await login(email.value, password.value)
+          if (user.value && user.value.id) {
+            localStorage.setItem('user', JSON.stringify(user.value))
+          }
           router.push('/')
         } catch (err) {
           showToast('Credenciais inválidas')
         }
-          
-        
       }
       
       loading.value = false
