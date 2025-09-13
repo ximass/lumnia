@@ -12,19 +12,7 @@
             :rules="[v => !!v || 'Nome é obrigatório']"
             required
           ></v-text-field>
-          <v-autocomplete
-            v-model="group.user_ids"
-            :items="users"
-            item-title="name"
-            item-value="id"
-            label="Usuários"
-            multiple
-            chips
-            clearable
-            hide-selected
-            :loading="loadingUsers"
-            @update:search="fetchUsers"
-          ></v-autocomplete>
+
           <v-select
             v-model="group.knowledge_base_ids"
             :items="knowledgeBases"
@@ -64,9 +52,7 @@
   import axios from 'axios'
   import { useToast } from '@/composables/useToast'
   import type {
-    User,
     KnowledgeBase,
-    GroupFormData,
     GroupWithKnowledgeBases,
     GroupWithUsers,
   } from '@/types/types'
@@ -79,7 +65,7 @@
         required: true,
       },
       groupData: {
-        type: Object as () => (GroupWithKnowledgeBases & GroupWithUsers) | null,
+        type: Object as () => GroupWithKnowledgeBases | null,
         default: null,
       },
     },
@@ -88,15 +74,13 @@
       const { showToast } = useToast()
       const form = ref()
 
-      const loadingUsers = ref(false)
       const loadingKnowledgeBases = ref(false)
 
-      const group = ref<GroupFormData>({
+      // Group no longer contains user_ids here — keep knowledge_base_ids as string|number
+      const group = ref<{ id?: number; name: string; knowledge_base_ids: (string | number)[] }>({
         name: '',
-        user_ids: [],
         knowledge_base_ids: [],
       })
-      const users = ref<User[]>([])
       const knowledgeBases = ref<KnowledgeBase[]>([])
 
       watch(
@@ -106,39 +90,18 @@
             group.value = {
               id: newData.id,
               name: newData.name,
-              user_ids: newData.users?.map((user: User) => user.id) || [],
+              // knowledge_base ids come from API as strings (KnowledgeBase.id is string)
               knowledge_base_ids: newData.knowledge_bases?.map((kb: KnowledgeBase) => kb.id) || [],
             }
           } else {
             group.value = {
               name: '',
-              user_ids: [],
               knowledge_base_ids: [],
             }
           }
         },
         { immediate: true }
       )
-
-      const fetchUsers = async (search: string) => {
-        if (!search) return
-
-        loadingUsers.value = true
-        try {
-          const response = await axios.get<User[]>('/api/users/search', {
-            params: { search },
-          })
-
-          if (response.data) {
-            users.value = response.data
-          }
-        } catch (error: any) {
-          const errorMsg = error.response?.data?.message || 'Erro ao buscar usuários'
-          showToast(errorMsg)
-        } finally {
-          loadingUsers.value = false
-        }
-      }
 
       const fetchKnowledgeBases = async () => {
         loadingKnowledgeBases.value = true
@@ -162,10 +125,10 @@
         const validation = await form.value?.validate()
 
         if (validation.valid) {
-          try {
-            const payload: Omit<GroupFormData, 'id'> = {
+            try {
+            // payload shape for API — keep ids as they are (string|number)
+            const payload: { name: string; knowledge_base_ids: (string | number)[] } = {
               name: group.value.name,
-              user_ids: group.value.user_ids,
               knowledge_base_ids: group.value.knowledge_base_ids,
             }
 
@@ -190,9 +153,6 @@
       return {
         form,
         group,
-        users,
-        loadingUsers,
-        fetchUsers,
         submitForm,
         close,
         isEdit: !!props.groupData?.id,

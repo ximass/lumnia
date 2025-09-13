@@ -97,7 +97,13 @@
 
       const fetchKnowledgeBases = async () => {
         try {
-          const response = await axios.get<{status: string, data: KnowledgeBase[]}>(`/api/knowledge-bases`)
+          const userId = JSON.parse(localStorage.getItem('user') || '{}')?.id
+          const response = await axios.get(`/api/knowledge-bases-user`, {
+            params: { user_id: userId },
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem('authToken')}`,
+            },
+          })
           knowledgeBases.value = response.data.data
         } catch (error: any) {
           const errorMsg = error.response?.data?.message || 'Erro ao buscar bases de conhecimento'

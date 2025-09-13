@@ -9,7 +9,7 @@ class UserController extends Controller
 {
     public function index()
     {
-        return response()->json(User::all());
+        return response()->json(User::with(['groups'])->get());
     }
 
     public function store(Request $request)
@@ -32,8 +32,14 @@ class UserController extends Controller
 
         $user = User::create($request->all());
 
+        if ($request->has('groups_ids'))
+        {
+            $user->groups()->attach($request->groups_ids);
+        }
+
+
         return response()->json($user, 200);
-        
+
     }
 
     public function search(Request $request)
@@ -43,7 +49,7 @@ class UserController extends Controller
         ]);
 
         $search = $request->query('search', '');
-        
+
         $users = User::where('name', 'ILIKE', "%{$search}%")
                      ->select('id', 'name', 'avatar')
                      ->limit(10)
@@ -70,6 +76,7 @@ class UserController extends Controller
             'name' => $request->input('name'),
         ];
 
+
         // Update email only if provided
         if ($request->has('email')) {
             $updateData['email'] = $request->input('email');
@@ -91,17 +98,21 @@ class UserController extends Controller
             $avatarFile = $request->file('avatar');
             $avatarName = time() . '_' . $user->id . '.' . $avatarFile->getClientOriginalExtension();
             $avatarPath = 'avatars/' . $avatarName;
-            
+
             // Create avatars directory if it doesn't exist
             if (!file_exists(public_path('avatars'))) {
                 mkdir(public_path('avatars'), 0755, true);
             }
-            
+
             $avatarFile->move(public_path('avatars'), $avatarName);
             $updateData['avatar'] = $avatarPath;
         }
 
         $user->update($updateData);
+
+        if ($request->has('groups_ids')) {
+            $user->groups()->sync($request->groups_ids);
+        }
 
         return response()->json($user);
     }
@@ -136,12 +147,12 @@ class UserController extends Controller
             $avatarFile = $request->file('avatar');
             $avatarName = time() . '_' . $user->id . '.' . $avatarFile->getClientOriginalExtension();
             $avatarPath = 'avatars/' . $avatarName;
-            
+
             // Create avatars directory if it doesn't exist
             if (!file_exists(public_path('avatars'))) {
                 mkdir(public_path('avatars'), 0755, true);
             }
-            
+
             $avatarFile->move(public_path('avatars'), $avatarName);
             $updateData['avatar'] = $avatarPath;
         }
@@ -154,7 +165,7 @@ class UserController extends Controller
     public function serveAvatar($filename)
     {
         $path = public_path('avatars/' . $filename);
-        
+
         if (!file_exists($path)) {
             abort(404);
         }
