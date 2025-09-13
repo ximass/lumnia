@@ -99,7 +99,7 @@
                     v-model="selectedFiles"
                     label="Selecionar arquivos"
                     multiple
-                    accept=".txt,.pdf"
+                    accept=".txt,.pdf,.csv,.xlsx,.doc,.docx,.odt"
                     variant="outlined"
                     prepend-icon="mdi-file-document"
                     :rules="fileRules"
@@ -134,9 +134,9 @@
                     <template #text>
                       <div class="d-flex align-center">
                         <div>
-                          <strong>Selecione pelo menos um arquivo</strong> (.txt ou .pdf) para criar a base de conhecimento.
+                          <strong>Selecione pelo menos um arquivo</strong> (.txt, .pdf, .csv, .xlsx, .doc, .docx ou .odt) para criar a base de conhecimento.
                           <br>
-                          <small class="text-medium-emphasis">Tamanho máximo: 10MB por arquivo • Formatos aceitos: TXT, PDF</small>
+                          <small class="text-medium-emphasis">Tamanho máximo: 10MB por arquivo • Formatos aceitos: TXT, PDF, CSV, XLSX, DOC, DOCX, ODT</small>
                         </div>
                       </div>
                     </template>
@@ -187,7 +187,7 @@
                     >
                       <template #prepend>
                         <v-icon color="primary">
-                          {{ source.source_type === 'pdf' ? 'mdi-file-pdf-box' : 'mdi-file-document' }}
+                          {{ getFileIcon(source.source_type) }}
                         </v-icon>
                       </template>
 
@@ -203,13 +203,28 @@
                       </v-list-item-subtitle>
 
                       <template #append>
-                        <v-chip
-                          :color="getStatusColor(source.status)"
-                          size="small"
-                          variant="flat"
-                        >
-                          {{ getStatusText(source.status) }}
-                        </v-chip>
+                        <div class="d-flex align-center ga-2">
+                          <v-chip
+                            :color="getStatusColor(source.status)"
+                            size="small"
+                            variant="flat"
+                          >
+                            {{ getStatusText(source.status) }}
+                          </v-chip>
+                          <v-btn
+                            icon
+                            size="small"
+                            variant="text"
+                            color="error"
+                            @click="deleteSource(source)"
+                            :disabled="isProcessing"
+                          >
+                            <v-icon size="20">mdi-delete</v-icon>
+                            <v-tooltip activator="parent" location="top">
+                              Excluir arquivo
+                            </v-tooltip>
+                          </v-btn>
+                        </div>
                       </template>
                     </v-list-item>
                   </v-list>
@@ -233,6 +248,45 @@
         </v-row>
       </v-container>
     </v-main>
+
+    <!-- Delete Confirmation Dialog -->
+    <v-dialog v-model="deleteDialog.show" max-width="500">
+      <v-card>
+        <v-card-title class="text-h6 d-flex align-center">
+          <v-icon color="error" class="me-3">mdi-alert-circle</v-icon>
+          Confirmar exclusão
+        </v-card-title>
+        
+        <v-card-text>
+          <p class="mb-3">
+            Tem certeza que deseja excluir o arquivo 
+            <strong>"{{ deleteDialog.source?.metadata?.original_filename || deleteDialog.source?.source_identifier }}"</strong>?
+          </p>
+          <v-alert type="warning" variant="tonal" class="mb-0">
+            <strong>Atenção:</strong> Esta ação não pode ser desfeita. O arquivo e todos os seus dados associados serão permanentemente removidos.
+          </v-alert>
+        </v-card-text>
+
+        <v-card-actions class="px-6 pb-6">
+          <v-spacer />
+          <v-btn 
+            variant="outlined" 
+            @click="deleteDialog.show = false"
+            :disabled="deleteDialog.loading"
+          >
+            Cancelar
+          </v-btn>
+          <v-btn 
+            color="error" 
+            variant="flat"
+            @click="confirmDeleteSource"
+            :loading="deleteDialog.loading"
+          >
+            Excluir arquivo
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-container>
 </template>
 
@@ -260,6 +314,12 @@ export default defineComponent({
     const selectedFiles = ref<File[]>([])
     const sources = ref<Source[]>([])
 
+    const deleteDialog = ref({
+      show: false,
+      source: null as Source | null,
+      loading: false
+    })
+
     const isEdit = computed(() => !!route.params.id)
 
     const formData = ref<KnowledgeBaseFormData>({
@@ -277,10 +337,23 @@ export default defineComponent({
       (files: File[]) => {
         if (!files || files.length === 0) return true
         return files.every(file => 
-          ['text/plain', 'application/pdf'].includes(file.type) ||
+          [
+            'text/plain', 
+            'application/pdf', 
+            'text/csv', 
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'application/msword',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'application/vnd.oasis.opendocument.text'
+          ].includes(file.type) ||
           file.name.toLowerCase().endsWith('.txt') ||
-          file.name.toLowerCase().endsWith('.pdf')
-        ) || 'Apenas arquivos .txt e .pdf são permitidos'
+          file.name.toLowerCase().endsWith('.pdf') ||
+          file.name.toLowerCase().endsWith('.csv') ||
+          file.name.toLowerCase().endsWith('.xlsx') ||
+          file.name.toLowerCase().endsWith('.doc') ||
+          file.name.toLowerCase().endsWith('.docx') ||
+          file.name.toLowerCase().endsWith('.odt')
+        ) || 'Apenas arquivos .txt, .pdf, .csv, .xlsx, .doc, .docx e .odt são permitidos'
       },
       (files: File[]) => {
         if (!files || files.length === 0) return true
@@ -324,6 +397,20 @@ export default defineComponent({
       return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
     }
 
+    const getFileIcon = (sourceType: string): string => {
+      const iconMap: Record<string, string> = {
+        'pdf': 'mdi-file-pdf-box',
+        'txt': 'mdi-file-document',
+        'text': 'mdi-file-document',
+        'csv': 'mdi-file-delimited',
+        'xlsx': 'mdi-file-excel',
+        'doc': 'mdi-file-word',
+        'docx': 'mdi-file-word',
+        'odt': 'mdi-file-document-outline'
+      }
+      return iconMap[sourceType] || 'mdi-file-document'
+    }
+
     const handleFileSelection = () => {
       resetProgress()
     }
@@ -362,7 +449,6 @@ export default defineComponent({
         let knowledgeBaseId: string
 
         if (isEdit.value) {
-          // Atualizar KB existente
           const response = await axios.put<ApiResponse<KnowledgeBase>>(
             `/api/knowledge-bases/${route.params.id}`,
             {
@@ -373,7 +459,6 @@ export default defineComponent({
           knowledgeBaseId = response.data.data?.id || route.params.id as string
           showToast('Base de conhecimento atualizada com sucesso!', 'success')
         } else {
-          // Criar nova KB
           const response = await axios.post<ApiResponse<KnowledgeBase>>('/api/knowledge-bases', {
             name: formData.value.name,
             description: formData.value.description,
@@ -399,6 +484,32 @@ export default defineComponent({
       }
     }
 
+    const deleteSource = (source: Source) => {
+      deleteDialog.value.source = source
+      deleteDialog.value.show = true
+    }
+
+    const confirmDeleteSource = async () => {
+      if (!deleteDialog.value.source) return
+
+      deleteDialog.value.loading = true
+
+      try {
+        await axios.delete(`/api/sources/${deleteDialog.value.source.id}`)
+        
+        sources.value = sources.value.filter(s => s.id !== deleteDialog.value.source?.id)
+        
+        showToast('Arquivo excluído com sucesso!', 'success')
+        deleteDialog.value.show = false
+        deleteDialog.value.source = null
+      } catch (error: any) {
+        const errorMsg = error.response?.data?.message || 'Erro ao excluir o arquivo'
+        showToast(errorMsg, 'error')
+      } finally {
+        deleteDialog.value.loading = false
+      }
+    }
+
     const handleCancel = () => {
       router.push('/knowledge-bases')
     }
@@ -416,6 +527,7 @@ export default defineComponent({
       selectedFiles,
       sources,
       uploadProgress,
+      deleteDialog,
       isEdit,
       formData,
       nameRules,
@@ -423,8 +535,11 @@ export default defineComponent({
       getStatusText,
       getStatusColor,
       formatFileSize,
+      getFileIcon,
       handleFileSelection,
       save,
+      deleteSource,
+      confirmDeleteSource,
       handleCancel
     }
   }

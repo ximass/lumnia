@@ -9,10 +9,10 @@ class InformationSource extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['content'];
+    protected $fillable = ['content', 'message_id'];
 
     public function message()
     {
-        return $this->hasOne(Message::class);
+        return $this->belongsTo(Message::class);
     }
 }

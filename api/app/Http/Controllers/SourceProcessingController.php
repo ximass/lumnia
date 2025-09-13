@@ -14,9 +14,9 @@ class SourceProcessingController extends Controller
     public function uploadAndProcess(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'file' => 'required|file|mimes:txt,pdf|max:10240',
+            'file' => 'required|file|mimes:txt,pdf,csv,xlsx,doc,docx,odt|max:10240',
             'kb_id' => 'required|uuid|exists:knowledge_bases,id',
-            'source_type' => 'sometimes|string|in:txt,pdf',
+            'source_type' => 'sometimes|string|in:txt,pdf,csv,xlsx,doc,docx,odt',
         ]);
 
         try {

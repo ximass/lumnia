@@ -11,7 +11,11 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Process;
+use Smalot\PdfParser\Parser;
+use League\Csv\Reader;
+use Maatwebsite\Excel\Facades\Excel;
+use Maatwebsite\Excel\HeadingRowImport;
+use PhpOffice\PhpWord\IOFactory;
 
 class ParseSourceJob implements ShouldQueue
 {
@@ -100,6 +104,10 @@ class ParseSourceJob implements ShouldQueue
         return match ($sourceType) {
             'txt', 'text' => $this->extractFromTxt($filePath),
             'pdf' => $this->extractFromPdf($filePath),
+            'csv' => $this->extractFromCsv($filePath),
+            'xlsx', 'xls' => $this->extractFromExcel($filePath),
+            'doc', 'docx' => $this->extractFromWord($filePath),
+            'odt' => $this->extractFromOdt($filePath),
             default => throw new \Exception("Unsupported source type: {$sourceType}")
         };
     }
@@ -122,27 +130,207 @@ class ParseSourceJob implements ShouldQueue
         return mb_convert_encoding($content, 'UTF-8', 'auto');
     }
 
-    private function extractFromPdf(string $filePath)
+    private function extractFromPdf(string $filePath): string
     {
-        return $this->extractWithPoppler($filePath);
+        return $this->extractWithSmalot($filePath);
     }
 
-    private function extractWithPoppler(string $filePath): string
+    private function extractWithSmalot(string $filePath): string
     {
-        $command = "pdftotext -layout -nopgbrk \"{$filePath}\" -";
-        
-        $result = Process::run($command);
-        
-        if (!$result->successful()) {
-            throw new \Exception("Poppler extraction failed: " . $result->errorOutput());
-        }
+        try {
+            $parser = new Parser();
+            $pdf = $parser->parseFile($filePath);
+            
+            $text = $pdf->getText();
 
-        $text = $result->output();
-        
-        if (empty(trim($text))) {
-            throw new \Exception("No text extracted with Poppler");
-        }
+            Log::info('Extracted text from PDF using Smalot', [
+                'text' => $text,
+                'file' => $filePath,
+                'text_length' => strlen($text)
+            ]);
+            
+            if (empty(trim($text))) {
+                throw new \Exception("No text extracted from PDF");
+            }
 
+            return $text;
+        } catch (\Exception $e) {
+            throw new \Exception("PDF extraction failed: " . $e->getMessage());
+        }
+    }
+
+    private function extractFromCsv(string $filePath): string
+    {
+        try {
+            $csv = Reader::createFromPath($filePath, 'r');
+            
+            $csv->setHeaderOffset(0);
+            
+            $headers = $csv->getHeader();
+            $records = iterator_to_array($csv->getRecords());
+            
+            $text = "Headers: " . implode(', ', $headers) . "\n\n";
+            
+            foreach ($records as $offset => $record) {
+                $rowText = [];
+                foreach ($record as $key => $value) {
+                    if (!empty(trim($value))) {
+                        $rowText[] = "$key: " . trim($value);
+                    }
+                }
+                if (!empty($rowText)) {
+                    $text .= "Row " . ($offset + 1) . ": " . implode('; ', $rowText) . "\n";
+                }
+            }
+
+            Log::info('Extracted text from CSV', [
+                'file' => $filePath,
+                'text_length' => strlen($text),
+                'rows_count' => count($records),
+                'headers' => $headers
+            ]);
+            
+            if (empty(trim($text))) {
+                throw new \Exception("No text extracted from CSV");
+            }
+
+            return $text;
+        } catch (\Exception $e) {
+            throw new \Exception("CSV extraction failed: " . $e->getMessage());
+        }
+    }
+
+    private function extractFromExcel(string $filePath): string
+    {
+        try {
+            $headings = Excel::toArray(new HeadingRowImport, $filePath)[0];
+            $data = Excel::toArray([], $filePath)[0];
+            
+            if (empty($data)) {
+                throw new \Exception("No data found in Excel file");
+            }
+            
+            $headers = array_shift($data);
+            $text = "Headers: " . implode(', ', array_filter($headers)) . "\n\n";
+            
+            foreach ($data as $rowIndex => $row) {
+                if (empty(array_filter($row))) continue;
+                
+                $rowText = [];
+                foreach ($row as $colIndex => $value) {
+                    $header = $headers[$colIndex] ?? "Column " . ($colIndex + 1);
+                    if (!empty($value)) {
+                        $rowText[] = "$header: $value";
+                    }
+                }
+                
+                if (!empty($rowText)) {
+                    $text .= "Row " . ($rowIndex + 1) . ": " . implode('; ', $rowText) . "\n";
+                }
+            }
+
+            Log::info('Extracted text from Excel', [
+                'file' => $filePath,
+                'text_length' => strlen($text),
+                'rows_count' => count($data)
+            ]);
+            
+            if (empty(trim($text))) {
+                throw new \Exception("No text extracted from Excel file");
+            }
+
+            return $text;
+        } catch (\Exception $e) {
+            throw new \Exception("Excel extraction failed: " . $e->getMessage());
+        }
+    }
+
+    private function extractFromWord(string $filePath): string
+    {
+        try {
+            $phpWord = IOFactory::load($filePath);
+            $text = '';
+            
+            foreach ($phpWord->getSections() as $section) {
+                $text .= $this->extractTextFromContainer($section) . "\n";
+            }
+
+            Log::info('Extracted text from Word document', [
+                'file' => $filePath,
+                'text_length' => strlen($text)
+            ]);
+            
+            if (empty(trim($text))) {
+                throw new \Exception("No text extracted from Word document");
+            }
+
+            return trim($text);
+        } catch (\Exception $e) {
+            throw new \Exception("Word document extraction failed: " . $e->getMessage());
+        }
+    }
+
+    private function extractFromOdt(string $filePath): string
+    {
+        try {
+            $phpWord = IOFactory::load($filePath, 'ODText');
+            $text = '';
+            
+            foreach ($phpWord->getSections() as $section) {
+                $text .= $this->extractTextFromContainer($section) . "\n";
+            }
+
+            Log::info('Extracted text from ODT document', [
+                'file' => $filePath,
+                'text_length' => strlen($text)
+            ]);
+            
+            if (empty(trim($text))) {
+                throw new \Exception("No text extracted from ODT document");
+            }
+
+            return trim($text);
+        } catch (\Exception $e) {
+            throw new \Exception("ODT document extraction failed: " . $e->getMessage());
+        }
+    }
+
+    private function extractTextFromContainer($container): string
+    {
+        $text = '';
+        
+        if (method_exists($container, 'getElements')) {
+            foreach ($container->getElements() as $element) {
+                $elementClass = get_class($element);
+                
+                switch ($elementClass) {
+                    case 'PhpOffice\PhpWord\Element\Text':
+                        $text .= $element->getText() . " ";
+                        break;
+                    case 'PhpOffice\PhpWord\Element\TextRun':
+                        foreach ($element->getElements() as $textElement) {
+                            if (method_exists($textElement, 'getText')) {
+                                $text .= $textElement->getText() . " ";
+                            }
+                        }
+                        break;
+                    case 'PhpOffice\PhpWord\Element\TextBreak':
+                        $text .= "\n";
+                        break;
+                    case 'PhpOffice\PhpWord\Element\ListItem':
+                        $text .= "• " . $this->extractTextFromContainer($element) . "\n";
+                        break;
+                    default:
+                        if (method_exists($element, 'getElements')) {
+                            $text .= $this->extractTextFromContainer($element) . " ";
+                        } elseif (method_exists($element, 'getText')) {
+                            $text .= $element->getText() . " ";
+                        }
+                        break;
+                }
+            }
+        }
+        
         return $text;
     }
 

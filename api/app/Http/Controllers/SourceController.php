@@ -7,6 +7,7 @@ use App\Models\KnowledgeBase;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Log;
 
 class SourceController extends Controller
 {
@@ -95,12 +96,50 @@ class SourceController extends Controller
 
     public function destroy(string $id): JsonResponse
     {
-        $source = Source::findOrFail($id);
-        $source->delete();
+        $source = Source::with('chunks')->findOrFail($id);
+        
+        try {
+            $chunksDeleted = $source->chunks()->delete();
+            
+            $this->deletePhysicalFile($source);
+            
+            $source->delete();
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Source deleted successfully'
-        ]);
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Source and associated data deleted successfully',
+                'data' => [
+                    'chunks_deleted' => $chunksDeleted
+                ]
+            ]);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to delete source',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    private function deletePhysicalFile(Source $source): void
+    {
+        try {
+            $filePath = $source->source_identifier;
+            
+            if (str_starts_with($filePath, 'sources/')) {
+                $fullPath = storage_path('app/private/' . $filePath);
+                
+                if (file_exists($fullPath)) {
+                    unlink($fullPath);
+                }
+            }
+        } catch (\Exception $e) {
+            Log::warning('Failed to delete physical file for source', [
+                'source_id' => $source->id,
+                'file_path' => $source->source_identifier,
+                'error' => $e->getMessage()
+            ]);
+        }
     }
 }

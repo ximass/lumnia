@@ -61,7 +61,14 @@ class ChatController extends Controller
 
     public function getMessages(Request $request, Chat $chat)
     {
-        $messages = $chat->messages()->with('user')->get();
+        $messages = $chat->messages()
+            ->with([
+                'user',
+                'rating' => function($query) use ($request) {
+                    $query->where('user_id', $request->user()->id);
+                }
+            ])
+            ->get();
 
         return response()->json($messages);
     }
@@ -112,6 +119,7 @@ class ChatController extends Controller
                     header('X-Accel-Buffering: no');
                     
                     $fullAnswer = '';
+                    $chunks = [];
                     
                     try {
                         $llmController = new LLMController($this->ragService);
@@ -125,10 +133,10 @@ class ChatController extends Controller
                         ]) . "\n\n";
                         flush();
                         
-                        $answerText = $llmController->generateAnswerStream($message->text, $chat, function ($chunk) use (&$fullAnswer) {
+                        $result = $llmController->generateAnswerStream($message->text, $chat, function ($chunk) use (&$fullAnswer) {
                             $fullAnswer .= $chunk;
                             
-                            Log::info('Streaming chunk sent', ['chunk_length' => strlen($chunk), 'chunk' => substr($chunk, 0, 50)]);
+                            //Log::info('Streaming chunk sent', ['chunk_length' => strlen($chunk), 'chunk' => substr($chunk, 0, 50)]);
                             
                             echo "data: " . json_encode([
                                 'type' => 'chunk',
@@ -142,7 +150,7 @@ class ChatController extends Controller
                             usleep(50000); // 50ms delay
                         });
 
-                        if ($answerText === false || $answerText === null || empty($answerText)) {
+                        if (!is_array($result) || !isset($result['answer']) || empty($result['answer'])) {
                             Log::error('LLM failed to generate streaming answer for message ID: ' . $message->id);
                             
                             $errorAnswer = 'Desculpe, ocorreu um erro ao processar sua solicitação. Tente novamente.';
@@ -153,7 +161,21 @@ class ChatController extends Controller
                                 'message' => 'Erro ao gerar resposta'
                             ]) . "\n\n";
                         } else {
+                            $answerText = $result['answer'];
+                            $chunks = $result['chunks'] ?? [];
+                            
                             $message->update(['answer' => $answerText]);
+                            
+                            // Salvar os chunks utilizados como fontes de informação
+                            if (!empty($chunks)) {
+                                foreach ($chunks as $chunk) {
+                                    $message->informationSources()->create([
+                                        'content' => $chunk->text
+                                    ]);
+                                }
+                                
+                                Log::info('Saved ' . count($chunks) . ' information sources for streaming message ID: ' . $message->id);
+                            }
                             
                             echo "data: " . json_encode([
                                 'type' => 'complete',
@@ -216,6 +238,7 @@ class ChatController extends Controller
                 return response()->json([
                     'status' => 'partial_success',
                     'message' => 'Mensagem enviada, mas houve erro na resposta da IA.',
+                    'message_id' => $message->id,
                     'answer' => [
                         'text' => 'Desculpe, ocorreu um erro ao processar sua solicitação. Tente novamente.',
                         'updated_at' => $message->created_at->toIso8601String()
@@ -226,6 +249,7 @@ class ChatController extends Controller
             return response()->json([
                 'status' => 'success',
                 'message' => 'Mensagem enviada com sucesso!',
+                'message_id' => $message->id,
                 'answer' => [
                     'text' => $answerText,
                     'updated_at' => $message->created_at->toIso8601String()
@@ -282,14 +306,25 @@ class ChatController extends Controller
 
             Log::info('Generating answer for message ID: ' . $message->id . ' in chat ID: ' . $chat->id);
 
-            $answerText = $llmController->generateAnswer($message->text, $chat);
+            $result = $llmController->generateAnswer($message->text, $chat);
 
-            if ($answerText === false || $answerText === null || empty(trim($answerText))) {
+            if (!is_array($result) || !isset($result['answer']) || empty(trim($result['answer']))) {
                 Log::error('LLM Controller returned invalid response for message ID: ' . $message->id);
                 return false;
             }
 
+            $answerText = $result['answer'];
+            $chunks = $result['chunks'] ?? [];
+
             $message->update(['answer' => $answerText]);
+
+            if (!empty($chunks)) {
+                foreach ($chunks as $chunk) {
+                    $message->informationSources()->create([
+                        'content' => $chunk->text
+                    ]);
+                }
+            }
 
             Log::info('Answer generated successfully for message ID: ' . $message->id);
 

@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<office:document-content xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0" xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0" xmlns:style="urn:oasis:names:tc:opendocument:xmlns:style:1.0">
+<office:body>
+<office:text>
+
+<text:h text:style-name="Heading_20_1" text:outline-level="1">
+Plano de Negócios - Startup TechSolution
+</text:h>
+
+<text:h text:style-name="Heading_20_2" text:outline-level="2">
+1. Resumo Executivo
+</text:h>
+
+<text:p text:style-name="Standard">
+A TechSolution é uma startup focada no desenvolvimento de soluções inovadoras em inteligência artificial para pequenas e médias empresas. Nossa missão é democratizar o acesso à tecnologia de IA, oferecendo ferramentas simples e eficazes.
+</text:p>
+
+<text:h text:style-name="Heading_20_2" text:outline-level="2">
+2. Análise de Mercado
+</text:h>
+
+<text:p text:style-name="Standard">
+O mercado de IA no Brasil movimenta aproximadamente R$ 1,2 bilhões anualmente, com crescimento esperado de 25% ao ano. Nosso público-alvo são empresas com 10 a 500 funcionários que buscam automação de processos.
+</text:p>
+
+<text:h text:style-name="Heading_20_2" text:outline-level="2">
+3. Produtos e Serviços
+</text:h>
+
+<text:p text:style-name="Standard">
+Oferecemos três principais soluções:
+</text:p>
+
+<text:list text:style-name="List_20_1">
+<text:list-item>
+<text:p text:style-name="List_20_Contents">ChatBot inteligente para atendimento ao cliente</text:p>
+</text:list-item>
+<text:list-item>
+<text:p text:style-name="List_20_Contents">Sistema de análise preditiva de vendas</text:p>
+</text:list-item>
+<text:list-item>
+<text:p text:style-name="List_20_Contents">Automação de processos administrativos</text:p>
+</text:list-item>
+</text:list>
+
+<text:h text:style-name="Heading_20_2" text:outline-level="2">
+4. Modelo de Negócio
+</text:h>
+
+<text:p text:style-name="Standard">
+Adotamos o modelo SaaS (Software as a Service) com planos mensais que variam de R$ 299 a R$ 1.999, dependendo do número de usuários e funcionalidades.
+</text:p>
+
+<text:h text:style-name="Heading_20_2" text:outline-level="2">
+5. Equipe
+</text:h>
+
+<text:p text:style-name="Standard">
+Nossa equipe é composta por 8 profissionais especializados:
+- 3 Desenvolvedores Full Stack
+- 2 Especialistas em IA/ML
+- 1 Designer UX/UI
+- 1 Gerente de Produtos
+- 1 Diretor Comercial
+</text:p>
+
+<text:h text:style-name="Heading_20_2" text:outline-level="2">
+6. Projeções Financeiras
+</text:h>
+
+<text:p text:style-name="Standard">
+Ano 1: R$ 480.000 em receita
+Ano 2: R$ 1.200.000 em receita
+Ano 3: R$ 2.400.000 em receita
+</text:p>
+
+<text:p text:style-name="Standard">
+Investimento inicial necessário: R$ 350.000
+Break-even esperado: 18 meses
+</text:p>
+
+<text:h text:style-name="Heading_20_2" text:outline-level="2">
+7. Estratégia de Marketing
+</text:h>
+
+<text:p text:style-name="Standard">
+Focaremos em marketing digital, parcerias estratégicas com consultorias empresariais e participação em eventos do setor tecnológico.
+</text:p>
+
+<text:p text:style-name="Standard">
+Data de elaboração: 29 de agosto de 2025
+Versão: 1.0
+</text:p>
+
+</office:text>
+</office:body>
+</office:document-content>

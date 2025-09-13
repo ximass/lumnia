@@ -1,0 +1,83 @@
+%PDF-1.4
+1 0 obj
+<<
+/Type /Catalog
+/Pages 2 0 R
+>>
+endobj
+
+2 0 obj
+<<
+/Type /Pages
+/Kids [3 0 R]
+/Count 1
+>>
+endobj
+
+3 0 obj
+<<
+/Type /Page
+/Parent 2 0 R
+/MediaBox [0 0 612 792]
+/Contents 4 0 R
+/Resources <<
+/Font <<
+/F1 5 0 R
+>>
+>>
+>>
+endobj
+
+4 0 obj
+<<
+/Length 100
+>>
+stream
+BT
+/F1 24 Tf
+50 750 Td
+(Relatório de Análise de Dados) Tj
+0 -30 Td
+(Este documento contém informações confidenciais) Tj
+0 -30 Td
+(sobre análise de performance empresarial.) Tj
+0 -50 Td
+(Dados de vendas: R$ 1.250.000,00) Tj
+0 -30 Td
+(Crescimento anual: 12.5%) Tj
+0 -30 Td
+(Margem de lucro: 8.3%) Tj
+0 -30 Td
+(Produtos em estoque: 2.340 itens) Tj
+0 -30 Td
+(Clientes ativos: 1.567) Tj
+0 -50 Td
+(Análise realizada em 29/08/2025) Tj
+ET
+endstream
+endobj
+
+5 0 obj
+<<
+/Type /Font
+/Subtype /Type1
+/BaseFont /Helvetica
+>>
+endobj
+
+xref
+0 6
+0000000000 65535 f 
+0000000010 00000 n 
+0000000053 00000 n 
+0000000110 00000 n 
+0000000254 00000 n 
+0000000406 00000 n 
+trailer
+<<
+/Size 6
+/Root 1 0 R
+>>
+startxref
+469
+%%EOF

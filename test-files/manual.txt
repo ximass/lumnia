@@ -1,0 +1,51 @@
+Manual de Treinamento - Sistema de Gestão
+
+CAPÍTULO 1: INTRODUÇÃO AO SISTEMA
+
+O Sistema de Gestão Empresarial é uma plataforma integrada desenvolvida para otimizar os processos organizacionais e melhorar a produtividade das equipes.
+
+Principais Funcionalidades:
+- Gestão de usuários e permissões
+- Controle de estoque e inventário
+- Módulo financeiro completo
+- Relatórios gerenciais
+- Dashboard executivo
+- Integração com sistemas externos
+
+CAPÍTULO 2: PRIMEIROS PASSOS
+
+2.1 Acesso ao Sistema
+Para acessar o sistema, utilize suas credenciais fornecidas pelo administrador. O login deve ser feito através do portal web utilizando navegadores compatíveis (Chrome, Firefox, Edge).
+
+2.2 Interface Principal
+A interface principal é dividida em seções:
+- Menu lateral esquerdo: Navegação principal
+- Área central: Conteúdo das páginas
+- Barra superior: Notificações e configurações do usuário
+- Rodapé: Informações do sistema e versão
+
+CAPÍTULO 3: MÓDULOS DO SISTEMA
+
+3.1 Módulo de Vendas
+Permite o cadastro de clientes, produtos, pedidos e acompanhamento do funil de vendas. Inclui relatórios de performance e comissões.
+
+3.2 Módulo Financeiro
+Controle completo de contas a pagar, contas a receber, fluxo de caixa e conciliação bancária.
+
+3.3 Módulo de Estoque
+Gestão de produtos, fornecedores, entrada e saída de mercadorias, controle de validade e localização.
+
+CAPÍTULO 4: RELATÓRIOS E DASHBOARDS
+
+O sistema oferece diversos relatórios pré-configurados e a possibilidade de criar relatórios personalizados. Os dashboards apresentam indicadores em tempo real.
+
+CAPÍTULO 5: CONFIGURAÇÕES E ADMINISTRAÇÃO
+
+Apenas usuários com perfil de administrador podem acessar as configurações do sistema, incluindo backup, segurança e integrações.
+
+ANEXO A: TROUBLESHOOTING
+
+Problemas comuns e soluções:
+- Erro de login: Verificar credenciais e conexão
+- Lentidão: Limpar cache do navegador
+- Relatórios não carregam: Verificar permissões

@@ -46,6 +46,24 @@
                   </div>
 
                   <div class="message-text">{{ message.answer }}</div>
+                  
+                  <div class="rating-buttons mt-1 d-flex justify-end">
+                    <v-btn
+                      size="x-small"
+                      variant="text"
+                      :color="message.rating?.rating === 'like' ? 'green' : 'grey'"
+                      @click="message.rating?.rating === 'like' ? removeRating(message.id) : handleRating(message.id, 'like')"
+                      icon="mdi-thumb-up"
+                    ></v-btn>
+                    <v-btn
+                      size="x-small"
+                      variant="text"
+                      :color="message.rating?.rating === 'dislike' ? 'red' : 'grey'"
+                      @click="message.rating?.rating === 'dislike' ? removeRating(message.id) : handleRating(message.id, 'dislike')"
+                      icon="mdi-thumb-down"
+                      class="ml-1"
+                    ></v-btn>
+                  </div>
                 </div>
               </div>
             </v-list-item-title>
@@ -68,25 +86,65 @@
           </v-list-item>
         </v-list>
       </v-card-text>
-      <v-dialog v-model="isModalOpen" max-width="600px">
+      <v-dialog v-model="isModalOpen" max-width="800px">
         <v-card>
-          <v-card-title>Fonte de informações</v-card-title>
+          <v-card-title class="d-flex align-center">
+            <v-icon class="mr-2">mdi-book-open-variant</v-icon>
+            Conhecimentos utilizados
+          </v-card-title>
           <v-card-text>
             <div v-if="informationSources.length">
-              <v-row v-for="source in informationSources" :key="source.id">
-                <v-textarea readonly outlined :value="source.content" rows="auto">
-                  {{ source.content }}
-                </v-textarea>
-              </v-row>
+              <v-alert
+                type="info"
+                variant="tonal"
+                class="mb-4"
+                density="compact"
+              >
+                Os seguintes trechos da base de conhecimento foram utilizados para formular a resposta:
+              </v-alert>
+              
+              <v-expansion-panels v-if="informationSources.length > 1" variant="accordion">
+                <v-expansion-panel
+                  v-for="(source, index) in informationSources"
+                  :key="source.id"
+                  :title="`informação ${index + 1}`"
+                >
+                  <v-expansion-panel-text>
+                    <v-card variant="outlined" class="pa-3">
+                      <div class="text-body-2" style="white-space: pre-wrap; line-height: 1.5;">
+                        {{ source.content }}
+                      </div>
+                    </v-card>
+                  </v-expansion-panel-text>
+                </v-expansion-panel>
+              </v-expansion-panels>
+              
+              <v-card v-else variant="outlined" class="pa-3">
+                <div class="text-body-2" style="white-space: pre-wrap; line-height: 1.5;">
+                  {{ informationSources[0].content }}
+                </div>
+              </v-card>
             </div>
 
             <div v-else>
-              <p>Nenhuma fonte disponível.</p>
+              <v-alert
+                type="warning"
+                variant="tonal"
+                density="compact"
+              >
+                Nenhum trecho de conhecimento específico foi utilizado para esta resposta.
+              </v-alert>
             </div>
           </v-card-text>
           <v-card-actions>
             <v-spacer></v-spacer>
-            <v-btn @click="isModalOpen = false" variant="text">Fechar</v-btn>
+            <v-btn 
+              @click="isModalOpen = false" 
+              color="primary"
+              variant="text"
+            >
+              Fechar
+            </v-btn>
           </v-card-actions>
         </v-card>
       </v-dialog>
@@ -127,7 +185,7 @@
     MessageWithUser,
     ChatWithLastMessage,
     InformationSource,
-    SendMessageResponse,
+    MessageRating,
   } from '@/types/types'
 
   const scrollToBottom = async () => {
@@ -182,10 +240,13 @@
         currentStreamingMessage.value = ''
 
         try {
-          // Add user message immediately
+          let tempMessageId: number | null = null
+
           if (user.value) {
+            tempMessageId = Date.now() // Temp ID
+            
             const userMessage: MessageWithUser = {
-              id: Date.now(),
+              id: tempMessageId,
               chat_id: props.currentChat.id,
               user_id: user.value.id,
               user: user.value,
@@ -268,6 +329,10 @@
                                   const lastMessage = props.messages[props.messages.length - 1]
                                   lastMessage.answer = streamingAnswer
                                   lastMessage.updated_at = data.updated_at
+
+                                  if (data.message_id && tempMessageId && lastMessage.id === tempMessageId) {
+                                    lastMessage.id = data.message_id
+                                  }
                                 }
                                 isLoading.value = false
                                 return
@@ -302,6 +367,10 @@
                     const lastMessage = props.messages[props.messages.length - 1]
                     lastMessage.answer = data.answer ? data.answer.text : ''
                     lastMessage.updated_at = data.answer ? data.answer.updated_at : new Date().toISOString()
+
+                    if (data.message_id && tempMessageId && lastMessage.id === tempMessageId) {
+                      lastMessage.id = data.message_id
+                    }
                   }
 
                   if (data.status === 'partial_success') {
@@ -373,13 +442,52 @@
       const openInformationSources = async (messageId: number) => {
         try {
           const response = await axios.get<InformationSource[]>(
-            `/api/message/${messageId}/information-sources`
+            `/api/messages/${messageId}/information-sources`
           )
           informationSources.value = response.data
           isModalOpen.value = true
         } catch (error: any) {
           const errorMsg = error.response?.data?.message || 'Erro ao buscar fontes.'
           showToast(errorMsg)
+        }
+      }
+
+      const handleRating = async (messageId: number, rating: 'like' | 'dislike') => {
+        try {
+          const response = await axios.post<{status: string, message: string, data: MessageRating}>(
+            `/api/messages/${messageId}/rating`,
+            { rating }
+          )
+          
+          if (response.data.status === 'success') {
+            const message = props.messages?.find(m => m.id === messageId)
+            if (message) {
+              message.rating = response.data.data
+            }
+            showToast(response.data.message, 'success')
+          }
+        } catch (error: any) {
+          const errorMsg = error.response?.data?.message || 'Erro ao avaliar mensagem.'
+          showToast(errorMsg, 'error')
+        }
+      }
+
+      const removeRating = async (messageId: number) => {
+        try {
+          const response = await axios.delete<{status: string, message: string}>(
+            `/api/messages/${messageId}/rating`
+          )
+          
+          if (response.data.status === 'success') {
+            const message = props.messages?.find(m => m.id === messageId)
+            if (message) {
+              message.rating = undefined
+            }
+            showToast(response.data.message, 'success')
+          }
+        } catch (error: any) {
+          const errorMsg = error.response?.data?.message || 'Erro ao remover avaliação.'
+          showToast(errorMsg, 'error')
         }
       }
 
@@ -394,6 +502,8 @@
         handleEnterKey,
         updateChatName,
         openInformationSources,
+        handleRating,
+        removeRating,
       }
     },
     updated() {
@@ -502,6 +612,17 @@
 
   .streaming-message {
     justify-content: flex-start;
+  }
+
+  .rating-buttons {
+    display: flex;
+    align-items: center;
+    opacity: 0.7;
+    transition: opacity 0.2s ease;
+  }
+
+  .received-message:hover .rating-buttons {
+    opacity: 1;
   }
 
   .blinking-cursor {

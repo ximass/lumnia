@@ -25,4 +25,14 @@ class Message extends Model
     {
         return $this->hasMany(InformationSource::class);
     }
+
+    public function rating()
+    {
+        return $this->hasOne(MessageRating::class);
+    }
+
+    public function ratings()
+    {
+        return $this->hasMany(MessageRating::class);
+    }
 }

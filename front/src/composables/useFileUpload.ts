@@ -14,14 +14,25 @@ export const useFileUpload = () => {
   const isUploading = ref(false)
 
   const validateFiles = (files: File[]): boolean => {
-    const allowedTypes = ['text/plain', 'application/pdf']
+    const allowedTypes = [
+      'text/plain', 
+      'application/pdf', 
+      'text/csv',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.oasis.opendocument.text'
+    ]
+    const allowedExtensions = ['.txt', '.pdf', '.csv', '.xlsx', '.doc', '.docx', '.odt']
     const maxSize = 10 * 1024 * 1024 // 10MB
 
     for (const file of files) {
-      if (!allowedTypes.includes(file.type) && 
-          !file.name.toLowerCase().endsWith('.txt') && 
-          !file.name.toLowerCase().endsWith('.pdf')) {
-        showToast(`Arquivo ${file.name} não é um formato válido (apenas .txt e .pdf)`)
+      const fileName = file.name.toLowerCase()
+      const hasValidType = allowedTypes.includes(file.type)
+      const hasValidExtension = allowedExtensions.some(ext => fileName.endsWith(ext))
+
+      if (!hasValidType && !hasValidExtension) {
+        showToast(`Arquivo ${file.name} não é um formato válido (apenas .txt, .pdf, .csv, .xlsx, .doc, .docx e .odt)`)
         return false
       }
 

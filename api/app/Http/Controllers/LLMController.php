@@ -29,16 +29,18 @@ class LLMController extends Controller
     {
         $persona = $this->getEffectivePersona($chat);
         
-        $answer = $this->generateAnswerWithRAG($message, $chat, $persona);
+        $result = $this->generateAnswerWithRAG($message, $chat, $persona);
 
-        return $answer;
+        return $result;
     }
 
     public function generateAnswerStream($message, Chat $chat, $callback = null)
     {
         $persona = $this->getEffectivePersona($chat);
         
-        return $this->generateAnswerWithRAGStream($message, $chat, $persona, $callback);
+        $result = $this->generateAnswerWithRAGStream($message, $chat, $persona, $callback);
+        
+        return $result;
     }
 
     private function getEffectivePersona(Chat $chat)
@@ -69,7 +71,7 @@ class LLMController extends Controller
         }
     }
 
-    private function generateAnswerWithRAG(string $userMessage, Chat $chat, $persona = null): string
+    private function generateAnswerWithRAG(string $userMessage, Chat $chat, $persona = null): array
     {
         Log::info('Generating answer with RAG', [
             'chat_id' => $chat->id,
@@ -108,10 +110,20 @@ class LLMController extends Controller
                 'chat_id'       => $chat->id
             ]);
 
-            return $this->generateLLMResponse($ragPrompt, $persona, $conversationHistory);
+            $answer = $this->generateLLMResponse($ragPrompt, $persona, $conversationHistory);
+            
+            return [
+                'answer' => $answer,
+                'chunks' => $relevantChunks
+            ];
         }
 
-        return $this->generateLLMResponse($userMessage, $persona, $conversationHistory);
+        $answer = $this->generateLLMResponse($userMessage, $persona, $conversationHistory);
+        
+        return [
+            'answer' => $answer,
+            'chunks' => []
+        ];
     }
 
     private function generateAnswerWithRAGStream(string $userMessage, Chat $chat, $persona = null, $callback = null)
@@ -152,10 +164,20 @@ class LLMController extends Controller
                 'chat_id' => $chat->id
             ]);
 
-            return $this->generateLLMResponseStream($ragPrompt, $persona, $conversationHistory, $callback);
+            $answer = $this->generateLLMResponseStream($ragPrompt, $persona, $conversationHistory, $callback);
+            
+            return [
+                'answer' => $answer,
+                'chunks' => $relevantChunks
+            ];
         }
 
-        return $this->generateLLMResponseStream($userMessage, $persona, $conversationHistory, $callback);
+        $answer = $this->generateLLMResponseStream($userMessage, $persona, $conversationHistory, $callback);
+        
+        return [
+            'answer' => $answer,
+            'chunks' => []
+        ];
     }
 
     private function generateLLMResponse(string $message, $persona = null, array $conversationHistory = []): string

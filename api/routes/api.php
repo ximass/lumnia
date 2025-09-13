@@ -13,6 +13,8 @@ use App\Http\Controllers\SourceController;
 use App\Http\Controllers\ChunkController;
 use App\Http\Controllers\SourceProcessingController;
 use App\Http\Controllers\SearchController;
+use App\Http\Controllers\MessageRatingController;
+use App\Http\Controllers\MessageController;
 
 Route::middleware('web')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
@@ -65,6 +67,14 @@ Route::middleware('auth:sanctum')->group(function () {
     
     // Search route
     Route::post('/search', [SearchController::class, 'search']);
+    
+    // Information Sources routes
+    Route::get('/messages/{message}/information-sources', [MessageController::class, 'getInformationSources']);
+
+    // Message Rating routes
+    Route::get('/messages/{message}/rating', [MessageRatingController::class, 'show']);
+    Route::post('/messages/{message}/rating', [MessageRatingController::class, 'store']);
+    Route::delete('/messages/{message}/rating', [MessageRatingController::class, 'destroy']);
     
     // Resource routes (CRUD completo)
     Route::apiResource('/groups', GroupController::class);

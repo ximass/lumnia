@@ -152,6 +152,7 @@ export interface ChatWithLastMessage extends Chat {
 export interface MessageWithUser extends Message {
   user: User
   updated_at: string
+  rating?: MessageRating
 }
 
 export interface InformationSource {
@@ -237,4 +238,17 @@ export interface ClearContextResponse {
   data?: {
     messages_deleted: number
   }
+}
+
+export interface MessageRating {
+  id: number
+  message_id: number
+  user_id: number
+  rating: 'like' | 'dislike'
+  created_at?: string
+  updated_at?: string
+}
+
+export interface MessageRatingFormData {
+  rating: 'like' | 'dislike'
 }
