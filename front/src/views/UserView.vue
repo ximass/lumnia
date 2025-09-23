@@ -36,7 +36,7 @@
   import axios from 'axios'
   import UserForm from '@/components/UserForm.vue'
   import { useToast } from '@/composables/useToast'
-  import type { User } from '@/types/types'
+  import type { UserWithGroups } from '@/types/types'
 
   export default defineComponent({
     name: 'UserView',
@@ -45,8 +45,8 @@
       const { showToast } = useToast()
       const isFormOpen = ref(false)
 
-      const users = ref<User[]>([])
-      const selectedUser = ref<User | null>(null)
+      const users = ref<UserWithGroups[]>([])
+      const selectedUser = ref<UserWithGroups | null>(null)
 
       const headers = [
         { title: 'Nome', value: 'name', sortable: true },
@@ -57,7 +57,7 @@
 
       const fetchUsers = async () => {
         try {
-          const response = await axios.get<User[]>('/api/users')
+          const response = await axios.get<UserWithGroups[]>('/api/users')
           users.value = response.data
         } catch (error: any) {
           const errorMsg = error.response?.data?.message || 'Erro ao buscar usuários'
@@ -65,7 +65,7 @@
         }
       }
 
-      const editUser = (user: User) => {
+      const editUser = (user: UserWithGroups) => {
         selectedUser.value = { ...user }
         isFormOpen.value = true
       }
