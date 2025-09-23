@@ -9,7 +9,7 @@
               <p>Esta é a página inicial do seu aplicativo.</p>
             </v-card-text>
             <v-card-actions class="justify-end">
-              <v-btn color="primary" @click="$router.push('/chats')">Iniciar Chat</v-btn>
+              <v-btn color="primary" @click="navigateTo('/chats')">Iniciar Chat</v-btn>
             </v-card-actions>
           </v-card>
         </v-col>
@@ -20,8 +20,20 @@
 
 <script lang="ts">
   import { defineComponent } from 'vue'
+  import { useRouter } from 'vue-router'
 
   export default defineComponent({
     name: 'Home',
+    setup() {
+      const router = useRouter()
+
+      const navigateTo = (route: string) => {
+        router.push(route)
+      }
+
+      return {
+        navigateTo
+      }
+    },
   })
 </script>

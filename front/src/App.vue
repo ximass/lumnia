@@ -1,7 +1,7 @@
 <template>
   <v-app>
-    <TopMenu v-if="isAuthenticated" :user="user" @toggleDrawer="drawerOpen = !drawerOpen" />
-    <SideMenu v-if="isAuthenticated" :user="user" :drawerOpen="drawerOpen" />
+    <TopMenu v-if="isAuthenticated && user" :user="user" @toggleDrawer="drawerOpen = !drawerOpen" />
+    <SideMenu v-if="isAuthenticated && user" :user="user" :drawerOpen="drawerOpen" />
     <v-main><router-view /></v-main>
     <v-snackbar v-model="isToastVisible" timeout="3000" :color="toastColor">
       {{ toastMessage }}
