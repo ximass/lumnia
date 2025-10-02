@@ -5,6 +5,7 @@ namespace App\Services\Providers;
 use App\Contracts\EmbeddingProvider;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class LocalEmbeddingProvider implements EmbeddingProvider
 {
@@ -13,27 +14,45 @@ class LocalEmbeddingProvider implements EmbeddingProvider
     private int $maxRetries;
     private int $retryDelay;
     private string $model;
+    private string $provider;
 
     public function __construct(
         string $apiUrl = null,
         int $batchSize = 10,
         int $maxRetries = 3,
         int $retryDelay = 1,
-        string $model = 'text-embedding-nomic-embed-text-v1.5'
+        string $model = null
     ) {
-        $this->apiUrl = $apiUrl ?: config('services.embedding.local_url', 'http://127.0.0.1:1234');
+        $this->provider = config('chat.llm.default_provider', 'llm_studio');
+        $providerConfig = config("chat.providers.{$this->provider}");
+        
+        $this->apiUrl = $providerConfig['embedding_endpoint'];
         $this->batchSize = $batchSize;
         $this->maxRetries = $maxRetries;
         $this->retryDelay = $retryDelay;
-        $this->model = $model;
+        $this->model = $model ?: $providerConfig['embedding_model'] ?? config('services.embedding.model');
     }
 
     public function getEmbeddings(array $texts): array
     {
+        if ($this->provider === 'ollama') {
+            return $this->getOllamaEmbeddings($texts);
+        }
+        
+        return $this->getLmStudioEmbeddings($texts);
+    }
+
+    private function getLmStudioEmbeddings(array $texts): array
+    {
         $response = Http::timeout(60)
-            ->post("{$this->apiUrl}/v1/embeddings", [
+            ->post($this->apiUrl, [
                 'model' => $this->model,
                 'input' => $texts,
+            ]);
+        
+            Log::info('LM Studio Embedding Request', [
+                'url' => $this->apiUrl,
+                'model' => $this->model,
             ]);
 
         if (!$response->successful()) {
@@ -43,16 +62,43 @@ class LocalEmbeddingProvider implements EmbeddingProvider
         $data = $response->json();
         
         if (!isset($data['data']) || !is_array($data['data'])) {
-            throw new \InvalidArgumentException('Invalid response format from embedding API');
+            throw new \InvalidArgumentException('Invalid response format from LM Studio embedding API');
         }
 
         return array_map(function ($item) {
             if (!isset($item['embedding']) || !is_array($item['embedding'])) {
-                throw new \InvalidArgumentException('Invalid embedding format in response');
+                throw new \InvalidArgumentException('Invalid embedding format in LM Studio response');
             }
             
             return array_map('floatval', $item['embedding']);
         }, $data['data']);
+    }
+
+    private function getOllamaEmbeddings(array $texts): array
+    {
+        $embeddings = [];
+        
+        foreach ($texts as $text) {
+            $response = Http::timeout(60)
+                ->post($this->apiUrl, [
+                    'model' => $this->model,
+                    'prompt' => $text,
+                ]);
+
+            if (!$response->successful()) {
+                throw new RequestException($response);
+            }
+
+            $data = $response->json();
+            
+            if (!isset($data['embedding']) || !is_array($data['embedding'])) {
+                throw new \InvalidArgumentException('Invalid response format from Ollama embedding API');
+            }
+
+            $embeddings[] = array_map('floatval', $data['embedding']);
+        }
+        
+        return $embeddings;
     }
 
     public function getBatchSize(): int

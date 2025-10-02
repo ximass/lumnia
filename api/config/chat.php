@@ -98,15 +98,19 @@ return [
     'providers' => [
         'llm_studio' => [
             'endpoint' => env('LLM_API_URL') . '/v1/chat/completions',
+            'embedding_endpoint' => env('LLM_API_URL') . '/v1/embeddings',
             'max_tokens' => env('LLM_STUDIO_MAX_TOKENS', 1000),
             'model' => env('LLM_STUDIO_MODEL', 'gemma-3-1b-it-qat'),
+            'embedding_model' => env('LLM_STUDIO_EMBEDDING_MODEL', 'text-embedding-nomic-embed-text-v1.5'),
             'timeout' => env('LLM_STUDIO_TIMEOUT', 120),
             'type' => 'openai_compatible',
         ],
         
         'ollama' => [
             'endpoint' => env('LLM_API_URL') . '/api/generate',
+            'embedding_endpoint' => env('LLM_API_URL') . '/api/embeddings',
             'model' => env('LLM_DEFAULT_MODEL', 'llama2'),
+            'embedding_model' => env('OLLAMA_EMBEDDING_MODEL', 'text-embedding-nomic-embed-text-v1.5'),
             'context_format' => env('OLLAMA_CONTEXT_FORMAT', 'conversational'),
             'timeout' => env('OLLAMA_TIMEOUT', 100),
             'type' => 'ollama',
