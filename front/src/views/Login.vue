@@ -55,6 +55,7 @@
           }
           router.push('/')
         } catch (err) {
+          loading.value = false
           showToast('Credenciais inválidas')
         }
       }
