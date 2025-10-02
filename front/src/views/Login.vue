@@ -1,31 +1,24 @@
 <template>
-  <v-container class="login-bg" fluid>
-    <v-row align="center" justify="center" style="height: 100vh">
-      <v-col cols="12" sm="6" md="4" class="offset-form">
-        <v-card>
-          <v-card-title class="justify-center">Faça login</v-card-title>
-          <v-card-text>
-            <v-form @submit.prevent="loginHandler">
-              <v-text-field label="Email" v-model="email" type="email" required></v-text-field>
-              <v-text-field
-                label="Senha"
-                v-model="password"
-                type="password"
-                required
-              ></v-text-field>
-              <v-btn :loading="loading" type="submit" color="primary" block>Entrar</v-btn>
-              <v-overlay :model-value="loading" class="align-center justify-center" persistent>
-                <v-progress-circular indeterminate color="primary" size="64" />
-              </v-overlay>
-            </v-form>
-          </v-card-text>
-          <v-card-actions class="justify-center">
-            <router-link to="/register">Não possui uma conta? Registre-se</router-link>
-          </v-card-actions>
-        </v-card>
-      </v-col>
-    </v-row>
-  </v-container>
+  <div class="login-container">
+    <!-- Background com pontos conectados -->
+    <AnimatedBackground />
+    
+    <!-- Conteúdo principal -->
+    <v-container class="login-content d-flex justify-center" fluid style="padding-top: 8vh;">
+      <v-row justify="center" style="width: 100%">
+        <v-col cols="12" sm="8" md="6" lg="4" xl="3">
+          <!-- Logo e Texto -->
+          <LumniaLogo :logo-src="LogoLumnia" />
+          
+          <!-- Card de Login -->
+          <LoginForm 
+            :loading="loading" 
+            @login="loginHandler"
+          />
+        </v-col>
+      </v-row>
+    </v-container>
+  </div>
 </template>
 
 <script lang="ts">
@@ -33,23 +26,35 @@
   import { useRouter } from 'vue-router'
   import { useAuth } from '@/composables/auth'
   import { useToast } from '@/composables/useToast'
+  import AnimatedBackground from '@/components/AnimatedBackground.vue'
+  import LumniaLogo from '@/components/LumniaLogo.vue'
+  import LoginForm from '@/components/LoginForm.vue'
+  import LogoLumnia from '@/assets/lumnia.png'
+
+  interface LoginCredentials {
+    email: string
+    password: string
+  }
 
   export default defineComponent({
     name: 'Login',
+    components: {
+      AnimatedBackground,
+      LumniaLogo,
+      LoginForm
+    },
     setup() {
-      const email = ref('')
-      const password = ref('')
       const router = useRouter()
       const loading = ref(false)
 
       const { login } = useAuth()
       const { showToast } = useToast()
-
       const { user } = useAuth()
-      const loginHandler = async () => {
+
+      const loginHandler = async (credentials: LoginCredentials) => {
         try {
           loading.value = true
-          await login(email.value, password.value)
+          await login(credentials.email, credentials.password)
           if (user.value && user.value.id) {
             localStorage.setItem('user', JSON.stringify(user.value))
           }
@@ -59,22 +64,30 @@
           showToast('Credenciais inválidas')
         }
       }
-      
+
       loading.value = false
 
-      return { email, password, loading, loginHandler }
+      return { 
+        loading, 
+        loginHandler,
+        LogoLumnia
+      }
     },
   })
 </script>
 
 <style scoped>
-  .login-bg {
-    /*   background-image: url('@/assets/login-bg.jpg'); */
-    background-size: cover;
-    background-position: center;
+  .login-container {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    background: linear-gradient(135deg, #0f1419 0%, #1a2332 50%, #0f1419 100%);
   }
 
-  .offset-form {
-    margin-left: 30%;
+  .login-content {
+    position: relative;
+    z-index: 2;
+    min-height: 100vh;
   }
 </style>
