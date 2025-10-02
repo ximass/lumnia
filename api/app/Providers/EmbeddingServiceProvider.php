@@ -13,25 +13,30 @@ class EmbeddingServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->bind(EmbeddingProvider::class, function ($app) {
-            $provider = config('services.embedding.provider', 'local');
+            $provider = config('providers.default_embedding', 'lm_studio');
+            $config = config("providers.embedding.{$provider}");
             
-            return match ($provider) {
-                'remote' => new RemoteEmbeddingProvider(
-                    apiUrl: config('services.embedding.remote_url'),
-                    apiKey: config('services.embedding.api_key'),
-                    batchSize: config('services.embedding.batch_size', 100),
-                    maxRetries: config('services.embedding.max_retries', 3),
-                    retryDelay: config('services.embedding.retry_delay', 2),
-                    model: config('services.embedding.model', 'text-embedding-ada-002')
-                ),
-                default => new LocalEmbeddingProvider(
-                    apiUrl: config('services.embedding.local_url'),
-                    batchSize: config('services.embedding.batch_size', 10),
-                    maxRetries: config('services.embedding.max_retries', 3),
-                    retryDelay: config('services.embedding.retry_delay', 1),
-                    model: config('services.embedding.model', 'all-MiniLM-L6-v2')
-                ),
-            };
+            if (!$config || !($config['enabled'] ?? false)) {
+                throw new \InvalidArgumentException("Embedding provider '{$provider}' is not available or enabled.");
+            }
+
+            if ($provider === 'openai') {
+                return new RemoteEmbeddingProvider(
+                    apiUrl: $config['full_endpoint'] ?? rtrim($config['base_url'], '/') . $config['endpoint'],
+                    apiKey: $config['api_key'],
+                    batchSize: $config['batch_size'],
+                    maxRetries: $config['max_retries'],
+                    retryDelay: $config['retry_delay'],
+                    model: $config['model']
+                );
+            }
+
+            return new LocalEmbeddingProvider(
+                provider: $provider,
+                batchSize: $config['batch_size'],
+                maxRetries: $config['max_retries'],
+                retryDelay: $config['retry_delay']
+            );
         });
 
         $this->app->singleton(EmbeddingClient::class, function ($app) {

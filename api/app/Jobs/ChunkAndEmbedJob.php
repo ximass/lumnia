@@ -48,7 +48,8 @@ class ChunkAndEmbedJob implements ShouldQueue
                 return;
             }
 
-            $batchSize = config('services.embedding.batch_size', 10);
+            $provider = config('providers.default_embedding', 'lm_studio');
+            $batchSize = config("providers.embedding.{$provider}.batch_size", 10);
             $chunkBatches = array_chunk($chunksToProcess, $batchSize);
 
             foreach ($chunkBatches as $batch) {

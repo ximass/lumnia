@@ -23,8 +23,11 @@ class RemoteEmbeddingProvider implements EmbeddingProvider
         int $retryDelay = 2,
         string $model = 'text-embedding-ada-002'
     ) {
-        $this->apiUrl = $apiUrl ?: config('services.embedding.remote_url', 'https://api.openai.com');
-        $this->apiKey = $apiKey ?: config('services.embedding.api_key');
+        $provider = config('providers.default_embedding', 'openai');
+        $providerConfig = config("providers.embedding.{$provider}");
+        
+        $this->apiUrl = $apiUrl ?: ($providerConfig['full_endpoint'] ?? rtrim($providerConfig['base_url'], '/') . $providerConfig['endpoint']);
+        $this->apiKey = $apiKey ?: ($providerConfig['api_key'] ?? '');
         $this->batchSize = $batchSize;
         $this->maxRetries = $maxRetries;
         $this->retryDelay = $retryDelay;
@@ -38,7 +41,7 @@ class RemoteEmbeddingProvider implements EmbeddingProvider
                 'Authorization' => 'Bearer ' . $this->apiKey,
                 'Content-Type' => 'application/json',
             ])
-            ->post("{$this->apiUrl}/v1/embeddings", [
+            ->post($this->apiUrl, [
                 'model' => $this->model,
                 'input' => $texts,
             ]);

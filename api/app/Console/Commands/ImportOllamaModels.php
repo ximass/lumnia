@@ -31,7 +31,14 @@ class ImportOllamaModels extends Command
     {
         $this->info('Iniciando a importação de models do Ollama...');
 
-        $response = Http::get(env('LLM_API_URL') . '/api/tags');
+        $ollamaConfig = config('providers.llm.ollama');
+        if (!$ollamaConfig || !($ollamaConfig['enabled'] ?? false)) {
+            $this->error('Ollama provider não está habilitado.');
+            return 1;
+        }
+
+        $baseUrl = rtrim($ollamaConfig['base_url'], '/');
+        $response = Http::get($baseUrl . '/api/tags');
 
         if ($response->failed()) {
             $this->error('Falha ao acessar o endpoint.');

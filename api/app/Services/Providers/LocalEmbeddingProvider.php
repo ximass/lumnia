@@ -17,20 +17,24 @@ class LocalEmbeddingProvider implements EmbeddingProvider
     private string $provider;
 
     public function __construct(
-        string $apiUrl = null,
+        string $provider = null,
         int $batchSize = 10,
         int $maxRetries = 3,
         int $retryDelay = 1,
         string $model = null
     ) {
-        $this->provider = config('chat.llm.default_provider', 'llm_studio');
-        $providerConfig = config("chat.providers.{$this->provider}");
+        $this->provider = $provider ?: config('providers.default_embedding', 'lm_studio');
+        $providerConfig = config("providers.embedding.{$this->provider}");
         
-        $this->apiUrl = $providerConfig['embedding_endpoint'];
+        if (!$providerConfig || !($providerConfig['enabled'] ?? false)) {
+            throw new \InvalidArgumentException("Embedding provider '{$this->provider}' is not available or enabled.");
+        }
+        
+        $this->apiUrl = rtrim($providerConfig['base_url'], '/') . $providerConfig['endpoint'];
         $this->batchSize = $batchSize;
         $this->maxRetries = $maxRetries;
         $this->retryDelay = $retryDelay;
-        $this->model = $model ?: $providerConfig['embedding_model'] ?? config('services.embedding.model');
+        $this->model = $model ?: $providerConfig['model'];
     }
 
     public function getEmbeddings(array $texts): array

@@ -21,8 +21,8 @@ class LLMController extends Controller
     public function __construct(RAGService $ragService)
     {
         $this->ragService = $ragService;
-        $this->defaultProvider = config('chat.llm.default_provider', 'llm_studio');
-        $this->providerConfig = config('chat.providers', []);
+        $this->defaultProvider = config('providers.default_llm', 'lm_studio');
+        $this->providerConfig = config('providers.llm', []);
     }
 
     public function generateAnswer($message, Chat $chat)
@@ -536,7 +536,13 @@ class LLMController extends Controller
 
     private function getProviderConfig(string $provider): ?array
     {
-        return $this->providerConfig[$provider] ?? null;
+        $config = $this->providerConfig[$provider] ?? null;
+        
+        if ($config && isset($config['base_url']) && isset($config['chat_endpoint'])) {
+            $config['endpoint'] = rtrim($config['base_url'], '/') . $config['chat_endpoint'];
+        }
+        
+        return $config;
     }
 
     private function getConversationHistory(Chat $chat): array
