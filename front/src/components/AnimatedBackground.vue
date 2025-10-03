@@ -25,8 +25,8 @@
       let ctx: CanvasRenderingContext2D | null = null
 
       // Configurações da animação
-      const numPoints = 20
-      const maxDistance = 200
+      const numPoints = 30
+      const maxDistance = 300
       const speed = 2
 
       const initCanvas = () => {
@@ -109,7 +109,7 @@
             const opacity = 1 - distance / maxDistance
 
             // Glow effect
-            ctx!.shadowColor = '#00BCD4'
+            ctx!.shadowColor = '#ffffff'
             ctx!.shadowBlur = 10
             ctx!.strokeStyle = `rgba(0, 188, 212, ${opacity * 0.6})`
             ctx!.lineWidth = 1
@@ -122,9 +122,9 @@
 
         // Desenhar pontos com glow
         points.forEach(point => {
-          ctx!.shadowColor = '#00BCD4'
+          ctx!.shadowColor = '#ffffff'
           ctx!.shadowBlur = 15
-          ctx!.fillStyle = '#00BCD4'
+          ctx!.fillStyle = '#ffffff'
           ctx!.beginPath()
           ctx!.arc(point.x, point.y, 3, 0, Math.PI * 2)
           ctx!.fill()

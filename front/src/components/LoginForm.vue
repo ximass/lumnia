@@ -12,7 +12,6 @@
           type="email" 
           required
           variant="outlined"
-          color="cyan"
           class="mb-3"
         ></v-text-field>
         
@@ -22,7 +21,6 @@
           type="password"
           required
           variant="outlined"
-          color="cyan"
           class="mb-4"
         ></v-text-field>
         
@@ -99,11 +97,11 @@
   .login-card {
     background: rgba(30, 41, 59, 0.05) !important;
     backdrop-filter: blur(1px);
-    border: 1px solid rgba(0, 188, 212, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 8px !important;
     box-shadow: 
       0 8px 32px rgba(0, 0, 0, 0.1),
-      0 0 60px rgba(0, 188, 212, 0.2) !important;
+      0 0 60px rgba(255, 255, 255, 0.2) !important;
   }
 
   .login-title {
@@ -118,11 +116,11 @@
   }
 
   :deep(.v-field--variant-outlined .v-field__outline) {
-    border-color: rgba(0, 188, 212, 0.3);
+    border-color: rgba(255, 255, 255, 0.3);
   }
 
   :deep(.v-field--focused .v-field__outline) {
-    border-color: #00BCD4 !important;
+    border-color: #ffffff !important;
     border-width: 2px;
   }
 
@@ -132,7 +130,7 @@
   }
 
   :deep(.v-field--focused .v-label) {
-    color: #00BCD4 !important;
+    color: #ffffff !important;
   }
 
   :deep(.v-field__input) {
@@ -140,8 +138,8 @@
   }
 
   .login-btn {
-    background: linear-gradient(45deg, #00BCD4, #00ACC1) !important;
-    color: #ffffff !important;
+    background: linear-gradient(45deg, #ffffff, #ffffff) !important;
+    color: #000000 !important;
     font-weight: 500;
     letter-spacing: 0.1em;
     text-transform: uppercase;
@@ -153,13 +151,13 @@
 
   .login-btn:hover {
     box-shadow: 
-      0 6px 20px rgba(0, 188, 212, 0.4),
-      0 0 30px rgba(0, 188, 212, 0.3) !important;
+      0 6px 20px rgba(255, 255, 255, 0.4),
+      0 0 30px rgba(255, 255, 255, 0.3) !important;
     transform: translateY(-2px);
   }
 
   .register-link {
-    color: #00BCD4 !important;
+    color: #ffffff !important;
     text-decoration: none;
     font-size: 0.9rem;
     opacity: 0.8;
@@ -168,6 +166,6 @@
 
   .register-link:hover {
     opacity: 1;
-    text-shadow: 0 0 10px rgba(0, 188, 212, 0.5);
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
   }
 </style>
