@@ -60,8 +60,8 @@ class ParseSourceJob implements ShouldQueue
             $chunks = Chunker::chunk(
                 text: $text,
                 sourceId: $this->sourceId,
-                maxTokens: 700,
-                overlap: 150
+                maxTokens: 50,
+                overlap: 10
             );
 
             if (empty($chunks)) {

@@ -103,7 +103,7 @@ class LLMController extends Controller
             );
 
             Log::info('Built RAG prompt', [
-                'prompt'        => $ragPrompt,
+                //'prompt'        => $ragPrompt,
                 'prompt_length' => strlen($ragPrompt),
                 'has_context'   => !empty($relevantChunks),
                 'has_history'   => !empty($conversationHistory),
@@ -158,6 +158,7 @@ class LLMController extends Controller
             );
 
             Log::info('Built RAG prompt for stream', [
+                'prompt' => $ragPrompt,
                 'prompt_length' => strlen($ragPrompt),
                 'has_context' => !empty($relevantChunks),
                 'has_history' => !empty($conversationHistory),

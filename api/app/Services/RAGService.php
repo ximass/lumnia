@@ -75,29 +75,46 @@ class RAGService
 
     public function buildRAGPrompt(string $userMessage, array $chunks, ?string $personaInstructions = null): string
     {
-        $prompt = '';
+        $prompt  = "Use as informações abaixo para responder à pergunta do usuário. ";
+        $prompt .= "Cada trecho está numerado e contém informações da base de conhecimento.\n\n";
 
         if ($personaInstructions) {
-            $prompt .= '--INICIO-DAS-INSTRUÇÕES--' . "\n\n" . $personaInstructions . "\n\n" . '--FIM-DAS-INSTRUÇÕES--' . "\n\n";
+            $prompt .= "INSTRUÇÕES DO SISTEMA:\n";
+            $prompt .= $personaInstructions . "\n\n";
+            $prompt .= "---\n\n";
         }
 
         if (!empty($chunks)) {
-            $prompt .= "--INICIO-DO-CONTEXTO--\n\n";
+            $prompt .= "CONTEXTO RELEVANTE:\n\n";
+            
             foreach ($chunks as $i => $chunk) {
-                $prompt .= "[" . ($i + 1) . "] " . $chunk->text . "\n\n";
+                $sourceInfo = '';
+                if (isset($chunk->metadata)) {
+                    $metadata = is_string($chunk->metadata) ? json_decode($chunk->metadata, true) : $chunk->metadata;
+                    if (isset($metadata['source_name'])) {
+                        $sourceInfo = " (Fonte: " . $metadata['source_name'] . ")";
+                    }
+                }
+                $prompt .= "Trecho " . ($i + 1) . $sourceInfo . ":\n";
+                $prompt .= $chunk->text . "\n\n";
             }
-            $prompt .= "--FIM-DO-CONTEXTO--\n\n";
+            $prompt .= "---\n\n";
         }
 
-        $prompt .= "Pergunta do usuário: " . $userMessage . "\n\n";
-        $prompt .= "--ATENÇÃO--" . "\n\n";
+        $prompt .= "PERGUNTA DO USUÁRIO:\n";
+        $prompt .= $userMessage . "\n\n";
+        $prompt .= "---\n\n";
 
+        $prompt .= "INSTRUÇÕES DE RESPOSTA:\n";
         if (!empty($chunks)) {
-            $prompt .= "Responda à pergunta baseando-se principalmente no contexto fornecido acima. ";
-            $prompt .= "Se a informação não estiver disponível no contexto, informe que não possui informações suficientes para responder adequadamente.";
+            $prompt .= "1. Baseie sua resposta EXCLUSIVAMENTE nas informações fornecidas no contexto acima\n";
+            $prompt .= "2. Se a resposta estiver no contexto, forneça uma resposta clara, direta e completa\n";
+            $prompt .= "3. Se o contexto não contiver informação suficiente para responder, diga claramente: \"Não encontrei informações suficientes na base de conhecimento para responder essa pergunta\"\n";
+            $prompt .= "4. NÃO invente, extrapole ou use conhecimento externo ao contexto fornecido\n";
+            $prompt .= "5. Se houver informações parciais, apresente o que está disponível e indique o que está faltando\n";
         } else {
-            $prompt .= "Não foram encontradas informações relevantes na base de conhecimento para responder esta pergunta. ";
-            $prompt .= "Responda de forma geral ou informe que não possui informações específicas sobre o assunto.";
+            $prompt .= "Não foram encontradas informações relevantes na base de conhecimento.\n";
+            $prompt .= "Informe ao usuário que não há informações disponíveis sobre este assunto na base de conhecimento atual.\n";
         }
 
         return $prompt;
