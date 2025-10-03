@@ -139,7 +139,7 @@ class LLMController extends Controller
             $userMessage, 
             $chat->kb_id, 
             5, // topK chunks
-            0.3 // threshold
+            0.5 // threshold
         );
 
         Log::info('Retrieved chunks for RAG Stream', [
