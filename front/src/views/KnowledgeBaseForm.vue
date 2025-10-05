@@ -4,26 +4,29 @@
     <v-app-bar 
       elevation="1" 
       color="surface" 
-      class="px-6"
-      height="72"
+      class="px-3 px-sm-6"
+      :height="$vuetify.display.smAndDown ? 64 : 72"
     >
       <v-btn
         icon
         variant="text"
         @click="handleCancel"
-        class="me-4"
+        :class="$vuetify.display.smAndDown ? 'me-2' : 'me-4'"
+        size="small"
       >
         <v-icon>mdi-arrow-left</v-icon>
       </v-btn>
-      <v-app-bar-title class="text-h5 font-weight-bold">
+      <v-app-bar-title :class="$vuetify.display.smAndDown ? 'text-subtitle-1' : 'text-h5'" class="font-weight-bold">
         {{ isEdit ? 'Editar base de conhecimento' : 'Nova base de conhecimento' }}
       </v-app-bar-title>
       <v-spacer />
       <v-btn 
+        v-if="!$vuetify.display.xs"
         variant="outlined" 
         @click="handleCancel"
         :disabled="isProcessing"
         class="me-3"
+        :size="$vuetify.display.smAndDown ? 'small' : 'default'"
       >
         Cancelar
       </v-btn>
@@ -33,24 +36,25 @@
         :disabled="!isValid || isProcessing || (!isEdit && selectedFiles.length === 0)"
         :loading="isProcessing"
         variant="flat"
+        :size="$vuetify.display.smAndDown ? 'small' : 'default'"
       >
-        {{ isEdit ? 'Atualizar' : 'Criar base de conhecimento' }}
+        {{ $vuetify.display.xs ? (isEdit ? 'Atualizar' : 'Criar') : (isEdit ? 'Atualizar' : 'Criar base de conhecimento') }}
       </v-btn>
     </v-app-bar>
 
     <!-- Main Content -->
     <v-main class="pa-0">
-      <v-container fluid class="pa-6 h-100">
+      <v-container fluid class="pa-3 pa-sm-6 h-100">
         <v-row class="h-100" no-gutters>
           <!-- Left Column - Form -->
-          <v-col cols="12" md="5" class="pe-md-3">
+          <v-col cols="12" md="5" class="pe-md-3 mb-3 mb-md-0">
             <v-card elevation="2" class="h-100">
-              <v-card-title class="text-h6 pa-6 pb-4 d-flex align-center bg-primary-lighten-5">
-                <v-icon color="primary" class="me-3">mdi-information</v-icon>
+              <v-card-title :class="$vuetify.display.smAndDown ? 'text-subtitle-1 pa-4 pb-3' : 'text-h6 pa-6 pb-4'" class="d-flex align-center bg-primary-lighten-5">
+                <v-icon color="primary" :class="$vuetify.display.smAndDown ? 'me-2' : 'me-3'" :size="$vuetify.display.smAndDown ? 'default' : 'large'">mdi-information</v-icon>
                 Informações básicas
               </v-card-title>
               
-              <v-card-text class="pa-6">
+              <v-card-text :class="$vuetify.display.smAndDown ? 'pa-4' : 'pa-6'">
                 <v-form ref="form" v-model="isValid">
                   <v-text-field 
                     label="Nome" 
@@ -59,15 +63,15 @@
                     required 
                     variant="outlined"
                     class="mb-4"
-                    density="comfortable"
+                    :density="$vuetify.display.smAndDown ? 'compact' : 'comfortable'"
                   />
                   
                   <v-textarea 
                     label="Descrição" 
                     v-model="formData.description" 
-                    rows="4" 
+                    :rows="$vuetify.display.smAndDown ? 3 : 4" 
                     variant="outlined"
-                    density="comfortable"
+                    :density="$vuetify.display.smAndDown ? 'compact' : 'comfortable'"
                     auto-grow
                   />
                 </v-form>
@@ -78,9 +82,9 @@
           <!-- Right Column - Files -->
           <v-col cols="12" md="7" class="ps-md-3">
             <v-card elevation="2" class="h-100">
-              <v-card-title class="text-h6 pa-6 pb-4 d-flex align-center bg-secondary-lighten-5">
-                <v-icon color="secondary" class="me-3">mdi-file-multiple</v-icon>
-                Arquivos da base de conhecimento
+              <v-card-title :class="$vuetify.display.smAndDown ? 'text-subtitle-1 pa-4 pb-3' : 'text-h6 pa-6 pb-4'" class="d-flex align-center bg-secondary-lighten-5">
+                <v-icon color="secondary" :class="$vuetify.display.smAndDown ? 'me-2' : 'me-3'" :size="$vuetify.display.smAndDown ? 'default' : 'large'">mdi-file-multiple</v-icon>
+                <span class="text-truncate">Arquivos da base de conhecimento</span>
                 <v-spacer />
                 <v-chip 
                   v-if="selectedFiles.length > 0" 
@@ -88,11 +92,11 @@
                   variant="flat" 
                   size="small"
                 >
-                  {{ selectedFiles.length }} arquivo{{ selectedFiles.length !== 1 ? 's' : '' }}
+                  {{ selectedFiles.length }}
                 </v-chip>
               </v-card-title>
               
-              <v-card-text class="pa-6 overflow-y-auto" style="max-height: calc(100vh - 200px);">
+              <v-card-text :class="$vuetify.display.smAndDown ? 'pa-4' : 'pa-6'" class="overflow-y-auto" :style="{ maxHeight: $vuetify.display.smAndDown ? 'calc(100vh - 300px)' : 'calc(100vh - 200px)' }">
                 <!-- Upload Section -->
                 <div class="mb-6">
                   <v-file-input
@@ -105,7 +109,7 @@
                     :rules="fileRules"
                     class="mb-4"
                     @change="handleFileSelection"
-                    density="comfortable"
+                    :density="$vuetify.display.smAndDown ? 'compact' : 'comfortable'"
                   >
                     <template #selection="{ fileNames }">
                       <div class="file-chips-container">
@@ -130,13 +134,14 @@
                     class="mb-4"
                     border="start"
                     border-color="info"
+                    :density="$vuetify.display.smAndDown ? 'compact' : 'default'"
                   >
                     <template #text>
                       <div class="d-flex align-center">
                         <div>
                           <strong>Selecione pelo menos um arquivo</strong> (.txt, .pdf, .csv, .xlsx, .doc, .docx ou .odt) para criar a base de conhecimento.
-                          <br>
-                          <small class="text-medium-emphasis">Tamanho máximo: 10MB por arquivo • Formatos aceitos: TXT, PDF, CSV, XLSX, DOC, DOCX, ODT</small>
+                          <br v-if="!$vuetify.display.xs">
+                          <small class="text-medium-emphasis" :class="$vuetify.display.xs ? 'd-block mt-1' : ''">Tamanho máximo: 10MB por arquivo • Formatos aceitos: TXT, PDF, CSV, XLSX, DOC, DOCX, ODT</small>
                         </div>
                       </div>
                     </template>
@@ -145,17 +150,17 @@
 
                 <!-- Progress Section -->
                 <div v-if="uploadProgress.length > 0" class="mb-6">
-                  <h4 class="text-h6 mb-3 d-flex align-center">
+                  <h4 :class="$vuetify.display.smAndDown ? 'text-subtitle-1 mb-2' : 'text-h6 mb-3'" class="d-flex align-center">
                     <v-icon color="warning" class="me-2">mdi-progress-upload</v-icon>
                     Progresso do upload
                   </h4>
                   <div
                     v-for="progress in uploadProgress"
                     :key="progress.fileName"
-                    class="mb-4"
+                    :class="$vuetify.display.smAndDown ? 'mb-3' : 'mb-4'"
                   >
                     <div class="d-flex justify-space-between align-center mb-2">
-                      <span class="text-body-1 font-weight-medium">{{ progress.fileName }}</span>
+                      <span :class="$vuetify.display.smAndDown ? 'text-body-2' : 'text-body-1'" class="font-weight-medium text-truncate me-2">{{ progress.fileName }}</span>
                       <v-chip
                         :color="progress.status === 'Erro' ? 'error' : progress.status === 'Concluído' ? 'success' : 'warning'"
                         size="small"
@@ -167,7 +172,7 @@
                     <v-progress-linear
                       :model-value="progress.percentage"
                       :color="progress.status === 'Erro' ? 'error' : 'primary'"
-                      height="8"
+                      :height="$vuetify.display.smAndDown ? 6 : 8"
                       rounded
                     />
                   </div>
@@ -175,35 +180,35 @@
 
                 <!-- Existing Files Section -->
                 <div v-if="isEdit && sources.length > 0" class="mb-6">
-                  <h4 class="text-h6 mb-3 d-flex align-center">
+                  <h4 :class="$vuetify.display.smAndDown ? 'text-subtitle-1 mb-2' : 'text-h6 mb-3'" class="d-flex align-center">
                     <v-icon color="success" class="me-2">mdi-check-circle</v-icon>
                     Arquivos já carregados
                   </h4>
-                  <v-list class="border rounded">
+                  <v-list class="border rounded" :density="$vuetify.display.smAndDown ? 'compact' : 'default'">
                     <v-list-item
                       v-for="(source, index) in sources"
                       :key="source.id"
                       :class="{ 'border-b': index < sources.length - 1 }"
                     >
                       <template #prepend>
-                        <v-icon color="primary">
+                        <v-icon color="primary" :size="$vuetify.display.smAndDown ? 'small' : 'default'">
                           {{ getFileIcon(source.source_type) }}
                         </v-icon>
                       </template>
 
-                      <v-list-item-title class="font-weight-medium">
+                      <v-list-item-title :class="$vuetify.display.smAndDown ? 'text-body-2' : ''" class="font-weight-medium">
                         {{ source.metadata?.original_filename || source.source_identifier }}
                       </v-list-item-title>
                       
-                      <v-list-item-subtitle>
+                      <v-list-item-subtitle :class="$vuetify.display.smAndDown ? 'text-caption' : ''">
                         Status: {{ getStatusText(source.status) }}
-                        <span v-if="source.metadata?.file_size" class="ml-2">
+                        <span v-if="source.metadata?.file_size && !$vuetify.display.xs" class="ml-2">
                           • {{ formatFileSize(source.metadata.file_size) }}
                         </span>
                       </v-list-item-subtitle>
 
                       <template #append>
-                        <div class="d-flex align-center ga-2">
+                        <div :class="$vuetify.display.smAndDown ? 'd-flex flex-column align-end ga-1' : 'd-flex align-center ga-2'">
                           <v-chip
                             :color="getStatusColor(source.status)"
                             size="small"
@@ -233,12 +238,12 @@
                 <!-- Empty State -->
                 <div v-if="!isEdit && selectedFiles.length === 0 && uploadProgress.length === 0" class="text-center py-8">
                   <div class="empty-state">
-                    <v-icon size="80" color="grey-lighten-2" class="mb-4">
+                    <v-icon :size="$vuetify.display.smAndDown ? 60 : 80" color="grey-lighten-2" :class="$vuetify.display.smAndDown ? 'mb-3' : 'mb-4'">
                       mdi-cloud-upload
                     </v-icon>
-                    <h3 class="text-h6 text-grey-darken-1 mb-2">Nenhum arquivo selecionado</h3>
-                    <p class="text-body-2 text-grey mb-4">
-                      Arraste arquivos aqui ou use o botão acima para selecionar
+                    <h3 :class="$vuetify.display.smAndDown ? 'text-subtitle-1' : 'text-h6'" class="text-grey-darken-1 mb-2">Nenhum arquivo selecionado</h3>
+                    <p :class="$vuetify.display.smAndDown ? 'text-caption' : 'text-body-2'" class="text-grey mb-4">
+                      {{ $vuetify.display.smAndDown ? 'Use o botão acima para selecionar' : 'Arraste arquivos aqui ou use o botão acima para selecionar' }}
                     </p>
                   </div>
                 </div>
@@ -250,37 +255,39 @@
     </v-main>
 
     <!-- Delete Confirmation Dialog -->
-    <v-dialog v-model="deleteDialog.show" max-width="500">
+    <v-dialog v-model="deleteDialog.show" :max-width="$vuetify.display.smAndDown ? '90vw' : '500'" :fullscreen="$vuetify.display.xs">
       <v-card>
-        <v-card-title class="text-h6 d-flex align-center">
-          <v-icon color="error" class="me-3">mdi-alert-circle</v-icon>
+        <v-card-title :class="$vuetify.display.smAndDown ? 'text-subtitle-1 pa-4' : 'text-h6 pa-6'" class="d-flex align-center">
+          <v-icon color="info" class="me-3">mdi-alert-circle</v-icon>
           Confirmar exclusão
         </v-card-title>
         
-        <v-card-text>
-          <p class="mb-3">
+        <v-card-text :class="$vuetify.display.smAndDown ? 'pa-4' : 'pa-6'">
+          <p class="mb-3" :class="$vuetify.display.smAndDown ? 'text-body-2' : ''">
             Tem certeza que deseja excluir o arquivo 
             <strong>"{{ deleteDialog.source?.metadata?.original_filename || deleteDialog.source?.source_identifier }}"</strong>?
           </p>
-          <v-alert type="warning" variant="tonal" class="mb-0">
+          <v-alert  class="mb-0" :density="$vuetify.display.smAndDown ? 'compact' : 'default'">
             <strong>Atenção:</strong> Esta ação não pode ser desfeita. O arquivo e todos os seus dados associados serão permanentemente removidos.
           </v-alert>
         </v-card-text>
 
-        <v-card-actions class="px-6 pb-6">
+        <v-card-actions :class="$vuetify.display.smAndDown ? 'px-4 pb-4' : 'px-6 pb-6'">
           <v-spacer />
           <v-btn 
-            variant="outlined" 
+            variant="flat" 
+            color="primary"
             @click="deleteDialog.show = false"
             :disabled="deleteDialog.loading"
+            :size="$vuetify.display.smAndDown ? 'small' : 'default'"
           >
             Cancelar
           </v-btn>
           <v-btn 
-            color="error" 
-            variant="flat"
+            variant="outlined"
             @click="confirmDeleteSource"
             :loading="deleteDialog.loading"
+            :size="$vuetify.display.smAndDown ? 'small' : 'default'"
           >
             Excluir arquivo
           </v-btn>
@@ -575,6 +582,21 @@ export default defineComponent({
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12) !important;
 }
 
+/* Mobile card adjustments */
+@media (max-width: 600px) {
+  .v-card {
+    border-radius: 8px;
+  }
+  
+  .v-card-title {
+    padding: 12px 16px !important;
+  }
+  
+  .v-card-text {
+    padding: 12px 16px !important;
+  }
+}
+
 /* Header styling with gradients */
 .bg-primary-lighten-5 {
   background: linear-gradient(135deg, rgb(var(--v-theme-primary-lighten-5)), rgb(var(--v-theme-primary-lighten-4))) !important;
@@ -601,6 +623,19 @@ export default defineComponent({
 .v-file-input:hover :deep(.v-field) {
   box-shadow: 0 4px 12px rgba(var(--v-theme-primary), 0.15);
   border-color: rgb(var(--v-theme-primary));
+}
+
+/* Mobile file input */
+@media (max-width: 600px) {
+  .v-file-input :deep(.v-field__input) {
+    min-height: 48px;
+    padding: 8px 12px;
+    font-size: 0.875rem;
+  }
+  
+  .v-file-input :deep(.v-field__prepend-inner) {
+    padding-inline-end: 8px;
+  }
 }
 
 /* File chips container */
@@ -662,6 +697,18 @@ export default defineComponent({
   border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
 }
 
+/* Mobile app bar */
+@media (max-width: 600px) {
+  .v-app-bar {
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+  }
+  
+  .v-app-bar .v-btn {
+    min-width: auto;
+  }
+}
+
 /* Empty state styling */
 .empty-state {
   padding: 2rem;
@@ -674,21 +721,75 @@ export default defineComponent({
 @media (max-width: 960px) {
   .v-main {
     height: auto;
-    min-height: calc(100vh - 72px);
+    min-height: calc(100vh - 64px);
   }
   
   .h-100 {
     height: auto !important;
-    min-height: 400px !important;
+    min-height: 300px !important;
   }
   
   .pe-md-3, .ps-md-3 {
     padding-left: 0 !important;
     padding-right: 0 !important;
   }
+}
+
+@media (max-width: 600px) {
+  /* Mobile specific adjustments */
+  .v-app-bar-title {
+    font-size: 0.9rem !important;
+    line-height: 1.2;
+  }
   
-  .v-col:not(:last-child) {
-    margin-bottom: 1rem;
+  .v-card-title {
+    font-size: 1rem !important;
+    flex-wrap: nowrap;
+  }
+  
+  .v-card-title .text-truncate {
+    max-width: calc(100vw - 180px);
+  }
+  
+  /* Reduce spacing on mobile */
+  .mb-6 {
+    margin-bottom: 1rem !important;
+  }
+  
+  .mb-4 {
+    margin-bottom: 0.75rem !important;
+  }
+  
+  .mb-3 {
+    margin-bottom: 0.5rem !important;
+  }
+  
+  /* Adjust empty state padding */
+  .empty-state {
+    padding: 1.5rem 1rem;
+  }
+  
+  /* File chips in file input */
+  .file-chips-container {
+    max-width: 100%;
+  }
+  
+  .file-chips-container .v-chip {
+    max-width: 100%;
+    font-size: 0.75rem;
+  }
+  
+  /* List items on mobile */
+  .v-list-item {
+    padding: 12px 8px;
+  }
+  
+  .v-list-item-title {
+    font-size: 0.875rem !important;
+  }
+  
+  .v-list-item-subtitle {
+    font-size: 0.75rem !important;
   }
 }
 
@@ -709,6 +810,13 @@ export default defineComponent({
 
 .overflow-y-auto::-webkit-scrollbar-thumb:hover {
   background: rgba(var(--v-theme-primary), 0.7);
+}
+
+/* Mobile scrollbar */
+@media (max-width: 600px) {
+  .overflow-y-auto::-webkit-scrollbar {
+    width: 4px;
+  }
 }
 
 /* Animation for progress bars */

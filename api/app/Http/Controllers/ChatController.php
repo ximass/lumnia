@@ -28,7 +28,7 @@ class ChatController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'kb_id' => 'nullable|exists:knowledge_bases,id',
+            'kb_id' => 'required|exists:knowledge_bases,id',
             'persona_id' => 'nullable|exists:personas,id',
         ]);
 
@@ -285,16 +285,26 @@ class ChatController extends Controller
     public function updateChat(Request $request, Chat $chat)
     {
         $request->validate([
-            'name' => 'required|string|max:255',
-            'kb_id' => 'nullable|exists:knowledge_bases,id',
-            'persona_id' => 'nullable|exists:personas,id',
+            'name' => 'sometimes|required|string|max:255',
+            'kb_id' => 'sometimes|nullable|exists:knowledge_bases,id',
+            'persona_id' => 'sometimes|nullable|exists:personas,id',
         ]);
 
-        $chat->update([
-            'name'             => $request->input('name'),
-            'kb_id'            => $request->input('kb_id'),
-            'persona_id'       => $request->input('persona_id'),
-        ]);
+        $updateData = [];
+        
+        if ($request->has('name')) {
+            $updateData['name'] = $request->input('name');
+        }
+        
+        if ($request->has('kb_id')) {
+            $updateData['kb_id'] = $request->input('kb_id');
+        }
+        
+        if ($request->has('persona_id')) {
+            $updateData['persona_id'] = $request->input('persona_id');
+        }
+
+        $chat->update($updateData);
 
         return response()->json($chat);
     }

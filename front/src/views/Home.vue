@@ -56,9 +56,6 @@
     backdrop-filter: blur(20px);
     border: 1px solid rgba(255, 255, 255, 0.4);
     border-radius: 12px !important;
-    box-shadow: 
-      0 1px 32px rgba(0, 0, 0, 0.15),
-      0 0 15px rgba(255, 255, 255, 0.2) !important;
   }
 
   .home-title {
@@ -66,7 +63,6 @@
     font-weight: 300;
     font-size: 2rem;
     letter-spacing: 0.05em;
-    text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
   }
 
   .home-subtitle {
@@ -74,7 +70,6 @@
     color: #ffffff;
     letter-spacing: 0.1em;
     font-weight: 300;
-    text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
   }
 
   .home-description {

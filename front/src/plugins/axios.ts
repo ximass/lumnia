@@ -26,8 +26,13 @@ axios.interceptors.response.use(
   },
   error => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('authToken')
-      window.location.href = '/'
+      const currentPath = window.location.pathname
+      const isAuthPage = currentPath === '/login' || currentPath === '/register'
+      
+      if (!isAuthPage) {
+        localStorage.removeItem('authToken')
+        window.location.href = '/'
+      }
     }
     return Promise.reject(error)
   }

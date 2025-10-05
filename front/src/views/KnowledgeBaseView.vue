@@ -1,68 +1,70 @@
 <template>
-  <v-container fluid class="pa-6">
+  <v-container fluid class="pa-4 pa-sm-6">
     <!-- Header -->
-    <v-row class="mb-6">
+    <v-row class="mb-4 mb-sm-6">
       <v-col cols="12">
-        <div class="d-flex align-center justify-space-between">
+        <div class="d-flex flex-column flex-sm-row align-start align-sm-center justify-space-between gap-4">
           <div>
-            <h1 class="text-h4 font-weight-bold mb-2">Bases de conhecimento</h1>
-            <p class="text-body-1 text-medium-emphasis">
+            <h1 class="text-h5 text-sm-h4 font-weight-bold mb-2">Bases de conhecimento</h1>
+            <p class="text-body-2 text-sm-body-1 text-medium-emphasis">
               Gerencie suas bases de conhecimento e faça upload de documentos
             </p>
           </div>
           <v-btn 
             color="primary" 
-            size="large"
+            :size="$vuetify.display.xs ? 'default' : 'large'"
             @click="createKnowledgeBase"
             prepend-icon="mdi-plus"
+            :block="$vuetify.display.xs"
           >
-            Nova base de conhecimento
+            <span class="d-none d-sm-inline">Nova base de conhecimento</span>
+            <span class="d-inline d-sm-none">Nova base</span>
           </v-btn>
         </div>
       </v-col>
     </v-row>
 
     <!-- Statistics Cards -->
-    <v-row class="mb-6">
-      <v-col cols="12" sm="6" md="3">
-        <v-card class="text-center pa-4" color="primary-lighten-5">
-          <v-icon size="40" color="primary" class="mb-2">mdi-database</v-icon>
-          <div class="text-h5 font-weight-bold">{{ knowledgeBases.length }}</div>
-          <div class="text-body-2 text-medium-emphasis">Total de bases</div>
+    <v-row class="mb-4 mb-sm-6">
+      <v-col cols="6" sm="6" md="3">
+        <v-card class="text-center pa-3 pa-sm-4" color="primary-lighten-5">
+          <v-icon :size="$vuetify.display.xs ? 32 : 40" color="primary" class="mb-2">mdi-database</v-icon>
+          <div class="text-h6 text-sm-h5 font-weight-bold">{{ knowledgeBases.length }}</div>
+          <div class="text-caption text-sm-body-2 text-medium-emphasis">Total de bases</div>
         </v-card>
       </v-col>
-      <v-col cols="12" sm="6" md="3">
-        <v-card class="text-center pa-4" color="success-lighten-5">
-          <v-icon size="40" color="success" class="mb-2">mdi-file-multiple</v-icon>
-          <div class="text-h5 font-weight-bold">{{ totalSources }}</div>
-          <div class="text-body-2 text-medium-emphasis">Total de arquivos</div>
+      <v-col cols="6" sm="6" md="3">
+        <v-card class="text-center pa-3 pa-sm-4" color="success-lighten-5">
+          <v-icon :size="$vuetify.display.xs ? 32 : 40" color="success" class="mb-2">mdi-file-multiple</v-icon>
+          <div class="text-h6 text-sm-h5 font-weight-bold">{{ totalSources }}</div>
+          <div class="text-caption text-sm-body-2 text-medium-emphasis">Total de arquivos</div>
         </v-card>
       </v-col>
-      <v-col cols="12" sm="6" md="3">
-        <v-card class="text-center pa-4" color="warning-lighten-5">
-          <v-icon size="40" color="warning" class="mb-2">mdi-cog</v-icon>
-          <div class="text-h5 font-weight-bold">{{ processingCount }}</div>
-          <div class="text-body-2 text-medium-emphasis">Processando</div>
+      <v-col cols="6" sm="6" md="3">
+        <v-card class="text-center pa-3 pa-sm-4" color="warning-lighten-5">
+          <v-icon :size="$vuetify.display.xs ? 32 : 40" color="warning" class="mb-2">mdi-cog</v-icon>
+          <div class="text-h6 text-sm-h5 font-weight-bold">{{ processingCount }}</div>
+          <div class="text-caption text-sm-body-2 text-medium-emphasis">Processando</div>
         </v-card>
       </v-col>
-      <v-col cols="12" sm="6" md="3">
-        <v-card class="text-center pa-4" color="info-lighten-5">
-          <v-icon size="40" color="info" class="mb-2">mdi-check-circle</v-icon>
-          <div class="text-h5 font-weight-bold">{{ completedCount }}</div>
-          <div class="text-body-2 text-medium-emphasis">Concluídas</div>
+      <v-col cols="6" sm="6" md="3">
+        <v-card class="text-center pa-3 pa-sm-4" color="info-lighten-5">
+          <v-icon :size="$vuetify.display.xs ? 32 : 40" color="info" class="mb-2">mdi-check-circle</v-icon>
+          <div class="text-h6 text-sm-h5 font-weight-bold">{{ completedCount }}</div>
+          <div class="text-caption text-sm-body-2 text-medium-emphasis">Concluídas</div>
         </v-card>
       </v-col>
     </v-row>
 
     <!-- Data Table -->
     <v-card elevation="2">
-      <v-card-title class="pa-6 pb-4">
-        <div class="d-flex align-center justify-space-between w-100">
+      <v-card-title class="pa-4 pa-sm-6 pb-4">
+        <div class="d-flex flex-column flex-md-row align-start align-md-center justify-space-between w-100 gap-3">
           <div class="d-flex align-center">
-            <v-icon color="primary" class="me-3">mdi-table</v-icon>
-            <span class="text-h6">Lista de bases de conhecimento</span>
+            <v-icon color="primary" class="me-2 me-sm-3" :size="$vuetify.display.xs ? 20 : 24">mdi-table</v-icon>
+            <span class="text-subtitle-1 text-sm-h6">Lista de bases de conhecimento</span>
           </div>
-          <div class="d-flex align-center gap-3">
+          <div class="d-flex align-center gap-3 gap-sm-3 w-100 w-md-auto">
             <v-text-field
               v-model="search"
               placeholder="Buscar bases..."
@@ -71,13 +73,15 @@
               density="compact"
               hide-details
               clearable
-              style="max-width: 300px;"
+              class="flex-grow-1"
+              :style="$vuetify.display.mdAndUp ? 'min-width: 400px;' : ''"
             />
             <v-btn
               icon
               variant="text"
               @click="fetchKnowledgeBases"
               :loading="loading"
+              :size="$vuetify.display.xs ? 'small' : 'default'"
             >
               <v-icon>mdi-refresh</v-icon>
             </v-btn>
@@ -156,43 +160,43 @@
         </template>
 
         <template #item.actions="{ item }">
-          <div class="d-flex align-center gap-1">
-            <v-btn
-              icon
-              variant="text"
-              size="small"
-              @click="editKnowledgeBase(item)"
-              color="primary"
-            >
-              <v-icon>mdi-pencil</v-icon>
-              <v-tooltip activator="parent">Editar</v-tooltip>
-            </v-btn>
-            <v-btn
-              icon
-              variant="text"
-              size="small"
-              @click="confirmDelete(item)"
-              color="error"
-            >
-              <v-icon>mdi-delete</v-icon>
-              <v-tooltip activator="parent">Excluir</v-tooltip>
-            </v-btn>
-          </div>
+          <v-menu offset-y>
+            <template #activator="{ props }">
+              <v-btn icon v-bind="props" variant="text">
+                <v-icon>mdi-dots-vertical</v-icon>
+              </v-btn>
+            </template>
+            <v-list>
+              <v-list-item @click="editKnowledgeBase(item)">
+                <v-list-item-title>
+                  <v-icon>mdi-pencil</v-icon>
+                  Editar
+                </v-list-item-title>
+              </v-list-item>
+              <v-list-item @click="confirmDelete(item)">
+                <v-list-item-title>
+                  <v-icon>mdi-delete</v-icon>
+                  Excluir
+                </v-list-item-title>
+              </v-list-item>
+            </v-list>
+          </v-menu>
         </template>
 
         <template #no-data>
-          <div class="text-center py-8">
-            <v-icon size="64" color="grey-lighten-1" class="mb-4">
+          <div class="text-center py-6 py-sm-8 px-4">
+            <v-icon :size="$vuetify.display.xs ? 48 : 64" color="grey-lighten-1" class="mb-3 mb-sm-4">
               mdi-database-off
             </v-icon>
-            <h3 class="text-h6 text-grey-darken-1 mb-2">Nenhuma base de conhecimento encontrada</h3>
-            <p class="text-body-2 text-grey mb-4">
+            <h3 class="text-subtitle-1 text-sm-h6 text-grey-darken-1 mb-2">Nenhuma base de conhecimento encontrada</h3>
+            <p class="text-caption text-sm-body-2 text-grey mb-3 mb-sm-4">
               Crie sua primeira base de conhecimento para começar
             </p>
             <v-btn 
               color="primary" 
               @click="createKnowledgeBase"
               prepend-icon="mdi-plus"
+              :size="$vuetify.display.xs ? 'default' : 'large'"
             >
               Criar primeira base
             </v-btn>
@@ -202,31 +206,33 @@
     </v-card>
 
     <!-- Delete Confirmation Dialog -->
-    <v-dialog v-model="deleteDialog" max-width="500">
+    <v-dialog v-model="deleteDialog" :max-width="$vuetify.display.xs ? '90%' : '500'">
       <v-card>
-        <v-card-title class="text-h5 d-flex align-center">
-          <v-icon color="error" class="me-3">mdi-alert-circle</v-icon>
+        <v-card-title class="text-subtitle-1 text-sm-h5 d-flex align-center pa-4 pa-sm-6">
+          <v-icon color="info" class="me-2 me-sm-3" :size="$vuetify.display.xs ? 20 : 24">mdi-alert-circle</v-icon>
           Confirmar exclusão
         </v-card-title>
-        <v-card-text>
-          <p>Tem certeza que deseja excluir a base de conhecimento <strong>"{{ selectedKnowledgeBase?.name }}"</strong>?</p>
-          <p class="text-caption text-error mt-2">
-            <v-icon size="small" class="me-1">mdi-warning</v-icon>
-            Esta ação não pode ser desfeita. Todos os arquivos e dados associados serão removidos permanentemente.
-          </p>
+        <v-card-text class="pa-4 pa-sm-6">
+          <p class="text-body-2 text-sm-body-1">Tem certeza que deseja excluir a base de conhecimento <strong>"{{ selectedKnowledgeBase?.name }}"</strong>?</p>
+          <v-alert  class="mb-0" :density="$vuetify.display.smAndDown ? 'compact' : 'default'">
+            <strong>Atenção:</strong> Esta ação não pode ser desfeita. Todos os arquivos e dados associados serão removidos permanentemente.
+          </v-alert>
         </v-card-text>
-        <v-card-actions>
+        <v-card-actions class="pa-4 pa-sm-6">
           <v-spacer />
           <v-btn 
-            variant="text" 
+            variant="flat" 
+            color="primary"
             @click="deleteDialog = false"
+            :size="$vuetify.display.xs ? 'small' : 'default'"
           >
             Cancelar
           </v-btn>
           <v-btn 
-            color="error" 
+            variant="outlined"
             @click="deleteKnowledgeBase"
             :loading="deleting"
+            :size="$vuetify.display.xs ? 'small' : 'default'"
           >
             Excluir
           </v-btn>
@@ -450,15 +456,9 @@ export default defineComponent({
   max-width: none !important;
 }
 
-/* Card hover effects */
+/* Card styling */
 .v-card {
-  transition: all 0.3s ease;
   border-radius: 12px;
-}
-
-.v-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15) !important;
 }
 
 /* Statistics cards special styling */
@@ -477,8 +477,6 @@ export default defineComponent({
 
 .v-data-table :deep(.v-data-table__th) {
   padding: 16px 12px;
-  font-weight: 600;
-  color: rgb(var(--v-theme-primary));
 }
 
 /* Search field styling */
@@ -573,33 +571,38 @@ export default defineComponent({
     padding: 8px 6px;
     font-size: 0.875rem;
   }
-  
-  .d-flex.gap-3 {
-    flex-direction: column;
+}
+
+@media (max-width: 600px) {
+  .v-container {
+    padding: 12px !important;
+  }
+
+  .v-card-title {
+    padding: 12px !important;
+  }
+
+  .v-data-table :deep(.v-data-table__td),
+  .v-data-table :deep(.v-data-table__th) {
+    padding: 6px 4px !important;
+    font-size: 0.75rem !important;
+  }
+
+  .v-data-table :deep(.v-data-table-header__content) {
+    font-size: 0.75rem !important;
+    font-weight: 600 !important;
+  }
+
+  .v-chip {
+    font-size: 0.625rem !important;
+  }
+
+  .gap-4 {
     gap: 12px !important;
   }
 }
 
-/* Animation for statistics cards */
-@keyframes countUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
 
-.text-h5 {
-  animation: countUp 0.6s ease-out;
-}
-
-/* Hover effects for action buttons */
-.v-btn--icon:hover {
-  background-color: rgba(var(--v-theme-primary), 0.08);
-}
 
 /* Focus states */
 .v-text-field:focus-within :deep(.v-field__outline) {
@@ -616,15 +619,6 @@ export default defineComponent({
 /* Divider styling */
 .v-divider {
   border-color: rgba(var(--v-border-color), 0.12);
-}
-
-/* Statistics card icons */
-.v-icon {
-  transition: transform 0.3s ease;
-}
-
-.v-card:hover .v-icon {
-  transform: scale(1.1);
 }
 
 /* Progress and loading indicators */
