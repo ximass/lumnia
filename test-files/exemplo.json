@@ -1,0 +1,24 @@
+{
+  "produtos": {
+    "nome": "Notebook Dell",
+    "preco": 3500.00,
+    "estoque": 15
+  },
+  "clientes": [
+    {
+      "id": 1,
+      "nome": "João Silva",
+      "email": "joao@email.com"
+    },
+    {
+      "id": 2,
+      "nome": "Maria Santos",
+      "email": "maria@email.com"
+    }
+  ],
+  "configuracoes": {
+    "tema": "escuro",
+    "idioma": "pt-BR",
+    "notificacoes": true
+  }
+}

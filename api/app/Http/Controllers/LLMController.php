@@ -139,7 +139,7 @@ class LLMController extends Controller
             $userMessage, 
             $chat->kb_id, 
             5, // topK chunks
-            0.5 // threshold
+            0.4 // threshold
         );
 
         Log::info('Retrieved chunks for RAG Stream', [
@@ -148,7 +148,9 @@ class LLMController extends Controller
         ]);
 
         $personaInstructions = $this->buildPersonaInstructions($persona);
-        $conversationHistory = $this->getConversationHistory($chat);
+        // TODO: verificar mais tarde
+        // $conversationHistory = $this->getConversationHistory($chat);
+        $conversationHistory = [];
 
         if (!empty($relevantChunks)) {
             $ragPrompt = $this->ragService->buildRAGPrompt(

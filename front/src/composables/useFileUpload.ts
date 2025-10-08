@@ -23,7 +23,7 @@ export const useFileUpload = () => {
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
       'application/vnd.oasis.opendocument.text'
     ]
-    const allowedExtensions = ['.txt', '.pdf', '.csv', '.xlsx', '.doc', '.docx', '.odt']
+    const allowedExtensions = ['.txt', '.pdf', '.csv', '.xlsx', '.doc', '.docx', '.odt', '.json', '.jsonl']
     const maxSize = 10 * 1024 * 1024 // 10MB
 
     for (const file of files) {
@@ -32,7 +32,7 @@ export const useFileUpload = () => {
       const hasValidExtension = allowedExtensions.some(ext => fileName.endsWith(ext))
 
       if (!hasValidType && !hasValidExtension) {
-        showToast(`Arquivo ${file.name} não é um formato válido (apenas .txt, .pdf, .csv, .xlsx, .doc, .docx e .odt)`)
+        showToast(`Arquivo ${file.name} não é um formato válido (apenas .txt, .pdf, .csv, .xlsx, .doc, .docx, .odt, .json e .jsonl)`)
         return false
       }
 

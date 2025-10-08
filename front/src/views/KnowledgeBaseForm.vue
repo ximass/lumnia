@@ -139,9 +139,9 @@
                     <template #text>
                       <div class="d-flex align-center">
                         <div>
-                          <strong>Selecione pelo menos um arquivo</strong> (.txt, .pdf, .csv, .xlsx, .doc, .docx ou .odt) para criar a base de conhecimento.
+                          <strong>Selecione pelo menos um arquivo</strong> para criar a base de conhecimento.
                           <br v-if="!$vuetify.display.xs">
-                          <small class="text-medium-emphasis" :class="$vuetify.display.xs ? 'd-block mt-1' : ''">Tamanho máximo: 10MB por arquivo • Formatos aceitos: TXT, PDF, CSV, XLSX, DOC, DOCX, ODT</small>
+                          <small class="text-medium-emphasis" :class="$vuetify.display.xs ? 'd-block mt-1' : ''">Tamanho máximo: 10MB por arquivo • Formatos aceitos: TXT, PDF, CSV, XLSX, DOC, DOCX, ODT, JSON, JSONL</small>
                         </div>
                       </div>
                     </template>
@@ -351,7 +351,10 @@ export default defineComponent({
             'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             'application/msword',
             'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-            'application/vnd.oasis.opendocument.text'
+            'application/vnd.oasis.opendocument.text',
+            'application/json',
+            'application/jsonl',
+            'application/x-jsonlines'
           ].includes(file.type) ||
           file.name.toLowerCase().endsWith('.txt') ||
           file.name.toLowerCase().endsWith('.pdf') ||
@@ -359,8 +362,10 @@ export default defineComponent({
           file.name.toLowerCase().endsWith('.xlsx') ||
           file.name.toLowerCase().endsWith('.doc') ||
           file.name.toLowerCase().endsWith('.docx') ||
-          file.name.toLowerCase().endsWith('.odt')
-        ) || 'Apenas arquivos .txt, .pdf, .csv, .xlsx, .doc, .docx e .odt são permitidos'
+          file.name.toLowerCase().endsWith('.odt') ||
+          file.name.toLowerCase().endsWith('.json') ||
+          file.name.toLowerCase().endsWith('.jsonl')
+        ) || 'Apenas arquivos .txt, .pdf, .csv, .xlsx, .doc, .docx, .odt, .json e .jsonl são permitidos'
       },
       (files: File[]) => {
         if (!files || files.length === 0) return true
@@ -413,7 +418,9 @@ export default defineComponent({
         'xlsx': 'mdi-file-excel',
         'doc': 'mdi-file-word',
         'docx': 'mdi-file-word',
-        'odt': 'mdi-file-document-outline'
+        'odt': 'mdi-file-document-outline',
+        'json': 'mdi-code-json',
+        'jsonl': 'mdi-code-json'
       }
       return iconMap[sourceType] || 'mdi-file-document'
     }

@@ -15,5 +15,9 @@ return Application::configure(basePath: dirname(__DIR__))
         //
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        //
+        $exceptions->report(function (Throwable $e) {
+            if (app()->environment('production', 'staging', 'local')) {
+                \App\Services\ErrorLogService::log($e, request());
+            }
+        });
     })->create();

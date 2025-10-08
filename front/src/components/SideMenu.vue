@@ -1,30 +1,55 @@
 <template>
-  <v-navigation-drawer app v-model="drawerOpen" :rail="rail" permanent @click="rail = false">
-    <v-list-item :title="props.user?.name || 'Usuário'" nav>
-      <template v-slot:prepend>
-        <v-avatar size="40">
-          <v-img
-            v-if="props.user?.avatar"
-            :src="`/api/avatars/${props.user.avatar.split('/').pop()}`"
-            alt="Avatar"
-          />
-          <v-icon v-else>mdi-account</v-icon>
-        </v-avatar>
-      </template>
+  <v-navigation-drawer
+    app
+    :value="drawerOpen"
+    :mini-variant="!drawerOpen"
+    expand-on-hover
+    :rail="rail"
+    permanent
+  >
+    <v-list-item
+      :prepend-avatar="props.user?.avatar || 'mdi-account'"
+      :title="props.user?.name || 'Usuário'"
+      nav
+    >
       <template v-slot:append>
-        <v-btn icon="mdi-chevron-left" variant="text" @click.stop="rail = !rail"></v-btn>
+        <v-btn
+          icon="mdi-chevron-left"
+          variant="text"
+          @click.stop="rail = !rail"
+        ></v-btn>
       </template>
     </v-list-item>
+
     <v-divider></v-divider>
+
     <v-list density="compact" nav>
       <v-list-item
-        v-for="item in filteredMenuItems"
+        v-for="item in basicMenuItems"
         :key="item.title"
         :prepend-icon="item.icon"
         :title="item.title"
         :value="item.route"
-        @click="navigateTo(item.route)"
+        @click="$router.push(item.route)"
       ></v-list-item>
+
+      <v-list-group
+        v-if="adminMenuItems.length"
+        value="Administração"
+        prepend-icon="mdi-shield-account"
+      >
+        <template v-slot:activator="{ props: groupProps }">
+          <v-list-item v-bind="groupProps" title="Administração"></v-list-item>
+        </template>
+        <v-list-item
+          v-for="item in adminMenuItems"
+          :key="item.title"
+          :prepend-icon="item.icon"
+          :title="item.title"
+          :value="item.route"
+          @click="$router.push(item.route)"
+        ></v-list-item>
+      </v-list-group>
     </v-list>
   </v-navigation-drawer>
 </template>
@@ -65,7 +90,7 @@
         {
           title: 'Bases de conhecimento',
           route: '/knowledge-bases',
-          admin: true,
+          admin: false,
           icon: 'mdi-book-open-variant-outline',
         },
         {
@@ -86,27 +111,31 @@
           admin: true,
           icon: 'mdi-account-tie',
         },
+        {
+          title: 'Logs de erros',
+          route: '/error-logs',
+          admin: true,
+          icon: 'mdi-alert-circle-outline',
+        },
       ]
 
-      const filteredMenuItems = computed(() => {
-        return menuItems.filter(item => {
-          if (item.admin) {
-            return props.user && props.user.admin
-          }
-          return true
-        })
-      })
+    const basicMenuItems = computed(() =>
+      menuItems.filter(
+        item =>
+          !item.admin
+      )
+    );
 
-      const navigateTo = (route: string) => {
-        router.push(route)
-      }
+    const adminMenuItems = computed(() =>
+      props.user && props.user.admin ? menuItems.filter(item => item.admin) : []
+    );
 
-      return {
-        filteredMenuItems,
-        rail,
-        navigateTo,
-        props,
-      }
+    return {
+      basicMenuItems,
+      adminMenuItems,
+      rail,
+      props,
+    };
     },
   })
 </script>

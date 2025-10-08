@@ -57,12 +57,20 @@ class ParseSourceJob implements ShouldQueue
                 return;
             }
 
-            $chunks = Chunker::chunk(
-                text: $text,
-                sourceId: $this->sourceId,
-                maxTokens: 50,
-                overlap: 10
-            );
+            $sourceType = strtolower($source->source_type);
+            
+            if ($sourceType === 'jsonl') {
+                $chunks = Chunker::chunkJsonl($text, $this->sourceId);
+            } elseif ($sourceType === 'json') {
+                $chunks = Chunker::chunkJson($text, $this->sourceId);
+            } else {
+                $chunks = Chunker::chunk(
+                    text: $text,
+                    sourceId: $this->sourceId,
+                    maxTokens: 200,
+                    overlap: 20
+                );
+            }
 
             if (empty($chunks)) {
                 throw new \Exception('No chunks created from text');
@@ -108,6 +116,8 @@ class ParseSourceJob implements ShouldQueue
             'xlsx', 'xls' => $this->extractFromExcel($filePath),
             'doc', 'docx' => $this->extractFromWord($filePath),
             'odt' => $this->extractFromOdt($filePath),
+            'json' => $this->extractFromJson($filePath),
+            'jsonl' => $this->extractFromJsonl($filePath),
             default => throw new \Exception("Unsupported source type: {$sourceType}")
         };
     }
@@ -127,7 +137,7 @@ class ParseSourceJob implements ShouldQueue
             throw new \Exception("Failed to read text file: {$filePath}");
         }
 
-        return mb_convert_encoding($content, 'UTF-8', 'auto');
+        return mb_check_encoding($content, 'UTF-8') ? $content : mb_convert_encoding($content, 'UTF-8', 'auto');
     }
 
     private function extractFromPdf(string $filePath): string
@@ -293,6 +303,122 @@ class ParseSourceJob implements ShouldQueue
         } catch (\Exception $e) {
             throw new \Exception("ODT document extraction failed: " . $e->getMessage());
         }
+    }
+
+    private function extractFromJson(string $filePath): string
+    {
+        try {
+            $content = file_get_contents($filePath);
+            
+            if ($content === false) {
+                throw new \Exception("Failed to read JSON file: {$filePath}");
+            }
+
+            $data = json_decode($content, true);
+            
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                throw new \Exception("Invalid JSON format: " . json_last_error_msg());
+            }
+
+            $text = $this->convertJsonToText($data);
+
+            Log::info('Extracted text from JSON', [
+                'file' => $filePath,
+                'text_length' => strlen($text)
+            ]);
+            
+            if (empty(trim($text))) {
+                throw new \Exception("No text extracted from JSON");
+            }
+
+            return $text;
+        } catch (\Exception $e) {
+            throw new \Exception("JSON extraction failed: " . $e->getMessage());
+        }
+    }
+
+    private function extractFromJsonl(string $filePath): string
+    {
+        try {
+            $content = file_get_contents($filePath);
+            
+            if ($content === false) {
+                throw new \Exception("Failed to read JSONL file: {$filePath}");
+            }
+
+            $lines = explode("\n", $content);
+            $processedLines = [];
+            
+            foreach ($lines as $lineNumber => $line) {
+                $line = trim($line);
+                
+                if (empty($line)) {
+                    continue;
+                }
+
+                $data = json_decode($line, true);
+                
+                if (json_last_error() !== JSON_ERROR_NONE) {
+                    Log::warning('Invalid JSON line in JSONL file', [
+                        'file' => $filePath,
+                        'line_number' => $lineNumber + 1,
+                        'error' => json_last_error_msg()
+                    ]);
+                    continue;
+                }
+
+                $processedLines[] = $this->convertJsonToText($data);
+            }
+
+            $text = implode("\n\n---\n\n", $processedLines);
+
+            Log::info('Extracted text from JSONL', [
+                'file' => $filePath,
+                'lines_count' => count($processedLines),
+                'text_length' => strlen($text)
+            ]);
+            
+            if (empty(trim($text))) {
+                throw new \Exception("No text extracted from JSONL");
+            }
+
+            return $text;
+        } catch (\Exception $e) {
+            throw new \Exception("JSONL extraction failed: " . $e->getMessage());
+        }
+    }
+
+    public function convertJsonToText($data, int $depth = 0): string
+    {
+        $text = '';
+        $indent = str_repeat('  ', $depth);
+        
+        if (is_array($data)) {
+            if (array_keys($data) === range(0, count($data) - 1)) {
+                foreach ($data as $index => $value) {
+                    if (is_array($value) || is_object($value)) {
+                        $text .= $this->convertJsonToText($value, $depth);
+                    } else {
+                        $text .= $indent . $value . "\n";
+                    }
+                }
+            } else {
+                foreach ($data as $key => $value) {
+                    if (is_array($value) || is_object($value)) {
+                        $text .= $indent . $key . ":\n";
+                        $text .= $this->convertJsonToText($value, $depth + 1);
+                    } else {
+                        $text .= $indent . $key . ": " . $value . "\n";
+                    }
+                }
+            }
+        } elseif (is_object($data)) {
+            $text .= $this->convertJsonToText((array)$data, $depth);
+        } else {
+            $text .= $indent . $data . "\n";
+        }
+        
+        return $text;
     }
 
     private function extractTextFromContainer($container): string

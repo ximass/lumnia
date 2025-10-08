@@ -353,8 +353,6 @@ export default defineComponent({
       }
 
       const statuses = knowledgeBase.sources.map(s => s.status)
-
-      console.log(statuses);
       
       if (statuses.every(s => s === 'processed')) {
         return 'Concluída'

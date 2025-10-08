@@ -15,6 +15,7 @@ use App\Http\Controllers\SourceProcessingController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\MessageRatingController;
 use App\Http\Controllers\MessageController;
+use App\Http\Controllers\ErrorLogController;
 
 Route::get('/status', function () {
     return response()->json(['message' => 'API is running']);
@@ -83,6 +84,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/messages/{message}/rating', [MessageRatingController::class, 'show']);
     Route::post('/messages/{message}/rating', [MessageRatingController::class, 'store']);
     Route::delete('/messages/{message}/rating', [MessageRatingController::class, 'destroy']);
+
+    Route::get('/error-logs/statistics', [ErrorLogController::class, 'statistics']);
+    Route::delete('/error-logs/destroy-all', [ErrorLogController::class, 'destroyAll']);
+    Route::apiResource('/error-logs', ErrorLogController::class)->only(['index', 'show', 'destroy']);
 
     // Resource routes (CRUD completo)
     Route::apiResource('/groups', GroupController::class);

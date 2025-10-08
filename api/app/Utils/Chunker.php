@@ -189,4 +189,46 @@ PYTHON;
     {
         return min($targetTokens, $maxTokens);
     }
+
+    public static function chunkJson(string $text, string $sourceId): array
+    {
+        return [
+            [
+                'source_id' => $sourceId,
+                'chunk_index' => 0,
+                'text' => trim($text),
+                'chunk_id' => self::generateChunkId($sourceId, 0, trim($text)),
+                'metadata' => [
+                    'chunking_method' => 'json_full_document'
+                ]
+            ]
+        ];
+    }
+
+    public static function chunkJsonl(string $text, string $sourceId): array
+    {
+        $lines = explode("\n\n---\n\n", $text);
+        $chunks = [];
+        
+        foreach ($lines as $index => $line) {
+            $line = trim($line);
+            
+            if (empty($line)) {
+                continue;
+            }
+
+            $chunks[] = [
+                'source_id' => $sourceId,
+                'chunk_index' => $index,
+                'text' => $line,
+                'chunk_id' => self::generateChunkId($sourceId, $index, $line),
+                'metadata' => [
+                    'line_number' => $index + 1,
+                    'chunking_method' => 'jsonl_line'
+                ]
+            ];
+        }
+
+        return $chunks;
+    }
 }

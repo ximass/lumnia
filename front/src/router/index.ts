@@ -9,6 +9,7 @@ import PersonaView from '@/views/PersonaView.vue'
 import KnowledgeBaseView from '@/views/KnowledgeBaseView.vue'
 import KnowledgeBaseForm from '@/views/KnowledgeBaseForm.vue'
 import { useAuth } from '@/composables/auth'
+import ErrorLogsView from '../views/ErrorLogsView.vue';
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -57,6 +58,12 @@ const routes: Array<RouteRecordRaw> = [
     path: '/personas',
     name: 'PersonaView',
     component: PersonaView,
+    meta: { requiresAuth: true, requiresAdmin: true },
+  },
+  {
+    path: '/error-logs',
+    name: 'ErrorLogsView',
+    component: ErrorLogsView,
     meta: { requiresAuth: true, requiresAdmin: true },
   },
   {

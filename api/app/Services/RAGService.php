@@ -129,6 +129,8 @@ class RAGService
         int $maxChunks
     ) {
         $embeddingStr = '[' . implode(',', $queryEmbedding) . ']';
+        $minSemanticScore = 0.2;
+        $minLexicalScore = 0.01;
 
         $sql = "
             WITH semantic_search AS (
@@ -141,6 +143,7 @@ class RAGService
                 FROM chunks 
                 WHERE kb_id = ? 
                     AND embedding IS NOT NULL
+                    AND (1 - (embedding <=> ?::vector)) >= ?
                 ORDER BY embedding <=> ?::vector
                 LIMIT ?
             ),
@@ -161,17 +164,44 @@ class RAGService
                 ORDER BY lexical_score DESC
                 LIMIT ?
             ),
-            combined_results AS (
+            lexical_normalized AS (
                 SELECT 
-                    COALESCE(s.id, l.id) as id,
-                    COALESCE(s.source_id, l.source_id) as source_id,
-                    COALESCE(s.text, l.text) as text,
-                    COALESCE(s.metadata, l.metadata) as metadata,
-                    COALESCE(s.semantic_score, 0.0) as semantic_score,
-                    COALESCE(l.lexical_score, 0.0) as lexical_score,
-                    (? * COALESCE(s.semantic_score, 0.0) + ? * COALESCE(l.lexical_score, 0.0)) as combined_score
+                    id,
+                    source_id,
+                    text,
+                    metadata,
+                    lexical_score,
+                    CASE 
+                        WHEN MAX(lexical_score) OVER () > 0 
+                        THEN lexical_score / MAX(lexical_score) OVER ()
+                        ELSE 0.0
+                    END AS normalized_lexical_score
+                FROM lexical_search
+                WHERE lexical_score >= ?
+            ),
+            all_results AS (
+                SELECT 
+                    s.id,
+                    s.source_id,
+                    s.text,
+                    s.metadata,
+                    s.semantic_score,
+                    COALESCE(l.normalized_lexical_score, 0.0) AS lexical_score
                 FROM semantic_search s
-                FULL OUTER JOIN lexical_search l ON s.id = l.id
+                LEFT JOIN lexical_normalized l ON s.id = l.id
+                
+                UNION
+                
+                SELECT 
+                    l.id,
+                    l.source_id,
+                    l.text,
+                    l.metadata,
+                    COALESCE(s.semantic_score, 0.0) AS semantic_score,
+                    l.normalized_lexical_score AS lexical_score
+                FROM lexical_normalized l
+                LEFT JOIN semantic_search s ON l.id = s.id
+                WHERE s.id IS NULL
             )
             SELECT 
                 id,
@@ -180,27 +210,32 @@ class RAGService
                 metadata,
                 semantic_score,
                 lexical_score,
-                combined_score
-            FROM combined_results
-            WHERE combined_score > 0
-            ORDER BY combined_score DESC
+                (? * semantic_score + ? * lexical_score) as combined_score
+            FROM all_results
+            WHERE (? * semantic_score + ? * lexical_score) > 0
+            ORDER BY combined_score DESC, semantic_score DESC
             LIMIT ?
         ";
 
         return collect(DB::select($sql, [
-            $embeddingStr,      // semantic search embedding 1
-            $kbId,              // semantic search kb_id
-            $embeddingStr,      // semantic search embedding 2 (for ORDER BY)
-            $maxChunks,         // semantic search limit
-            config('search.language'), // lexical search language 1
-            $query,             // lexical search query 1
-            $kbId,              // lexical search kb_id
-            config('search.language'), // lexical search language 2
-            $query,             // lexical search query 2
-            $maxChunks,         // lexical search limit
-            $semanticWeight,    // alpha weight
-            $lexicalWeight,     // beta weight
-            $maxChunks          // final limit
+            $embeddingStr,              // semantic search embedding 1
+            $kbId,                      // semantic search kb_id
+            $embeddingStr,              // semantic search embedding 2 (for WHERE)
+            $minSemanticScore,          // semantic search min threshold
+            $embeddingStr,              // semantic search embedding 3 (for ORDER BY)
+            $maxChunks,                 // semantic search limit
+            config('search.language'),  // lexical search language 1
+            $query,                     // lexical search query 1
+            $kbId,                      // lexical search kb_id
+            config('search.language'),  // lexical search language 2
+            $query,                     // lexical search query 2
+            $maxChunks,                 // lexical search limit
+            $minLexicalScore,           // lexical search min threshold
+            $semanticWeight,            // weight for combined_score calculation 1
+            $lexicalWeight,             // weight for combined_score calculation 2
+            $semanticWeight,            // weight for WHERE clause 1
+            $lexicalWeight,             // weight for WHERE clause 2
+            $maxChunks                  // final limit
         ]));
     }
 }
