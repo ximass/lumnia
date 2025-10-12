@@ -192,17 +192,121 @@ PYTHON;
 
     public static function chunkJson(string $text, string $sourceId): array
     {
-        return [
-            [
-                'source_id' => $sourceId,
-                'chunk_index' => 0,
-                'text' => trim($text),
-                'chunk_id' => self::generateChunkId($sourceId, 0, trim($text)),
-                'metadata' => [
-                    'chunking_method' => 'json_full_document'
+        $data = json_decode($text, true);
+        
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            return [
+                [
+                    'source_id' => $sourceId,
+                    'chunk_index' => 0,
+                    'text' => trim($text),
+                    'chunk_id' => self::generateChunkId($sourceId, 0, trim($text)),
+                    'metadata' => [
+                        'chunking_method' => 'json_full_document',
+                        'error' => 'Invalid JSON, processed as single chunk'
+                    ]
                 ]
-            ]
-        ];
+            ];
+        }
+        
+        if (!is_array($data)) {
+            return [
+                [
+                    'source_id' => $sourceId,
+                    'chunk_index' => 0,
+                    'text' => trim($text),
+                    'chunk_id' => self::generateChunkId($sourceId, 0, trim($text)),
+                    'metadata' => [
+                        'chunking_method' => 'json_full_document',
+                        'type' => 'non_array'
+                    ]
+                ]
+            ];
+        }
+        
+        if (array_keys($data) !== range(0, count($data) - 1)) {
+            return [
+                [
+                    'source_id' => $sourceId,
+                    'chunk_index' => 0,
+                    'text' => trim($text),
+                    'chunk_id' => self::generateChunkId($sourceId, 0, trim($text)),
+                    'metadata' => [
+                        'chunking_method' => 'json_full_document',
+                        'type' => 'object'
+                    ]
+                ]
+            ];
+        }
+        
+        $chunks = [];
+        
+        foreach ($data as $index => $item) {
+            $itemText = '';
+            
+            if (is_array($item) || is_object($item)) {
+                foreach ($item as $key => $value) {
+                    if (is_array($value) || is_object($value)) {
+                        $itemText .= $key . ":\n";
+                        $itemText .= self::convertItemToText($value, 1);
+                    } else {
+                        $itemText .= $key . ": " . $value . "\n";
+                    }
+                }
+            } else {
+                $itemText = (string) $item;
+            }
+            
+            $itemText = trim($itemText);
+            
+            if (!empty($itemText)) {
+                $chunks[] = [
+                    'source_id' => $sourceId,
+                    'chunk_index' => $index,
+                    'text' => $itemText,
+                    'chunk_id' => self::generateChunkId($sourceId, $index, $itemText),
+                    'metadata' => [
+                        'chunking_method' => 'json_array_item',
+                        'item_index' => $index
+                    ]
+                ];
+            }
+        }
+        
+        return $chunks;
+    }
+    
+    private static function convertItemToText($data, int $depth = 0): string
+    {
+        $text = '';
+        $indent = str_repeat('  ', $depth);
+        
+        if (is_array($data)) {
+            if (array_keys($data) === range(0, count($data) - 1)) {
+                foreach ($data as $value) {
+                    if (is_array($value) || is_object($value)) {
+                        $text .= self::convertItemToText($value, $depth);
+                    } else {
+                        $text .= $indent . $value . "\n";
+                    }
+                }
+            } else {
+                foreach ($data as $key => $value) {
+                    if (is_array($value) || is_object($value)) {
+                        $text .= $indent . $key . ":\n";
+                        $text .= self::convertItemToText($value, $depth + 1);
+                    } else {
+                        $text .= $indent . $key . ": " . $value . "\n";
+                    }
+                }
+            }
+        } elseif (is_object($data)) {
+            $text .= self::convertItemToText((array)$data, $depth);
+        } else {
+            $text .= $indent . $data . "\n";
+        }
+        
+        return $text;
     }
 
     public static function chunkJsonl(string $text, string $sourceId): array

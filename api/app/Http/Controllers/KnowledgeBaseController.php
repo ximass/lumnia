@@ -11,7 +11,7 @@ class KnowledgeBaseController extends Controller
 {
     public function index()
     {
-        $knowledgeBases = KnowledgeBase::with(['owner', 'sources', 'chunks'])->get();
+        $knowledgeBases = KnowledgeBase::with(['owner', 'sources'])->get();
         return response()->json([
             'status' => 'success',
             'data' => $knowledgeBases
@@ -24,7 +24,7 @@ class KnowledgeBaseController extends Controller
         $knowledgeBases = [];
         if ($userId) {
             // Buscar apenas as bases de conhecimento vinculadas a grupos nos quais o usuário está cadastrado
-            $knowledgeBases = KnowledgeBase::with(['owner', 'sources', 'chunks'])
+            $knowledgeBases = KnowledgeBase::with(['owner', 'sources'])
                 ->whereHas('groups.users', function ($q) use ($userId) {
                     $q->where('users.id', $userId);
                 })
@@ -52,7 +52,7 @@ class KnowledgeBaseController extends Controller
             'owner_id' => $request->input('owner_id'),
         ]);
 
-        $knowledgeBase->load(['owner', 'sources', 'chunks']);
+        $knowledgeBase->load(['owner', 'sources']);
 
         return response()->json([
             'status' => 'success',
@@ -63,7 +63,7 @@ class KnowledgeBaseController extends Controller
 
     public function show(KnowledgeBase $knowledgeBase)
     {
-        $knowledgeBase->load(['owner', 'sources', 'chunks']);
+        $knowledgeBase->load(['owner', 'sources']);
 
         return response()->json([
             'status' => 'success',
@@ -79,7 +79,7 @@ class KnowledgeBaseController extends Controller
         ]);
 
         $knowledgeBase->update($request->only(['name', 'description']));
-        $knowledgeBase->load(['owner', 'sources', 'chunks']);
+        $knowledgeBase->load(['owner', 'sources']);
 
         return response()->json([
             'status' => 'success',

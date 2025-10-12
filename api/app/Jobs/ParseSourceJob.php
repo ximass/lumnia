@@ -320,7 +320,7 @@ class ParseSourceJob implements ShouldQueue
                 throw new \Exception("Invalid JSON format: " . json_last_error_msg());
             }
 
-            $text = $this->convertJsonToText($data);
+            $text = $content;
 
             Log::info('Extracted text from JSON', [
                 'file' => $filePath,
@@ -367,7 +367,7 @@ class ParseSourceJob implements ShouldQueue
                     continue;
                 }
 
-                $processedLines[] = $this->convertJsonToText($data);
+                $processedLines[] = $line;
             }
 
             $text = implode("\n\n---\n\n", $processedLines);
@@ -386,39 +386,6 @@ class ParseSourceJob implements ShouldQueue
         } catch (\Exception $e) {
             throw new \Exception("JSONL extraction failed: " . $e->getMessage());
         }
-    }
-
-    public function convertJsonToText($data, int $depth = 0): string
-    {
-        $text = '';
-        $indent = str_repeat('  ', $depth);
-        
-        if (is_array($data)) {
-            if (array_keys($data) === range(0, count($data) - 1)) {
-                foreach ($data as $index => $value) {
-                    if (is_array($value) || is_object($value)) {
-                        $text .= $this->convertJsonToText($value, $depth);
-                    } else {
-                        $text .= $indent . $value . "\n";
-                    }
-                }
-            } else {
-                foreach ($data as $key => $value) {
-                    if (is_array($value) || is_object($value)) {
-                        $text .= $indent . $key . ":\n";
-                        $text .= $this->convertJsonToText($value, $depth + 1);
-                    } else {
-                        $text .= $indent . $key . ": " . $value . "\n";
-                    }
-                }
-            }
-        } elseif (is_object($data)) {
-            $text .= $this->convertJsonToText((array)$data, $depth);
-        } else {
-            $text .= $indent . $data . "\n";
-        }
-        
-        return $text;
     }
 
     private function extractTextFromContainer($container): string
