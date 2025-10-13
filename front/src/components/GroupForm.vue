@@ -39,7 +39,7 @@
           <v-select
             v-model="group.permission_ids"
             :items="permissions"
-            item-title="label"
+            item-title="name"
             item-value="id"
             label="Permissões"
             multiple
@@ -150,8 +150,8 @@
       const fetchPermissions = async () => {
         loadingPermissions.value = true
         try {
-          const response = await axios.get('/api/permissions')
-          permissions.value = response.data.data || []
+          const response = await axios.get<{status: string, data: Permission[]}>('/api/permissions')
+          permissions.value = response.data.data
         } catch (error: any) {
           const errorMsg = error.response?.data?.message || 'Erro ao buscar permissões'
           showToast(errorMsg)
