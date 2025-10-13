@@ -231,14 +231,12 @@ export interface UserPersonaFormData {
 export interface Permission {
   id: number
   name: string
-  label?: string
   description?: string
 }
 
 export interface PermissionFormData {
   id?: number
   name: string
-  label?: string
   description?: string
 }
 

@@ -41,7 +41,7 @@ export default defineComponent({
   },
   emits: ['close', 'saved'],
   setup(props, { emit }) {
-    const local = ref<PermissionFormData>({ name: '', label: '', description: '' })
+    const local = ref<PermissionFormData>({ name: '', description: '' })
     const selectedMenuOption = ref<string | null>(null)
 
     watch(
@@ -50,10 +50,10 @@ export default defineComponent({
         if (v) {
           local.value = { ...v }
           // try to map to a menu option if possible
-          const found = menuItems.find(m => m.permission === v.name || m.title === v.label || m.route.replace(/\//g, '_').replace(/^_/, '') === v.name)
+          const found = menuItems.find(m => m.permission === v.name || m.route.replace(/\//g, '_').replace(/^_/, '') === v.name)
           selectedMenuOption.value = found ? found.route : null
         } else {
-          local.value = { name: '', label: '', description: '' }
+          local.value = { name: '', description: '' }
           selectedMenuOption.value = null
         }
       },
@@ -63,8 +63,7 @@ export default defineComponent({
     watch(selectedMenuOption, (val) => {
       if (!val) return
       const opt = menuItems.find(m => m.route === val)
-      if (!opt) return
-      local.value.label = opt.title
+          if (!opt) return
       local.value.name = opt.permission || opt.route.replace(/\//g, '_').replace(/^_/, '')
     })
 
