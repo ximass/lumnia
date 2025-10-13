@@ -8,7 +8,6 @@
       :items="groups"
       :headers="[
         { title: 'Nome', value: 'name', sortable: true },
-        { title: 'Usuários', value: 'users', sortable: false },
         {
           title: 'Bases de conhecimentos',
           value: 'knowledge_bases',
