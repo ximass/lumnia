@@ -242,6 +242,14 @@ export interface PermissionFormData {
   description?: string
 }
 
+export interface MenuItem {
+  title: string
+  route: string
+  admin?: boolean
+  permission?: string
+  icon?: string
+}
+
 export interface ChatContextInfo {
   context_enabled: boolean
   context_limit: number

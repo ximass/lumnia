@@ -39,11 +39,12 @@
 </template>
 
 <script lang="ts">
-  import { defineComponent, ref, onMounted } from 'vue'
-  import axios from 'axios'
+  import { defineComponent, ref, onMounted, nextTick } from 'vue'
   import PermissionForm from '@/components/PermissionForm.vue'
   import { useToast } from '@/composables/useToast'
   import type { Permission } from '@/types/types'
+  import { menuItems } from '@/constants/menu'
+  import permissionService from '@/services/permission'
 
   export default defineComponent({
     name: 'PermissionsView',
@@ -51,30 +52,46 @@
     setup() {
       const { showToast } = useToast()
       const isFormOpen = ref(false)
+    const selectedMenuOption = ref<string | null>(null)
 
       const allPermissions = ref<Permission[]>([])
       const selectedPermission = ref<Permission | null>(null)
 
       const headers = [
         { title: 'Nome', value: 'name', sortable: true },
-        { title: 'Rótulo', value: 'label', sortable: true },
         { title: 'Descrição', value: 'description', sortable: false },
         { title: 'Ações', value: 'actions', sortable: false },
       ]
 
       const fetchPermissions = async () => {
         try {
-          const response = await axios.get<Permission[]>('/api/permissions')
-          // API returns { status, data }
-          allPermissions.value = response.data?.data || []
+          const r = await permissionService.list()
+          allPermissions.value = r.data || []
         } catch (error: any) {
           const errorMsg = error.response?.data?.message || 'Erro ao buscar permissões'
           showToast(errorMsg)
         }
       }
 
-      const openForm = () => {
+      const createPermissionFromMenu = async () => {
+        if (!selectedMenuOption.value) return
+        const option = menuItems.find(m => m.route === selectedMenuOption.value || m.permission === selectedMenuOption.value || m.title === selectedMenuOption.value)
+        if (!option) return showToast('Opção de menu inválida')
+
+        try {
+          await permissionService.create({ name: option.permission || option.route.replace(/\//g, '_').replace(/^_/, ''), label: option.title, description: `Permissão para acessar ${option.title}` })
+          showToast('Permissão criada')
+          fetchPermissions()
+        } catch (error: any) {
+          const errorMsg = error.response?.data?.message || 'Erro ao criar permissão'
+          showToast(errorMsg)
+        }
+      }
+
+      const openForm = async () => {
         selectedPermission.value = null
+        selectedMenuOption.value = null
+        await nextTick()
         isFormOpen.value = true
       }
 
@@ -85,7 +102,7 @@
 
       const deletePermission = async (id: number) => {
         try {
-          await axios.delete(`/api/permissions/${id}`)
+          await permissionService.remove(id)
           fetchPermissions()
         } catch (error: any) {
           const errorMsg = error.response?.data?.message || 'Erro ao deletar permissão'
@@ -102,10 +119,13 @@
         isFormOpen,
         selectedPermission,
         headers,
+        menuItems,
+        selectedMenuOption,
         openForm,
         editPermission,
         deletePermission,
         fetchPermissions,
+        createPermissionFromMenu,
       }
     },
   })

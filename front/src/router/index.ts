@@ -23,25 +23,25 @@ const routes: Array<RouteRecordRaw> = [
     path: '/chats',
     name: 'Chat',
     component: ChatView,
-    meta: { requiresAuth: true },
+    meta: { requiresAuth: true, permission: 'use_chats' },
   },
   {
     path: '/knowledge-bases',
     name: 'KnowledgeBaseView',
     component: KnowledgeBaseView,
-    meta: { requiresAuth: true, requiresAdmin: true },
+    meta: { requiresAuth: true, permission: 'manage_knowledge_bases' },
   },
   {
     path: '/knowledge-bases/create',
     name: 'KnowledgeBaseCreate',
     component: KnowledgeBaseForm,
-    meta: { requiresAuth: true, requiresAdmin: true },
+    meta: { requiresAuth: true, permission: 'manage_knowledge_bases' },
   },
   {
     path: '/knowledge-bases/:id/edit',
     name: 'KnowledgeBaseEdit',
     component: KnowledgeBaseForm,
-    meta: { requiresAuth: true, requiresAdmin: true },
+    meta: { requiresAuth: true, permission: 'manage_knowledge_bases' },
   },
   {
     path: '/groups',
@@ -106,6 +106,7 @@ router.beforeEach(async (to, from, next) => {
   const requiresAuth = to.matched.some(record => record.meta.requiresAuth)
   const requiresGuest = to.matched.some(record => record.meta.requiresGuest)
   const requiresAdmin = to.matched.some(record => record.meta.requiresAdmin)
+  const requiredPermission = to.matched.map(record => (record.meta as any).permission).find(p => !!p)
 
   if (requiresAuth && !isAuthenticated.value) {
     return next({ name: 'Login' })
@@ -115,12 +116,26 @@ router.beforeEach(async (to, from, next) => {
     return next({ name: 'Home' })
   }
 
-  if (requiresAdmin && (!user.value || !user.value.admin)) {
-    // Allow access if user belongs to a group that has 'manage_permissions'
-    const hasGroupPermission = user.value && user.value.groups && user.value.groups.some(g => (g.permissions || []).some((p: any) => p.name === 'manage_permissions'))
-    if (!user.value || (!user.value.admin && !hasGroupPermission)) {
-      return next({ name: 'Home' })
+  function userHasPermission(name: string) {
+    if (!user.value || !user.value.groups) return false
+    return user.value.groups.some((g: any) => (g.permissions || []).some((p: any) => p.name === name))
+  }
+
+  if (requiredPermission || requiresAdmin) {
+
+    if (user.value && user.value.admin) {
+      return next()
     }
+
+    if (requiredPermission && userHasPermission(requiredPermission)) {
+      return next()
+    }
+
+    if (requiresAdmin && userHasPermission('manage_permissions')) {
+      return next()
+    }
+
+    return next({ name: 'Home' })
   }
 
   next()
