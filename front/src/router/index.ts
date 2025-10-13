@@ -8,6 +8,7 @@ import UserView from '@/views/UserView.vue'
 import PersonaView from '@/views/PersonaView.vue'
 import KnowledgeBaseView from '@/views/KnowledgeBaseView.vue'
 import KnowledgeBaseForm from '@/views/KnowledgeBaseForm.vue'
+import PermissionsView from '@/views/Permissions.vue'
 import { useAuth } from '@/composables/auth'
 import ErrorLogsView from '../views/ErrorLogsView.vue';
 
@@ -61,6 +62,12 @@ const routes: Array<RouteRecordRaw> = [
     meta: { requiresAuth: true, requiresAdmin: true },
   },
   {
+    path: '/permissions',
+    name: 'PermissionsView',
+    component: PermissionsView,
+    meta: { requiresAuth: true, requiresAdmin: true },
+  },
+  {
     path: '/error-logs',
     name: 'ErrorLogsView',
     component: ErrorLogsView,
@@ -109,7 +116,11 @@ router.beforeEach(async (to, from, next) => {
   }
 
   if (requiresAdmin && (!user.value || !user.value.admin)) {
-    return next({ name: 'Home' })
+    // Allow access if user belongs to a group that has 'manage_permissions'
+    const hasGroupPermission = user.value && user.value.groups && user.value.groups.some(g => (g.permissions || []).some((p: any) => p.name === 'manage_permissions'))
+    if (!user.value || (!user.value.admin && !hasGroupPermission)) {
+      return next({ name: 'Home' })
+    }
   }
 
   next()

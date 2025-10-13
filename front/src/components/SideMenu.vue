@@ -30,7 +30,7 @@
         :prepend-icon="item.icon"
         :title="item.title"
         :value="item.route"
-        @click="$router.push(item.route)"
+        @click="navigate(item.route)"
       ></v-list-item>
 
       <v-list-group
@@ -47,7 +47,7 @@
           :prepend-icon="item.icon"
           :title="item.title"
           :value="item.route"
-          @click="$router.push(item.route)"
+          @click="navigate(item.route)"
         ></v-list-item>
       </v-list-group>
     </v-list>
@@ -112,6 +112,12 @@
           icon: 'mdi-account-tie',
         },
         {
+          title: 'Permissões',
+          route: '/permissions',
+          admin: true,
+          icon: 'mdi-shield-key',
+        },
+        {
           title: 'Logs de erros',
           route: '/error-logs',
           admin: true,
@@ -126,15 +132,29 @@
       )
     );
 
+    function userHasPermission(name: string) {
+      if (!props.user || !props.user.groups) return false;
+      for (const g of props.user.groups) {
+        if (!g.permissions) continue;
+        if (g.permissions.some((p: any) => p.name === name)) return true;
+      }
+      return false;
+    }
+
     const adminMenuItems = computed(() =>
-      props.user && props.user.admin ? menuItems.filter(item => item.admin) : []
+      props.user && (props.user.admin || userHasPermission('manage_permissions')) ? menuItems.filter(item => item.admin) : []
     );
+
+    function navigate(route: string) {
+      router.push(route);
+    }
 
     return {
       basicMenuItems,
       adminMenuItems,
       rail,
       props,
+      navigate,
     };
     },
   })

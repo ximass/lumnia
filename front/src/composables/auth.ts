@@ -1,9 +1,9 @@
 import { ref } from 'vue';
 import axios from '../plugins/axios';
-import type { User } from '../types/types';
+import type { UserWithGroups } from '../types/types';
 
 const isAuthenticated = ref(false);
-const user = ref<User | null>(null);
+const user = ref<UserWithGroups | null>(null);
 const isUserFetched = ref(false);
 
 const fetchUser = async () => {
@@ -30,7 +30,7 @@ const fetchUser = async () => {
 
 const login = async (email: string, password: string) => {
   await axios.get('/sanctum/csrf-cookie', { withCredentials: true });
-  
+
   const response = await axios.post(
     '/api/login',
     { email, password },
