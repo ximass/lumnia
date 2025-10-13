@@ -36,7 +36,7 @@ Route::post('/chunks/search', [ChunkController::class, 'search']);
 Route::middleware('auth:sanctum')->group(function () {
     // User routes
     Route::get('/user', function (Request $request) {
-        return $request->user()->load('userPersona');
+        return $request->user()->load(['userPersona', 'groups.permissions']);
     });
 
     // Chat routes
@@ -76,7 +76,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Search route
     Route::post('/search', [SearchController::class, 'search']);
-    
+
     // Information Sources routes
     Route::get('/messages/{message}/information-sources', [MessageController::class, 'getInformationSources']);
 
@@ -93,6 +93,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('/groups', GroupController::class);
     Route::apiResource('/users', UserController::class);
     Route::apiResource('/personas', PersonaController::class);
+    // Permissions
+    Route::apiResource('/permissions', \App\Http\Controllers\PermissionController::class);
+    Route::post('/permissions/{permission}/assign-to-group', [\App\Http\Controllers\PermissionController::class, 'assignToGroup']);
+    Route::post('/permissions/{permission}/remove-from-group', [\App\Http\Controllers\PermissionController::class, 'removeFromGroup']);
     Route::apiResource('/knowledge-bases', KnowledgeBaseController::class);
     Route::apiResource('/sources', SourceController::class);
     Route::apiResource('/chunks', ChunkController::class);

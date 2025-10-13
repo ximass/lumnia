@@ -39,8 +39,12 @@ export interface GroupWithUsers extends Group {
   users: User[]
 }
 
+export interface GroupWithPermissions extends Group {
+  permissions?: Permission[]
+}
+
 export interface UserWithGroups extends User {
-  groups: Group[]
+  groups: GroupWithPermissions[]
 }
 
 export interface Chat {
@@ -222,6 +226,28 @@ export interface UserPersonaFormData {
   instructions: string
   response_format?: string
   creativity: number
+}
+
+export interface Permission {
+  id: number
+  name: string
+  label?: string
+  description?: string
+}
+
+export interface PermissionFormData {
+  id?: number
+  name: string
+  label?: string
+  description?: string
+}
+
+export interface MenuItem {
+  title: string
+  route: string
+  admin?: boolean
+  permission?: string
+  icon?: string
 }
 
 export interface ChatContextInfo {

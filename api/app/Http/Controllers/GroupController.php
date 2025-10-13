@@ -9,7 +9,7 @@ class GroupController extends Controller
 {
     public function index()
     {
-        return response()->json(Group::with([ 'knowledgeBases'])->get());
+        return response()->json(Group::with([ 'knowledgeBases', 'permissions'])->get());
     }
 
     public function store(Request $request)
@@ -18,6 +18,8 @@ class GroupController extends Controller
             'name' => 'required|string|max:255',
             'knowledge_base_ids' => 'array',
             'knowledge_base_ids.*' => 'exists:knowledge_bases,id',
+            'permission_ids' => 'array',
+            'permission_ids.*' => 'exists:permissions,id',
         ]);
 
         $group = Group::create($request->only('name'));
@@ -26,12 +28,16 @@ class GroupController extends Controller
             $group->knowledgeBases()->attach($request->knowledge_base_ids);
         }
 
+        if ($request->has('permission_ids')) {
+            $group->permissions()->attach($request->permission_ids);
+        }
+
         return response()->json($group->load(['knowledgeBases']), 201);
     }
 
     public function show(Group $group)
     {
-        return response()->json($group->load(['users', 'knowledgeBases']));
+        return response()->json($group->load(['users', 'knowledgeBases', 'permissions']));
     }
 
     public function update(Request $request, Group $group)
@@ -40,12 +46,18 @@ class GroupController extends Controller
             'name' => 'sometimes|required|string|max:255',
             'knowledge_base_ids' => 'array',
             'knowledge_base_ids.*' => 'exists:knowledge_bases,id',
+            'permission_ids' => 'array',
+            'permission_ids.*' => 'exists:permissions,id',
         ]);
 
         $group->update($request->only('name'));
 
         if ($request->has('knowledge_base_ids')) {
             $group->knowledgeBases()->sync($request->knowledge_base_ids);
+        }
+
+        if ($request->has('permission_ids')) {
+            $group->permissions()->sync($request->permission_ids);
         }
 
         return response()->json($group->load(['knowledgeBases']));

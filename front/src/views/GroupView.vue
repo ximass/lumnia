@@ -93,8 +93,18 @@
       }
 
       const editGroup = (group: GroupComplete) => {
-        selectedGroup.value = group
-        isFormOpen.value = true
+        // fetch full group data (including permissions) before opening form
+        (async () => {
+          try {
+            const response = await axios.get(`/api/groups/${group.id}`)
+            selectedGroup.value = response.data
+          } catch (error: any) {
+            const errorMsg = error.response?.data?.message || 'Erro ao carregar grupo'
+            showToast(errorMsg)
+            return
+          }
+          isFormOpen.value = true
+        })()
       }
 
       const deleteGroup = async (groupId: number) => {

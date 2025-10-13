@@ -36,6 +36,18 @@
               ></v-list-item>
             </template>
           </v-select>
+          <v-select
+            v-model="group.permission_ids"
+            :items="permissions"
+            item-title="label"
+            item-value="id"
+            label="Permissões"
+            multiple
+            chips
+            clearable
+            hide-selected
+            :loading="loadingPermissions"
+          />
           <v-card-actions>
             <v-spacer></v-spacer>
             <v-btn @click="close">Cancelar</v-btn>
@@ -55,6 +67,7 @@
     KnowledgeBase,
     GroupWithKnowledgeBases,
     GroupWithUsers,
+    Permission,
   } from '@/types/types'
 
   export default defineComponent({
@@ -65,7 +78,7 @@
         required: true,
       },
       groupData: {
-        type: Object as () => GroupWithKnowledgeBases | null,
+        type: Object as () => any | null,
         default: null,
       },
     },
@@ -77,26 +90,43 @@
       const loadingKnowledgeBases = ref(false)
 
       // Group no longer contains user_ids here — keep knowledge_base_ids as string|number
-      const group = ref<{ id?: number; name: string; knowledge_base_ids: (string | number)[] }>({
+      const group = ref<{ id?: number; name: string; knowledge_base_ids: (string | number)[]; permission_ids?: number[] }>({
         name: '',
         knowledge_base_ids: [],
+        permission_ids: [],
       })
       const knowledgeBases = ref<KnowledgeBase[]>([])
+      const permissions = ref<Permission[]>([])
+      const loadingPermissions = ref(false)
 
       watch(
         () => props.groupData,
-        newData => {
-          if (newData) {
-            group.value = {
-              id: newData.id,
-              name: newData.name,
-              // knowledge_base ids come from API as strings (KnowledgeBase.id is string)
-              knowledge_base_ids: newData.knowledge_bases?.map((kb: KnowledgeBase) => kb.id) || [],
+        async (newData) => {
+          if (newData && newData.id) {
+            // fetch full group from API to ensure permissions are present
+            try {
+              const resp = await axios.get(`/api/groups/${newData.id}`)
+              const d = resp.data
+              group.value = {
+                id: d.id,
+                name: d.name,
+                knowledge_base_ids: d.knowledge_bases?.map((kb: KnowledgeBase) => kb.id) || [],
+                permission_ids: d.permissions?.map((p: Permission) => p.id) || [],
+              }
+            } catch (error: any) {
+              // fallback to provided data if fetch fails
+              group.value = {
+                id: newData.id,
+                name: newData.name,
+                knowledge_base_ids: newData.knowledge_bases?.map((kb: KnowledgeBase) => kb.id) || [],
+                permission_ids: newData.permissions?.map((p: any) => p.id) || [],
+              }
             }
           } else {
             group.value = {
               name: '',
               knowledge_base_ids: [],
+              permission_ids: [],
             }
           }
         },
@@ -117,8 +147,22 @@
         }
       }
 
+      const fetchPermissions = async () => {
+        loadingPermissions.value = true
+        try {
+          const response = await axios.get('/api/permissions')
+          permissions.value = response.data.data || []
+        } catch (error: any) {
+          const errorMsg = error.response?.data?.message || 'Erro ao buscar permissões'
+          showToast(errorMsg)
+        } finally {
+          loadingPermissions.value = false
+        }
+      }
+
       onMounted(() => {
         fetchKnowledgeBases()
+        fetchPermissions()
       })
 
       const submitForm = async () => {
@@ -127,13 +171,14 @@
         if (validation.valid) {
             try {
             // payload shape for API — keep ids as they are (string|number)
-            const payload: { name: string; knowledge_base_ids: (string | number)[] } = {
+            const payload: { name: string; knowledge_base_ids: (string | number)[]; permission_ids?: number[] } = {
               name: group.value.name,
               knowledge_base_ids: group.value.knowledge_base_ids,
+              permission_ids: group.value.permission_ids || [],
             }
 
-            if (props.groupData?.id) {
-              await axios.put(`/api/groups/${props.groupData.id}`, payload)
+            if (group.value.id) {
+              await axios.put(`/api/groups/${group.value.id}`, payload)
             } else {
               await axios.post('/api/groups', payload)
             }
@@ -155,10 +200,12 @@
         group,
         submitForm,
         close,
-        isEdit: !!props.groupData?.id,
+        isEdit: !!group.value.id,
         knowledgeBases,
         loadingKnowledgeBases,
         fetchKnowledgeBases,
+        permissions,
+        loadingPermissions,
       }
     },
   })

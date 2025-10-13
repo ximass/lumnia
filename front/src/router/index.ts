@@ -8,6 +8,7 @@ import UserView from '@/views/UserView.vue'
 import PersonaView from '@/views/PersonaView.vue'
 import KnowledgeBaseView from '@/views/KnowledgeBaseView.vue'
 import KnowledgeBaseForm from '@/views/KnowledgeBaseForm.vue'
+import PermissionsView from '@/views/Permissions.vue'
 import { useAuth } from '@/composables/auth'
 import ErrorLogsView from '../views/ErrorLogsView.vue';
 
@@ -22,25 +23,25 @@ const routes: Array<RouteRecordRaw> = [
     path: '/chats',
     name: 'Chat',
     component: ChatView,
-    meta: { requiresAuth: true },
+    meta: { requiresAuth: true, permission: 'use_chats' },
   },
   {
     path: '/knowledge-bases',
     name: 'KnowledgeBaseView',
     component: KnowledgeBaseView,
-    meta: { requiresAuth: true, requiresAdmin: true },
+    meta: { requiresAuth: true, permission: 'manage_knowledge_bases' },
   },
   {
     path: '/knowledge-bases/create',
     name: 'KnowledgeBaseCreate',
     component: KnowledgeBaseForm,
-    meta: { requiresAuth: true, requiresAdmin: true },
+    meta: { requiresAuth: true, permission: 'manage_knowledge_bases' },
   },
   {
     path: '/knowledge-bases/:id/edit',
     name: 'KnowledgeBaseEdit',
     component: KnowledgeBaseForm,
-    meta: { requiresAuth: true, requiresAdmin: true },
+    meta: { requiresAuth: true, permission: 'manage_knowledge_bases' },
   },
   {
     path: '/groups',
@@ -58,6 +59,12 @@ const routes: Array<RouteRecordRaw> = [
     path: '/personas',
     name: 'PersonaView',
     component: PersonaView,
+    meta: { requiresAuth: true, requiresAdmin: true },
+  },
+  {
+    path: '/permissions',
+    name: 'PermissionsView',
+    component: PermissionsView,
     meta: { requiresAuth: true, requiresAdmin: true },
   },
   {
@@ -99,6 +106,7 @@ router.beforeEach(async (to, from, next) => {
   const requiresAuth = to.matched.some(record => record.meta.requiresAuth)
   const requiresGuest = to.matched.some(record => record.meta.requiresGuest)
   const requiresAdmin = to.matched.some(record => record.meta.requiresAdmin)
+  const requiredPermission = to.matched.map(record => (record.meta as any).permission).find(p => !!p)
 
   if (requiresAuth && !isAuthenticated.value) {
     return next({ name: 'Login' })
@@ -108,7 +116,25 @@ router.beforeEach(async (to, from, next) => {
     return next({ name: 'Home' })
   }
 
-  if (requiresAdmin && (!user.value || !user.value.admin)) {
+  function userHasPermission(name: string) {
+    if (!user.value || !user.value.groups) return false
+    return user.value.groups.some((g: any) => (g.permissions || []).some((p: any) => p.name === name))
+  }
+
+  if (requiredPermission || requiresAdmin) {
+
+    if (user.value && user.value.admin) {
+      return next()
+    }
+
+    if (requiredPermission && userHasPermission(requiredPermission)) {
+      return next()
+    }
+
+    if (requiresAdmin && userHasPermission('manage_permissions')) {
+      return next()
+    }
+
     return next({ name: 'Home' })
   }
 
