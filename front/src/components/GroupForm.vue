@@ -39,7 +39,7 @@
           <v-select
             v-model="group.permission_ids"
             :items="permissions"
-            item-title="label"
+            item-title="name"
             item-value="id"
             label="Permissões"
             multiple
