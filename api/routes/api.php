@@ -16,6 +16,7 @@ use App\Http\Controllers\SearchController;
 use App\Http\Controllers\MessageRatingController;
 use App\Http\Controllers\MessageController;
 use App\Http\Controllers\ErrorLogController;
+use App\Http\Controllers\PermissionController;
 
 Route::get('/status', function () {
     return response()->json(['message' => 'API is running']);
@@ -94,9 +95,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('/users', UserController::class);
     Route::apiResource('/personas', PersonaController::class);
     // Permissions
-    Route::apiResource('/permissions', \App\Http\Controllers\PermissionController::class);
-    Route::post('/permissions/{permission}/assign-to-group', [\App\Http\Controllers\PermissionController::class, 'assignToGroup']);
-    Route::post('/permissions/{permission}/remove-from-group', [\App\Http\Controllers\PermissionController::class, 'removeFromGroup']);
+    Route::apiResource('/permissions', PermissionController::class);
+    Route::post('/permissions/{permission}/assign-to-group', [PermissionController::class, 'assignToGroup']);
+    Route::post('/permissions/{permission}/remove-from-group', [PermissionController::class, 'removeFromGroup']);
     Route::apiResource('/knowledge-bases', KnowledgeBaseController::class);
     Route::apiResource('/sources', SourceController::class);
     Route::apiResource('/chunks', ChunkController::class);

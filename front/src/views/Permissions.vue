@@ -79,7 +79,7 @@
         if (!option) return showToast('Opção de menu inválida')
 
         try {
-          await permissionService.create({ name: option.permission || option.route.replace(/\//g, '_').replace(/^_/, ''), label: option.title, description: `Permissão para acessar ${option.title}` })
+          await permissionService.create({ name: option.permission || option.route.replace(/\//g, '_').replace(/^_/, ''), description: `Permissão para acessar ${option.title}` })
           showToast('Permissão criada')
           fetchPermissions()
         } catch (error: any) {
