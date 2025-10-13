@@ -18,7 +18,6 @@ class PermissionController extends Controller
     {
         $data = $request->validate([
             'name' => 'required|string|unique:permissions,name',
-            'label' => 'nullable|string',
             'description' => 'nullable|string',
         ]);
 
@@ -35,7 +34,6 @@ class PermissionController extends Controller
     {
         $data = $request->validate([
             'name' => 'required|string|unique:permissions,name,' . $permission->id,
-            'label' => 'nullable|string',
             'description' => 'nullable|string',
         ]);
 
