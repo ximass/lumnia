@@ -45,7 +45,21 @@
                     </span>
                   </div>
 
-                  <div class="message-text">{{ message.answer }}</div>
+                  <div v-if="extractThinking(message.answer).thinking" class="thinking-section">
+                    <v-expansion-panels variant="accordion">
+                      <v-expansion-panel>
+                        <v-expansion-panel-title>
+                          <v-icon class="mr-2" size="small">mdi-brain</v-icon>
+                          Raciocínio
+                        </v-expansion-panel-title>
+                        <v-expansion-panel-text>
+                          <div class="thinking-text">{{ extractThinking(message.answer).thinking }}</div>
+                        </v-expansion-panel-text>
+                      </v-expansion-panel>
+                    </v-expansion-panels>
+                  </div>
+
+                  <div class="message-text">{{ extractThinking(message.answer).message }}</div>
                   
                   <div class="rating-buttons mt-1 d-flex justify-end">
                     <v-btn
@@ -77,8 +91,22 @@
           <v-list-item v-if="currentStreamingMessage" class="streaming-message">
             <v-list-item-title>
               <div class="received-message">
+                <div v-if="extractThinking(currentStreamingMessage).thinking" class="thinking-section">
+                  <v-expansion-panels variant="accordion">
+                    <v-expansion-panel>
+                      <v-expansion-panel-title>
+                        <v-icon class="mr-2" size="small">mdi-brain</v-icon>
+                        Raciocínio
+                      </v-expansion-panel-title>
+                      <v-expansion-panel-text>
+                        <div class="thinking-text">{{ extractThinking(currentStreamingMessage).thinking }}</div>
+                      </v-expansion-panel-text>
+                    </v-expansion-panel>
+                  </v-expansion-panels>
+                </div>
+                
                 <div class="message-text">
-                  {{ currentStreamingMessage }}
+                  {{ extractThinking(currentStreamingMessage).message }}
                   <span class="blinking-cursor">|</span>
                 </div>
               </div>
@@ -314,12 +342,6 @@
                               case 'chunk':
                                 streamingAnswer += data.content
                                 currentStreamingMessage.value = streamingAnswer
-                                
-                                // Update the last message in real-time
-                                if (props.messages && props.messages.length > 0) {
-                                  const lastMessage = props.messages[props.messages.length - 1]
-                                  lastMessage.answer = streamingAnswer
-                                }
                                 scrollToBottom()
                                 break
 
@@ -491,6 +513,20 @@
         }
       }
 
+      const extractThinking = (text: string): { thinking: string | null, message: string } => {
+        const thinkingRegex = /<think>([\s\S]*?)<\/think>/i
+        const match = text.match(thinkingRegex)
+
+        if (match) {
+          const thinking = match[1].trim()
+          const message = text.replace(thinkingRegex, '').trim()
+          
+          return { thinking, message }
+        }
+
+        return { thinking: null, message: text }
+      }
+
       return {
         newMessage,
         chatName,
@@ -504,6 +540,7 @@
         openInformationSources,
         handleRating,
         removeRating,
+        extractThinking,
       }
     },
     updated() {
@@ -594,6 +631,19 @@
     color: var(--color-message-text);
     padding: 8px;
     border-radius: 8px;
+  }
+
+  .thinking-section {
+    margin-bottom: 8px;
+  }
+
+  .thinking-text {
+    font-size: 13px;
+    color: #666;
+    font-style: italic;
+    white-space: pre-wrap;
+    word-break: break-word;
+    padding: 4px 0;
   }
 
   .ver-fontes {
