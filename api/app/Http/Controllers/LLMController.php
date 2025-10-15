@@ -156,7 +156,7 @@ class LLMController extends Controller
             
             $messages[] = ['role' => 'user', 'content' => $userMessage];
             
-            $temperature = $persona ? $persona->creativity : 0.7;
+            $temperature = $persona ? ($persona->creativity ?? 0) : 0.7;
 
             if ($stream) {
                 return $this->handleOpenAIStream($messages, $temperature, $providerConfig, $callback);
@@ -283,16 +283,19 @@ class LLMController extends Controller
             
             $fullPrompt = $this->buildOllamaPrompt($userMessage, $conversationHistory, $persona);
             
+            $temperature = $persona ? ($persona->creativity ?? 0) : 0.7;
+            
             Log::info('Ollama prompt built', [
                 'history_count' => count($conversationHistory),
                 'prompt_length' => strlen($fullPrompt),
+                'temperature' => $temperature,
                 'stream' => $stream
             ]);
 
             if ($stream) {
-                return $this->handleOllamaStream($client, $fullPrompt, $providerConfig, $callback);
+                return $this->handleOllamaStream($client, $fullPrompt, $providerConfig, $temperature, $callback);
             } else {
-                return $this->handleOllamaStandard($client, $fullPrompt, $providerConfig);
+                return $this->handleOllamaStandard($client, $fullPrompt, $providerConfig, $temperature);
             }
 
         } catch (\Exception $e) {
@@ -303,13 +306,16 @@ class LLMController extends Controller
         }
     }
 
-    private function handleOllamaStandard(\GuzzleHttp\Client $client, string $fullPrompt, array $providerConfig): string
+    private function handleOllamaStandard(\GuzzleHttp\Client $client, string $fullPrompt, array $providerConfig, float $temperature): string
     {
         $response = $client->post($providerConfig['endpoint'], [
             'json' => [
                 'model' => $providerConfig['model'],
                 'prompt' => $fullPrompt,
                 'stream' => false,
+                'options' => [
+                    'temperature' => $temperature,
+                ],
             ],
             'timeout' => $providerConfig['timeout'] ?? 100,
         ]);
@@ -327,7 +333,7 @@ class LLMController extends Controller
         return $data['response'];
     }
 
-    private function handleOllamaStream(\GuzzleHttp\Client $client, string $fullPrompt, array $providerConfig, $callback = null): string
+    private function handleOllamaStream(\GuzzleHttp\Client $client, string $fullPrompt, array $providerConfig, float $temperature, $callback = null): string
     {
         $fullResponse = '';
 
@@ -336,6 +342,9 @@ class LLMController extends Controller
                 'model' => $providerConfig['model'],
                 'prompt' => $fullPrompt,
                 'stream' => true,
+                'options' => [
+                    'temperature' => $temperature,
+                ],
             ],
             'timeout' => $providerConfig['timeout'] ?? 100,
             'stream' => true,

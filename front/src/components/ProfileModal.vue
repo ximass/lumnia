@@ -58,7 +58,17 @@
             <v-container>
               <v-row>
                 <v-col cols="12">
-                  <h3 class="mb-4">Persona</h3>
+                  <div class="d-flex justify-space-between align-center mb-4">
+                    <h3>Persona</h3>
+                    <v-switch
+                      v-if="userPersona"
+                      v-model="userPersonaForm.active"
+                      :label="userPersonaForm.active ? 'Ativa' : 'Inativa'"
+                      color="primary"
+                      hide-details
+                      @update:modelValue="toggleUserPersonaActive"
+                    />
+                  </div>
 
                   <p class="text-body-2 mb-4">
                     Configure sua persona personalizada para interações com a IA.
@@ -73,7 +83,6 @@
                           variant="outlined"
                           rows="4"
                           :rules="userPersonaInstructionsRules"
-                          required
                         />
                       </v-col>
                       <v-col cols="12">
@@ -111,16 +120,6 @@
                           </template>
                         </v-slider>
                       </v-col>
-                      <v-col cols="12" class="d-flex justify-end">
-                        <v-btn
-                          color="primary"
-                          :loading="savingUserPersona"
-                          :disabled="!userPersonaValid"
-                          @click="saveOrUpdateUserPersona"
-                        >
-                          {{ userPersona ? 'Atualizar' : 'Criar' }} persona
-                        </v-btn>
-                      </v-col>
                     </v-row>
                   </v-form>
                 </v-col>
@@ -137,7 +136,7 @@
           variant="elevated"
           @click="updateProfile"
           :loading="loading"
-          :disabled="!valid"
+          :disabled="activeTab === 'general' ? !valid : !userPersonaValid"
         >
           Salvar
         </v-btn>
@@ -190,6 +189,7 @@
         instructions: '',
         response_format: '',
         creativity: 0.5,
+        active: false,
       })
 
       const dialogVisible = computed({
@@ -219,6 +219,7 @@
               instructions: user.value.user_persona.instructions,
               response_format: user.value.user_persona.response_format || '',
               creativity: user.value.user_persona.creativity,
+              active: user.value.user_persona.active,
             }
           } else {
             userPersona.value = null
@@ -226,6 +227,7 @@
               instructions: '',
               response_format: '',
               creativity: 0.5,
+              active: false,
             }
           }
         }
@@ -261,13 +263,13 @@
       ]
 
       const userPersonaInstructionsRules = [
-        (v: string) => !!v || 'Instruções são obrigatórias',
-        (v: string) => v.length <= 10000 || 'Instruções devem ter no máximo 10000 caracteres',
+        (v: string) =>
+          !v || v.length <= 500 || 'Instruções deve ter no máximo 500 caracteres',
       ]
 
       const userPersonaResponseFormatRules = [
         (v: string) =>
-          !v || v.length <= 2000 || 'Formato de resposta deve ter no máximo 2000 caracteres',
+          !v || v.length <= 500 || 'Formato de resposta deve ter no máximo 500 caracteres',
       ]
 
       const loadUserData = () => {
@@ -284,6 +286,7 @@
               instructions: user.value.user_persona.instructions,
               response_format: user.value.user_persona.response_format || '',
               creativity: user.value.user_persona.creativity,
+              active: user.value.user_persona.active,
             }
           }
         }
@@ -303,11 +306,17 @@
 
         savingUserPersona.value = true
         try {
+          const payload = {
+            instructions: userPersonaForm.value.instructions,
+            response_format: userPersonaForm.value.response_format,
+            creativity: userPersonaForm.value.creativity,
+          }
+
           if (userPersona.value) {
-            await axios.put('/api/user-persona', userPersonaForm.value)
+            await axios.put('/api/user-persona', payload)
             showSuccess('Persona de usuário atualizada com sucesso!')
           } else {
-            const response = await axios.post('/api/user-persona', userPersonaForm.value)
+            const response = await axios.post('/api/user-persona', payload)
             userPersona.value = response.data.data
             showSuccess('Persona de usuário criada com sucesso!')
           }
@@ -322,6 +331,30 @@
           }
         } finally {
           savingUserPersona.value = false
+        }
+      }
+
+      const toggleUserPersonaActive = async () => {
+        if (!userPersona.value) return
+
+        try {
+          const response = await axios.patch('/api/user-persona/toggle-active')
+          userPersona.value = response.data.data
+          await fetchUser()
+
+          const statusMessage = response.data.data.active ? 'ativada' : 'desativada'
+          showSuccess(`Persona ${statusMessage} com sucesso!`)
+        } catch (error: any) {
+          console.error('Erro ao alternar status da persona:', error)
+          if (error.response?.data?.message) {
+            showError(error.response.data.message)
+          } else {
+            showError('Erro ao alternar status da persona. Tente novamente.')
+          }
+
+          if (user.value?.user_persona) {
+            userPersonaForm.value.active = user.value.user_persona.active
+          }
         }
       }
 
@@ -345,24 +378,41 @@
       }
 
       const updateProfile = async () => {
-        if (!user.value || !valid.value) return
+        if (!user.value) return
 
         loading.value = true
         try {
-          const formData = new FormData()
-          formData.append('name', form.value.name)
+          if (valid.value) {
+            const formData = new FormData()
+            formData.append('name', form.value.name)
 
-          if (selectedFile.value && selectedFile.value.length > 0) {
-            formData.append('avatar', selectedFile.value[0])
+            if (selectedFile.value && selectedFile.value.length > 0) {
+              formData.append('avatar', selectedFile.value[0])
+            }
+
+            const authToken = localStorage.getItem('authToken')
+            await axios.post(`/api/user/${user.value.id}/profile`, formData, {
+              headers: {
+                Authorization: `Bearer ${authToken}`,
+                'Content-Type': 'multipart/form-data',
+              },
+            })
           }
 
-          const authToken = localStorage.getItem('authToken')
-          await axios.post(`/api/user/${user.value.id}/profile`, formData, {
-            headers: {
-              Authorization: `Bearer ${authToken}`,
-              'Content-Type': 'multipart/form-data',
-            },
-          })
+          if (userPersonaValid.value && activeTab.value === 'personas') {
+            const payload = {
+              instructions: userPersonaForm.value.instructions,
+              response_format: userPersonaForm.value.response_format,
+              creativity: userPersonaForm.value.creativity,
+            }
+
+            if (userPersona.value) {
+              await axios.put('/api/user-persona', payload)
+            } else {
+              const response = await axios.post('/api/user-persona', payload)
+              userPersona.value = response.data.data
+            }
+          }
 
           await fetchUser()
           showSuccess('Perfil atualizado com sucesso!')
@@ -399,6 +449,7 @@
           instructions: '',
           response_format: '',
           creativity: 0.5,
+          active: false,
         }
 
         previewImage.value = ''
@@ -438,6 +489,7 @@
         onFileSelected,
         updateProfile,
         saveOrUpdateUserPersona,
+        toggleUserPersonaActive,
         resetModalState,
         closeModal,
       }

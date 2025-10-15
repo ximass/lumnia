@@ -35,9 +35,10 @@ class UserPersonaController extends Controller
     {
         try {
             $validated = $request->validate([
-                'instructions' => 'required|string|max:10000',
-                'response_format' => 'nullable|string|max:2000',
-                'creativity' => 'nullable|numeric|between:0,1'
+                'instructions' => 'nullable|string|max:500',
+                'response_format' => 'nullable|string|max:500',
+                'creativity' => 'nullable|numeric|between:0,1',
+                'active' => 'nullable|boolean'
             ]);
 
             $existingUserPersona = UserPersona::where('user_id', $request->user()->id)->first();
@@ -51,6 +52,7 @@ class UserPersonaController extends Controller
 
             $validated['user_id'] = $request->user()->id;
             $validated['creativity'] = $validated['creativity'] ?? 0.5;
+            $validated['active'] = $validated['active'] ?? false;
 
             $userPersona = UserPersona::create($validated);
 
@@ -79,9 +81,10 @@ class UserPersonaController extends Controller
     {
         try {
             $validated = $request->validate([
-                'instructions' => 'required|string|max:10000',
-                'response_format' => 'nullable|string|max:2000',
-                'creativity' => 'nullable|numeric|between:0,1'
+                'instructions' => 'nullable|string|max:500',
+                'response_format' => 'nullable|string|max:500',
+                'creativity' => 'nullable|numeric|between:0,1',
+                'active' => 'nullable|boolean'
             ]);
 
             $userPersona = UserPersona::where('user_id', $request->user()->id)->first();
@@ -108,7 +111,6 @@ class UserPersonaController extends Controller
                 'errors' => $e->errors()
             ], 422);
         } catch (\Exception $e) {
-            Log::error('Exception in UserPersonaController@update: ' . $e->getMessage());
             return response()->json([
                 'status' => 'error',
                 'message' => 'Erro interno do servidor.'
@@ -137,6 +139,38 @@ class UserPersonaController extends Controller
 
         } catch (\Exception $e) {
             Log::error('Exception in UserPersonaController@destroy: ' . $e->getMessage());
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Erro interno do servidor.'
+            ], 500);
+        }
+    }
+
+    public function toggleActive(Request $request)
+    {
+        try {
+            $userPersona = UserPersona::where('user_id', $request->user()->id)->first();
+
+            if (!$userPersona) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Persona de usuário não encontrada.'
+                ], 404);
+            }
+
+            $userPersona->active = !$userPersona->active;
+            $userPersona->save();
+
+            $statusMessage = $userPersona->active ? 'ativada' : 'desativada';
+
+            return response()->json([
+                'status' => 'success',
+                'message' => "Persona de usuário {$statusMessage} com sucesso!",
+                'data' => $userPersona
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Exception in UserPersonaController@toggleActive: ' . $e->getMessage());
             return response()->json([
                 'status' => 'error',
                 'message' => 'Erro interno do servidor.'

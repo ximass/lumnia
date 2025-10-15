@@ -218,6 +218,7 @@ export interface UserPersona {
   instructions: string
   response_format?: string
   creativity: number
+  active: boolean
   created_at?: string
   updated_at?: string
 }
@@ -226,6 +227,7 @@ export interface UserPersonaFormData {
   instructions: string
   response_format?: string
   creativity: number
+  active?: boolean
 }
 
 export interface Permission {

@@ -55,6 +55,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user-persona', [UserPersonaController::class, 'show']);
     Route::post('/user-persona', [UserPersonaController::class, 'store']);
     Route::put('/user-persona', [UserPersonaController::class, 'update']);
+    Route::patch('/user-persona/toggle-active', [UserPersonaController::class, 'toggleActive']);
     Route::delete('/user-persona', [UserPersonaController::class, 'destroy']);
 
     // User management routes

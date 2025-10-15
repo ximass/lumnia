@@ -15,11 +15,20 @@ class UserPersona extends Model
         'user_id',
         'instructions',
         'response_format',
-        'creativity'
+        'creativity',
+        'active'
     ];
 
     protected $casts = [
-        'creativity' => 'decimal:2'
+        'creativity' => 'decimal:2',
+        'active' => 'boolean'
+    ];
+
+    protected $attributes = [
+        'instructions' => null,
+        'response_format' => null,
+        'creativity' => 0.5,
+        'active' => true
     ];
 
     public function user()
