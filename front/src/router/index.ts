@@ -9,6 +9,7 @@ import PersonaView from '@/views/PersonaView.vue'
 import KnowledgeBaseView from '@/views/KnowledgeBaseView.vue'
 import KnowledgeBaseForm from '@/views/KnowledgeBaseForm.vue'
 import PermissionsView from '@/views/Permissions.vue'
+import ReportsAnswers from '@/views/ReportsAnswers.vue'
 import { useAuth } from '@/composables/auth'
 import ErrorLogsView from '../views/ErrorLogsView.vue';
 
@@ -44,6 +45,12 @@ const routes: Array<RouteRecordRaw> = [
     meta: { requiresAuth: true, permission: 'manage_knowledge_bases' },
   },
   {
+    path: '/reports-answers',
+    name: 'ReportsAnswers',
+    component: ReportsAnswers,
+    meta: { requiresAuth: true, permission: 'view_reports' },
+  },
+  {
     path: '/groups',
     name: 'GroupView',
     component: GroupView,
@@ -72,12 +79,6 @@ const routes: Array<RouteRecordRaw> = [
     name: 'ErrorLogsView',
     component: ErrorLogsView,
     meta: { requiresAuth: true, requiresAdmin: true },
-  },
-  {
-    path: '/reports-answers',
-    name: 'ReportsAnswers',
-    component: () => import('@/views/ReportsAnswers.vue'),
-    meta: { requiresAuth: true },
   },
   {
     path: '/login',
