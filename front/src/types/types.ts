@@ -244,6 +244,7 @@ export interface MenuItem {
   title: string
   route: string
   admin?: boolean
+  class?: string
   permission?: string
   icon?: string
 }
