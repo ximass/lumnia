@@ -52,7 +52,6 @@
 
 <style scoped>
   .home-card {
-    background: rgba(30, 41, 59, 0.15) !important;
     backdrop-filter: blur(20px);
     border: 1px solid rgba(255, 255, 255, 0.4);
     border-radius: 12px !important;
