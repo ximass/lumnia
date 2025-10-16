@@ -51,6 +51,12 @@ const routes: Array<RouteRecordRaw> = [
     meta: { requiresAuth: true, permission: 'view_reports' },
   },
   {
+    path: '/personas',
+    name: 'PersonaView',
+    component: PersonaView,
+    meta: { requiresAuth: true, permission: 'manage_personas' },
+  },
+  {
     path: '/groups',
     name: 'GroupView',
     component: GroupView,
@@ -60,12 +66,6 @@ const routes: Array<RouteRecordRaw> = [
     path: '/users',
     name: 'UserView',
     component: UserView,
-    meta: { requiresAuth: true, requiresAdmin: true },
-  },
-  {
-    path: '/personas',
-    name: 'PersonaView',
-    component: PersonaView,
     meta: { requiresAuth: true, requiresAdmin: true },
   },
   {
