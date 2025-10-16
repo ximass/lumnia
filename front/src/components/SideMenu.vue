@@ -6,6 +6,7 @@
     expand-on-hover
     :rail="rail"
     permanent
+  
   >
     <v-list-item nav>
       <template #prepend>
@@ -26,6 +27,7 @@
           <v-icon>mdi-chevron-left</v-icon>
         </v-btn>
       </template>
+
     </v-list-item>
 
     <v-divider></v-divider>
@@ -39,6 +41,42 @@
         :value="item.route"
         @click="navigate(item.route)"
       ></v-list-item>
+
+      <v-list-group
+        v-if="operationalMenuItems.length"
+        value="Operacional"
+        prepend-icon="mdi-cog"
+      >
+        <template v-slot:activator="{ props: groupProps }">
+          <v-list-item v-bind="groupProps" title="Operacional"></v-list-item>
+        </template>
+        <v-list-item
+          v-for="item in operationalMenuItems"
+          :key="item.title"
+          :prepend-icon="item.icon"
+          :title="item.title"
+          :value="item.route"
+          @click="navigate(item.route)"
+        ></v-list-item>
+      </v-list-group>
+
+      <v-list-group
+        v-if="reportsMenuItems.length"
+        value="Relatórios"
+        prepend-icon="mdi-chart-bar"
+      >
+        <template v-slot:activator="{ props: groupProps }">
+          <v-list-item v-bind="groupProps" title="Relatórios"></v-list-item>
+        </template>
+        <v-list-item
+          v-for="item in reportsMenuItems"
+          :key="item.title"
+          :prepend-icon="item.icon"
+          :title="item.title"
+          :value="item.route"
+          @click="navigate(item.route)"
+        ></v-list-item>
+      </v-list-group>
 
       <v-list-group
         v-if="adminMenuItems.length"
@@ -56,6 +94,25 @@
           :value="item.route"
           @click="navigate(item.route)"
         ></v-list-item>
+      </v-list-group>
+
+      <v-list-group
+        v-if="logsMenuItems.length"
+        value="Logs"
+        prepend-icon="mdi-alert-circle-outline"
+      >
+        <template v-slot:activator="{ props: groupProps }">
+          <v-list-item v-bind="groupProps" title="Logs"></v-list-item>
+        </template>
+        <v-list-item
+          v-for="item in logsMenuItems"
+          :key="item.title"
+          :prepend-icon="item.icon"
+          :title="item.title"
+          :value="item.route"
+          @click="navigate(item.route)"
+        ></v-list-item>
+
       </v-list-group>
     </v-list>
   </v-navigation-drawer>
@@ -88,14 +145,61 @@ export default defineComponent({
     const { hasPermission } = usePermissions()
 
     const basicMenuItems = computed(() =>
-      menuItems.filter(item => !item.admin && (!item.permission || hasPermission(item.permission) || props.user.admin))
+      menuItems.filter(
+        item =>
+          (
+            !item.class ||
+            item.class === 'principal'
+          ) &&
+          (
+            !item.permission ||
+            hasPermission(item.permission) ||
+            props.user.admin
+          )
+      )
+    )
+
+    const logsMenuItems = computed(() =>
+      menuItems.filter(
+        item =>
+          item.class === 'logs' &&
+          (
+            !item.permission ||
+            hasPermission(item.permission) ||
+            props.user.admin
+          )
+      )
+    )
+
+    const reportsMenuItems = computed(() =>
+      menuItems.filter(
+        item =>
+          item.class === 'reports' &&
+          (
+            !item.permission ||
+            hasPermission(item.permission) ||
+            props.user.admin
+          )
+      )
+    )
+
+    const operationalMenuItems = computed(() =>
+      menuItems.filter(
+        item =>
+          item.class === 'operational' &&
+          (
+            !item.permission ||
+            hasPermission(item.permission) ||
+            props.user.admin
+          )
+      )
     )
 
     const adminMenuItems = computed(() =>
       props.user
         ? menuItems.filter(
             item =>
-              item.admin &&
+              item.class === 'admin' &&
               (props.user.admin || (item.permission ? hasPermission(item.permission) : hasPermission('manage_permissions')))
           )
         : []
@@ -107,6 +211,9 @@ export default defineComponent({
 
     return {
       basicMenuItems,
+      operationalMenuItems,
+      logsMenuItems,
+      reportsMenuItems,
       adminMenuItems,
       rail,
       props,
@@ -115,3 +222,10 @@ export default defineComponent({
   },
 })
 </script>
+
+<style scoped>
+/* make items inside v-list-group less indented */
+::v-deep .v-list-group__items .v-list-item {
+  padding-left: 25px !important;
+}
+</style>

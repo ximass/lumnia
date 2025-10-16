@@ -5,12 +5,14 @@ export const menuItems: MenuItem[] = [
     title: 'Tela inicial',
     route: '/home',
     admin: false,
+    class: 'principal',
     icon: 'mdi-home',
   },
   {
     title: 'Chats',
     route: '/chats',
     permission: 'use_chats',
+    class: 'principal',
     admin: false,
     icon: 'mdi-message-text-outline',
   },
@@ -18,12 +20,14 @@ export const menuItems: MenuItem[] = [
     title: 'Bases de conhecimento',
     route: '/knowledge-bases',
     permission: 'manage_knowledge_bases',
+    class: 'operational',
     admin: false,
     icon: 'mdi-book-open-variant-outline',
   },
   {
     title: 'Usuários',
     route: '/users',
+    class: 'admin',
     admin: true,
     permission: 'manage_users',
     icon: 'mdi-account',
@@ -31,6 +35,7 @@ export const menuItems: MenuItem[] = [
   {
     title: 'Grupos',
     route: '/groups',
+    class: 'admin',
     admin: true,
     permission: 'manage_groups',
     icon: 'mdi-account-group',
@@ -38,6 +43,7 @@ export const menuItems: MenuItem[] = [
   {
     title: 'Permissões',
     route: '/permissions',
+    class: 'admin',
     admin: true,
     permission: 'manage_permissions',
     icon: 'mdi-shield-key',
@@ -45,15 +51,25 @@ export const menuItems: MenuItem[] = [
   {
     title: 'Personas',
     route: '/personas',
-    admin: true,
+    class: 'operational',
+    admin: false,
     permission: 'manage_personas',
     icon: 'mdi-account-tie',
   },
   {
     title: 'Logs de erros',
     route: '/error-logs',
+    class: 'logs',
     admin: true,
     permission: 'view_error_logs',
     icon: 'mdi-alert-circle-outline',
   },
+  {
+    title: 'Avaliação das respostas',
+    route: '/reports-answers',
+    class: 'reports',
+    admin: true,
+    permission: 'view_reports',
+    icon: 'mdi-file-chart',
+  }
 ]
