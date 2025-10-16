@@ -272,6 +272,8 @@ export interface MessageRating {
   rating: 'like' | 'dislike'
   created_at?: string
   updated_at?: string
+  message?: Message
+  user?: User
 }
 
 export interface MessageRatingFormData {
