@@ -25,7 +25,7 @@ class MessageRatingController extends Controller
                 $existingRating->update([
                     'rating' => $request->rating
                 ]);
-                
+
                 return response()->json([
                     'status' => 'success',
                     'message' => 'Avaliação atualizada com sucesso!',
@@ -117,7 +117,13 @@ class MessageRatingController extends Controller
                 $query->where('user_id', $request->user_id);
             }
 
-            if ($request->has('search') && $request->search) {
+            // if 'user' provided, search only by user name
+            if ($request->has('user') && $request->user) {
+                $userTerm = '%' . $request->user . '%';
+                $query->whereHas('user', function ($q) use ($userTerm) {
+                    $q->where('name', 'ILIKE', $userTerm);
+                });
+            } elseif ($request->has('search') && $request->search) {
                 $searchTerm = '%' . $request->search . '%';
                 $query->whereHas('message', function ($q) use ($searchTerm) {
                     $q->where('text', 'ILIKE', $searchTerm)
