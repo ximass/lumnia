@@ -68,6 +68,7 @@ class ChatController extends Controller
                     $query->where('user_id', $request->user()->id);
                 }
             ])
+            ->orderBy('id')
             ->get();
 
         return response()->json($messages);
