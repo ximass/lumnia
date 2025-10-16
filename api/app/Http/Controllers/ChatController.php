@@ -126,6 +126,7 @@ class ChatController extends Controller
     private function handleStreamingResponse(Chat $chat, Message $message)
     {
         set_time_limit(0);
+        ignore_user_abort(false);
 
         $headers = [
             'Content-Type' => 'text/event-stream',
@@ -135,14 +136,24 @@ class ChatController extends Controller
         ];
 
         return response()->stream(function () use ($chat, $message) {
+            if (ob_get_level()) {
+                ob_end_clean();
+            }
+            
             $this->setupStreamHeaders();
             
             try {
                 $this->sendStreamEvent('start', ['message' => 'Iniciando geração de resposta...']);
                 
                 $result = $this->generateAnswerWithCallback($chat, $message, function ($chunk) {
+                    if (connection_aborted()) {
+                        Log::warning('Client disconnected during streaming', [
+                            'message_id' => $message->id ?? null
+                        ]);
+                        return false;
+                    }
+                    
                     $this->sendStreamEvent('chunk', ['content' => $chunk]);
-                    usleep(50000);
                 });
 
                 if (!$result) {
@@ -155,7 +166,11 @@ class ChatController extends Controller
                 }
 
             } catch (\Exception $e) {
-                Log::error('Exception in streaming answer generation: ' . $e->getMessage() . ' - Message ID: ' . $message->id);
+                Log::error('Exception in streaming answer generation', [
+                    'error' => $e->getMessage(),
+                    'message_id' => $message->id,
+                    'trace' => $e->getTraceAsString()
+                ]);
                 $this->handleStreamError($message, 'Erro interno do servidor');
             }
             

@@ -291,7 +291,7 @@
 
           // Try streaming first (if enabled by backend config)
           try {
-            await fetch(`/api/chat/${props.currentChat.id}`, {
+            const response = await fetch(`/api/chat/${props.currentChat.id}`, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
@@ -301,114 +301,152 @@
               body: JSON.stringify({
                 text: messageText,
               }),
-            }).then(response => {
-              // Check if response is streaming (event-stream)
-              const contentType = response.headers.get('content-type')
-              
-              if (contentType && contentType.includes('text/event-stream')) {
-                // Handle as stream
-                if (!response.ok) {
-                  throw new Error(`HTTP error! status: ${response.status}`)
-                }
+            })
 
-                const reader = response.body?.getReader()
-                if (!reader) {
-                  throw new Error('Response body is not readable')
-                }
+            // Check if response is streaming (event-stream)
+            const contentType = response.headers.get('content-type')
+            
+            if (contentType && contentType.includes('text/event-stream')) {
+              // Handle as stream
+              if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`)
+              }
 
-                let streamingAnswer = ''
-                const decoder = new TextDecoder()
+              const reader = response.body?.getReader()
+              if (!reader) {
+                throw new Error('Response body is not readable')
+              }
 
-                const readStream = async () => {
-                  try {
-                    while (true) {
-                      const { done, value } = await reader.read()
-                      
-                      if (done) break
+              let streamingAnswer = ''
+              const decoder = new TextDecoder()
+              let hasReceivedData = false
 
-                      const chunk = decoder.decode(value, { stream: true })
-                      const lines = chunk.split('\n')
+              const readStream = async () => {
+                try {
+                  while (true) {
+                    const { done, value } = await reader.read()
+                    
+                    if (done) {
+                      if (!hasReceivedData) {
+                        throw new Error('Stream ended without receiving data')
+                      }
+                      break
+                    }
 
-                      for (const line of lines) {
-                        if (line.startsWith('data: ')) {
-                          try {
-                            const data = JSON.parse(line.slice(6))
-                            
-                            switch (data.type) {
-                              case 'start':
-                                currentStreamingMessage.value = ''
-                                break
+                    hasReceivedData = true
+                    const chunk = decoder.decode(value, { stream: true })
+                    const lines = chunk.split('\n')
 
-                              case 'chunk':
-                                streamingAnswer += data.content
-                                currentStreamingMessage.value = streamingAnswer
-                                scrollToBottom()
-                                break
+                    for (const line of lines) {
+                      if (line.startsWith('data: ')) {
+                        try {
+                          const data = JSON.parse(line.slice(6))
+                          
+                          switch (data.type) {
+                            case 'start':
+                              currentStreamingMessage.value = ''
+                              break
 
-                              case 'complete':
-                                currentStreamingMessage.value = ''
-                                if (props.messages && props.messages.length > 0) {
-                                  const lastMessage = props.messages[props.messages.length - 1]
-                                  lastMessage.answer = streamingAnswer
-                                  lastMessage.updated_at = data.updated_at
+                            case 'chunk':
+                              streamingAnswer += data.content
+                              currentStreamingMessage.value = streamingAnswer
+                              scrollToBottom()
+                              break
 
-                                  if (data.message_id && tempMessageId && lastMessage.id === tempMessageId) {
-                                    lastMessage.id = data.message_id
-                                  }
+                            case 'complete':
+                              currentStreamingMessage.value = ''
+                              if (props.messages && props.messages.length > 0) {
+                                const lastMessage = props.messages[props.messages.length - 1]
+                                lastMessage.answer = streamingAnswer
+                                lastMessage.updated_at = data.updated_at
+
+                                if (data.message_id && tempMessageId && lastMessage.id === tempMessageId) {
+                                  lastMessage.id = data.message_id
                                 }
-                                isLoading.value = false
-                                return
-                                
-                              case 'error':
-                                showToast(data.message || 'Erro ao processar mensagem', 'error')
-                                isLoading.value = false
-                                return
-                            }
-                          } catch (parseError) {
-                            console.error('Error parsing stream data:', parseError)
+                              }
+                              isLoading.value = false
+                              reader.releaseLock()
+                              return
+                              
+                            case 'error':
+                              showToast(data.message || 'Erro ao processar mensagem', 'error')
+                              isLoading.value = false
+                              reader.releaseLock()
+                              return
                           }
+                        } catch (parseError) {
+                          console.error('Error parsing stream data:', parseError, 'Line:', line)
                         }
                       }
                     }
-                  } finally {
-                    reader.releaseLock()
-                    isLoading.value = false
                   }
-                }
-
-                readStream()
-              } else {
-                // Handle as regular JSON response
-                return response.json().then(data => {
-                  if (data.status === 'error') {
-                    showToast(data.message || 'Erro ao enviar mensagem.')
-                    return
-                  }
-
-                  if (props.messages && props.messages.length > 0) {
-                    const lastMessage = props.messages[props.messages.length - 1]
-                    lastMessage.answer = data.answer ? data.answer.text : ''
-                    lastMessage.updated_at = data.answer ? data.answer.updated_at : new Date().toISOString()
-
-                    if (data.message_id && tempMessageId && lastMessage.id === tempMessageId) {
-                      lastMessage.id = data.message_id
+                } catch (readError) {
+                  console.error('Stream read error:', readError)
+                  
+                  if (streamingAnswer) {
+                    currentStreamingMessage.value = ''
+                    if (props.messages && props.messages.length > 0) {
+                      const lastMessage = props.messages[props.messages.length - 1]
+                      lastMessage.answer = streamingAnswer
                     }
+                    showToast('Resposta recebida parcialmente', 'warning')
+                  } else {
+                    showToast('Erro ao receber resposta do servidor', 'error')
                   }
-
-                  if (data.status === 'partial_success') {
-                    showToast(
-                      data.message || 'Mensagem enviada, mas houve erro na resposta da IA.',
-                      'warning'
-                    )
+                } finally {
+                  try {
+                    reader.releaseLock()
+                  } catch (e) {
+                    // Reader already released
                   }
-
                   isLoading.value = false
-                })
+                }
               }
-            })
+
+              await readStream()
+            } else {
+              // Handle as regular JSON response
+              const data = await response.json()
+              
+              if (data.status === 'error') {
+                showToast(data.message || 'Erro ao enviar mensagem.', 'error')
+                isLoading.value = false
+                return
+              }
+
+              if (props.messages && props.messages.length > 0) {
+                const lastMessage = props.messages[props.messages.length - 1]
+                lastMessage.answer = data.answer ? data.answer.text : ''
+                lastMessage.updated_at = data.answer ? data.answer.updated_at : new Date().toISOString()
+
+                if (data.message_id && tempMessageId && lastMessage.id === tempMessageId) {
+                  lastMessage.id = data.message_id
+                }
+              }
+
+              if (data.status === 'partial_success') {
+                showToast(
+                  data.message || 'Mensagem enviada, mas houve erro na resposta da IA.',
+                  'warning'
+                )
+              }
+
+              isLoading.value = false
+            }
           } catch (streamError) {
             console.error('Stream error:', streamError)
-            throw streamError
+            
+            if (currentStreamingMessage.value) {
+              if (props.messages && props.messages.length > 0) {
+                const lastMessage = props.messages[props.messages.length - 1]
+                lastMessage.answer = currentStreamingMessage.value
+              }
+              currentStreamingMessage.value = ''
+              showToast('Resposta recebida parcialmente devido a erro de conexão', 'warning')
+              isLoading.value = false
+            } else {
+              throw streamError
+            }
           }
 
         } catch (error: any) {

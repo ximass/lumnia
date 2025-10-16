@@ -217,63 +217,96 @@ class LLMController extends Controller
         $client = new \GuzzleHttp\Client();
         $fullResponse = '';
 
-        $response = $client->post($providerConfig['endpoint'], [
-            'headers' => [
-                'Content-Type' => 'application/json',
-            ],
-            'json' => [
-                'model' => $providerConfig['model'],
-                'messages' => $messages,
-                'temperature' => $temperature,
-                'max_tokens' => $providerConfig['max_tokens'] ?? 1000,
+        try {
+            $response = $client->post($providerConfig['endpoint'], [
+                'headers' => [
+                    'Content-Type' => 'application/json',
+                ],
+                'json' => [
+                    'model' => $providerConfig['model'],
+                    'messages' => $messages,
+                    'temperature' => $temperature,
+                    'max_tokens' => $providerConfig['max_tokens'] ?? 1000,
+                    'stream' => true,
+                ],
+                'timeout' => 0,
+                'read_timeout' => $providerConfig['timeout'] ?? 300,
                 'stream' => true,
-            ],
-            'timeout' => $providerConfig['timeout'] ?? 120,
-            'stream' => true,
-        ]);
+            ]);
 
-        $body = $response->getBody();
-        $buffer = '';
-        
-        while (!$body->eof()) {
-            $chunk = $body->read(1);
-            $buffer .= $chunk;
+            $body = $response->getBody();
+            $buffer = '';
             
-            while (($pos = strpos($buffer, "\n")) !== false) {
-                $line = substr($buffer, 0, $pos);
-                $buffer = substr($buffer, $pos + 1);
+            while (!$body->eof()) {
+                $chunk = $body->read(1024);
+                $buffer .= $chunk;
                 
-                $line = trim($line);
-                if (strpos($line, 'data: ') === 0) {
-                    $data = trim(substr($line, 6));
+                while (($pos = strpos($buffer, "\n")) !== false) {
+                    $line = substr($buffer, 0, $pos);
+                    $buffer = substr($buffer, $pos + 1);
                     
-                    if ($data === '[DONE]') {
-                        return $fullResponse;
-                    }
-                    
-                    if (!empty($data) && $data !== '') {
-                        $json = json_decode($data, true);
-                        if ($json && isset($json['choices'][0]['delta']['content'])) {
-                            $content = $json['choices'][0]['delta']['content'];
-                            $fullResponse .= $content;
-                            
-                            Log::info('LLM chunk received', ['content_length' => strlen($content), 'content_preview' => substr($content, 0, 30)]);
-                            
-                            if ($callback) {
-                                $callback($content);
+                    $line = trim($line);
+                    if (strpos($line, 'data: ') === 0) {
+                        $data = trim(substr($line, 6));
+                        
+                        if ($data === '[DONE]') {
+                            Log::info('OpenAI Compatible Stream Response completed', [
+                                'provider' => $this->defaultProvider,
+                                'response_length' => strlen($fullResponse)
+                            ]);
+                            return $fullResponse;
+                        }
+                        
+                        if (!empty($data) && $data !== '') {
+                            $json = json_decode($data, true);
+                            if ($json && isset($json['choices'][0]['delta']['content'])) {
+                                $content = $json['choices'][0]['delta']['content'];
+                                $fullResponse .= $content;
+                                
+                                if ($callback) {
+                                    $callback($content);
+                                    if (function_exists('fastcgi_finish_request')) {
+                                        flush();
+                                    }
+                                }
                             }
                         }
                     }
                 }
             }
+
+            Log::info('OpenAI Compatible Stream Response completed (EOF)', [
+                'provider' => $this->defaultProvider,
+                'response_length' => strlen($fullResponse)
+            ]);
+
+            return $fullResponse;
+            
+        } catch (\GuzzleHttp\Exception\RequestException $e) {
+            Log::error('OpenAI Stream Request Exception', [
+                'error' => $e->getMessage(),
+                'provider' => $this->defaultProvider,
+                'response_length' => strlen($fullResponse)
+            ]);
+            
+            if (strlen($fullResponse) > 0) {
+                return $fullResponse;
+            }
+            
+            throw $e;
+        } catch (\Exception $e) {
+            Log::error('OpenAI Stream Exception', [
+                'error' => $e->getMessage(),
+                'provider' => $this->defaultProvider,
+                'response_length' => strlen($fullResponse)
+            ]);
+            
+            if (strlen($fullResponse) > 0) {
+                return $fullResponse;
+            }
+            
+            throw $e;
         }
-
-        Log::info('OpenAI Compatible Stream Response completed', [
-            'provider' => $this->defaultProvider,
-            'response_length' => strlen($fullResponse)
-        ]);
-
-        return $fullResponse;
     }
 
     private function generateOllamaResponse(string $userMessage, $persona, array $conversationHistory, array $providerConfig, $stream = false, $callback = null): string
@@ -337,53 +370,85 @@ class LLMController extends Controller
     {
         $fullResponse = '';
 
-        $response = $client->post($providerConfig['endpoint'], [
-            'json' => [
-                'model' => $providerConfig['model'],
-                'prompt' => $fullPrompt,
-                'stream' => true,
-                'options' => [
-                    'temperature' => $temperature,
+        try {
+            $response = $client->post($providerConfig['endpoint'], [
+                'json' => [
+                    'model' => $providerConfig['model'],
+                    'prompt' => $fullPrompt,
+                    'stream' => true,
+                    'options' => [
+                        'temperature' => $temperature,
+                    ],
                 ],
-            ],
-            'timeout' => $providerConfig['timeout'] ?? 100,
-            'stream' => true,
-        ]);
+                'timeout' => 0,
+                'read_timeout' => $providerConfig['timeout'] ?? 300,
+                'stream' => true,
+            ]);
 
-        $body = $response->getBody();
-        $buffer = '';
-        
-        while (!$body->eof()) {
-            $chunk = $body->read(1);
-            $buffer .= $chunk;
+            $body = $response->getBody();
+            $buffer = '';
             
-            while (($pos = strpos($buffer, "\n")) !== false) {
-                $line = substr($buffer, 0, $pos);
-                $buffer = substr($buffer, $pos + 1);
+            while (!$body->eof()) {
+                $chunk = $body->read(1024);
+                $buffer .= $chunk;
                 
-                if (trim($line) !== '') {
-                    $data = json_decode($line, true);
-                    if ($data && isset($data['response'])) {
-                        $content = $data['response'];
-                        $fullResponse .= $content;
-                        
-                        if ($callback) {
-                            $callback($content);
-                        }
-                        
-                        if (isset($data['done']) && $data['done']) {
-                            return $fullResponse;
+                while (($pos = strpos($buffer, "\n")) !== false) {
+                    $line = substr($buffer, 0, $pos);
+                    $buffer = substr($buffer, $pos + 1);
+                    
+                    if (trim($line) !== '') {
+                        $data = json_decode($line, true);
+                        if ($data && isset($data['response'])) {
+                            $content = $data['response'];
+                            $fullResponse .= $content;
+                            
+                            if ($callback) {
+                                $callback($content);
+                                if (function_exists('fastcgi_finish_request')) {
+                                    flush();
+                                }
+                            }
+                            
+                            if (isset($data['done']) && $data['done']) {
+                                Log::info('Ollama Stream Response completed', [
+                                    'response_length' => strlen($fullResponse)
+                                ]);
+                                return $fullResponse;
+                            }
                         }
                     }
                 }
             }
+
+            Log::info('Ollama Stream Response completed (EOF)', [
+                'response_length' => strlen($fullResponse)
+            ]);
+
+            return $fullResponse;
+            
+        } catch (\GuzzleHttp\Exception\RequestException $e) {
+            Log::error('Ollama Stream Request Exception', [
+                'error' => $e->getMessage(),
+                'response_length' => strlen($fullResponse)
+            ]);
+            
+            if (strlen($fullResponse) > 0) {
+                return $fullResponse;
+            }
+            
+            throw $e;
+        } catch (\Exception $e) {
+            Log::error('Ollama Stream Exception', [
+                'error' => $e->getMessage(),
+                'response_length' => strlen($fullResponse)
+            ]);
+            
+            if (strlen($fullResponse) > 0) {
+                return $fullResponse;
+            }
+            
+            throw $e;
         }
-
-        Log::info('Ollama Stream Response completed', [
-            'response_length' => strlen($fullResponse)
-        ]);
-
-        return $fullResponse;
     }
 
     private function buildOllamaPrompt(string $userMessage, array $conversationHistory, $persona = null): string
