@@ -7,17 +7,24 @@
     :rail="rail"
     permanent
   >
-    <v-list-item
-      :prepend-avatar="props.user?.avatar || 'mdi-account'"
-      :title="props.user?.name || 'Usuário'"
-      nav
-    >
-      <template v-slot:append>
-        <v-btn
-          icon="mdi-chevron-left"
-          variant="text"
-          @click.stop="rail = !rail"
-        ></v-btn>
+    <v-list-item nav>
+      <template #prepend>
+        <v-avatar size="40">
+          <v-img
+            v-if="props.user?.avatar && props.user.avatar.length > 0"
+            :src="`/api/avatars/${props.user.avatar.split('/').pop()}`"
+            alt="Avatar"
+          />
+          <v-icon v-else>mdi-account</v-icon>
+        </v-avatar>
+      </template>
+
+      <v-list-item-title>{{ props.user?.name || 'Usuário' }}</v-list-item-title>
+
+      <template #append>
+        <v-btn icon variant="text" @click.stop="rail = !rail">
+          <v-icon>mdi-chevron-left</v-icon>
+        </v-btn>
       </template>
     </v-list-item>
 
