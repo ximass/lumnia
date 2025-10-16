@@ -86,6 +86,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/messages/{message}/rating', [MessageRatingController::class, 'show']);
     Route::post('/messages/{message}/rating', [MessageRatingController::class, 'store']);
     Route::delete('/messages/{message}/rating', [MessageRatingController::class, 'destroy']);
+    // List message ratings for reports
+    Route::get('/message-ratings', [MessageRatingController::class, 'index']);
 
     Route::get('/error-logs/statistics', [ErrorLogController::class, 'statistics']);
     Route::delete('/error-logs/destroy-all', [ErrorLogController::class, 'destroyAll']);

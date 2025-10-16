@@ -6,6 +6,7 @@ use App\Models\Message;
 use App\Models\MessageRating;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 
 class MessageRatingController extends Controller
 {
@@ -84,6 +85,56 @@ class MessageRatingController extends Controller
 
         } catch (\Exception $e) {
             Log::error('Exception in MessageRatingController::destroy: ' . $e->getMessage());
+
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Erro interno do servidor. Tente novamente mais tarde.'
+            ], 500);
+        }
+    }
+
+    /**
+     * List message ratings with filters and pagination.
+     */
+    public function index(Request $request)
+    {
+        try {
+            $query = MessageRating::with(['user:id,name,email', 'message:id,chat_id,user_id,text,answer']);
+
+            if ($request->has('rating') && $request->rating) {
+                $query->where('rating', $request->rating);
+            }
+
+            if ($request->has('date_from') && $request->date_from) {
+                $query->where('created_at', '>=', $request->date_from);
+            }
+
+            if ($request->has('date_to') && $request->date_to) {
+                $query->where('created_at', '<=', $request->date_to);
+            }
+
+            if ($request->has('user_id') && $request->user_id) {
+                $query->where('user_id', $request->user_id);
+            }
+
+            if ($request->has('search') && $request->search) {
+                $searchTerm = '%' . $request->search . '%';
+                $query->whereHas('message', function ($q) use ($searchTerm) {
+                    $q->where('text', 'ILIKE', $searchTerm)
+                      ->orWhere('answer', 'ILIKE', $searchTerm);
+                })->orWhereHas('user', function ($q) use ($searchTerm) {
+                    $q->where('name', 'ILIKE', $searchTerm);
+                });
+            }
+
+            $query->orderBy('created_at', 'desc');
+
+            $perPage = $request->get('per_page', 50);
+            $ratings = $query->paginate($perPage);
+
+            return response()->json($ratings);
+        } catch (\Exception $e) {
+            Log::error('Exception in MessageRatingController::index: ' . $e->getMessage());
 
             return response()->json([
                 'status' => 'error',

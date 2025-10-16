@@ -74,6 +74,12 @@ const routes: Array<RouteRecordRaw> = [
     meta: { requiresAuth: true, requiresAdmin: true },
   },
   {
+    path: '/reports-answers',
+    name: 'ReportsAnswers',
+    component: () => import('@/views/ReportsAnswers.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
     path: '/login',
     name: 'Login',
     component: Login,
