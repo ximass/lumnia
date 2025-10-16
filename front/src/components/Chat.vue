@@ -327,7 +327,16 @@
                     const { done, value } = await reader.read()
                     
                     if (done) {
-                      if (!hasReceivedData) {
+                      // Stream ended - check if we have a complete message
+                      if (streamingAnswer) {
+                        // We have partial data, save it
+                        currentStreamingMessage.value = ''
+                        if (props.messages && props.messages.length > 0) {
+                          const lastMessage = props.messages[props.messages.length - 1]
+                          lastMessage.answer = streamingAnswer
+                        }
+                        console.log('Stream ended with partial data, saved:', streamingAnswer.length, 'chars')
+                      } else if (!hasReceivedData) {
                         throw new Error('Stream ended without receiving data')
                       }
                       break
@@ -365,13 +374,21 @@
                                 }
                               }
                               isLoading.value = false
-                              reader.releaseLock()
+                              try {
+                                reader.releaseLock()
+                              } catch (e) {
+                                console.log('Reader already released')
+                              }
                               return
                               
                             case 'error':
                               showToast(data.message || 'Erro ao processar mensagem', 'error')
                               isLoading.value = false
-                              reader.releaseLock()
+                              try {
+                                reader.releaseLock()
+                              } catch (e) {
+                                console.log('Reader already released')
+                              }
                               return
                           }
                         } catch (parseError) {
@@ -380,16 +397,23 @@
                       }
                     }
                   }
+                  
+                  // Stream ended normally (done = true)
+                  if (streamingAnswer) {
+                    showToast('Resposta recebida com sucesso', 'success')
+                  }
+                  
                 } catch (readError) {
                   console.error('Stream read error:', readError)
                   
+                  // Save partial response before showing error
                   if (streamingAnswer) {
                     currentStreamingMessage.value = ''
                     if (props.messages && props.messages.length > 0) {
                       const lastMessage = props.messages[props.messages.length - 1]
                       lastMessage.answer = streamingAnswer
                     }
-                    showToast('Resposta recebida parcialmente', 'warning')
+                    showToast('Conexão interrompida - resposta parcial salva', 'warning')
                   } else {
                     showToast('Erro ao receber resposta do servidor', 'error')
                   }
@@ -399,6 +423,7 @@
                   } catch (e) {
                     // Reader already released
                   }
+                  currentStreamingMessage.value = ''
                   isLoading.value = false
                 }
               }

@@ -250,10 +250,14 @@ class LLMController extends Controller
                         $data = trim(substr($line, 6));
                         
                         if ($data === '[DONE]') {
-                            Log::info('OpenAI Compatible Stream Response completed', [
+                            Log::info('OpenAI Compatible Stream Response completed ([DONE])', [
                                 'provider' => $this->defaultProvider,
                                 'response_length' => strlen($fullResponse)
                             ]);
+                            
+                            // Small delay to ensure all data is sent
+                            usleep(100000); // 100ms
+                            
                             return $fullResponse;
                         }
                         
@@ -264,9 +268,15 @@ class LLMController extends Controller
                                 $fullResponse .= $content;
                                 
                                 if ($callback) {
-                                    $callback($content);
+                                    $result = $callback($content);
                                     if (function_exists('fastcgi_finish_request')) {
                                         flush();
+                                    }
+                                    
+                                    // If callback returns false, stop streaming (client disconnected)
+                                    if ($result === false) {
+                                        Log::warning('Callback returned false, stopping stream');
+                                        return $fullResponse;
                                     }
                                 }
                             }
@@ -403,16 +413,26 @@ class LLMController extends Controller
                             $fullResponse .= $content;
                             
                             if ($callback) {
-                                $callback($content);
+                                $result = $callback($content);
                                 if (function_exists('fastcgi_finish_request')) {
                                     flush();
+                                }
+                                
+                                // If callback returns false, stop streaming (client disconnected)
+                                if ($result === false) {
+                                    Log::warning('Callback returned false, stopping stream');
+                                    return $fullResponse;
                                 }
                             }
                             
                             if (isset($data['done']) && $data['done']) {
-                                Log::info('Ollama Stream Response completed', [
+                                Log::info('Ollama Stream Response completed (done flag)', [
                                     'response_length' => strlen($fullResponse)
                                 ]);
+                                
+                                // Small delay to ensure all data is sent
+                                usleep(100000); // 100ms
+                                
                                 return $fullResponse;
                             }
                         }

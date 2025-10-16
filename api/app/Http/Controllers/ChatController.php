@@ -144,8 +144,9 @@ class ChatController extends Controller
             
             try {
                 $this->sendStreamEvent('start', ['message' => 'Iniciando geração de resposta...']);
+                flush();
                 
-                $result = $this->generateAnswerWithCallback($chat, $message, function ($chunk) {
+                $result = $this->generateAnswerWithCallback($chat, $message, function ($chunk) use ($message) {
                     if (connection_aborted()) {
                         Log::warning('Client disconnected during streaming', [
                             'message_id' => $message->id ?? null
@@ -154,14 +155,27 @@ class ChatController extends Controller
                     }
                     
                     $this->sendStreamEvent('chunk', ['content' => $chunk]);
+                    flush();
                 });
 
                 if (!$result) {
                     $this->handleStreamError($message, 'Erro ao gerar resposta');
+                    flush();
                 } else {
+                    // Reload message to get updated_at
+                    $message->refresh();
+                    
                     $this->sendStreamEvent('complete', [
                         'message_id' => $message->id,
                         'updated_at' => $message->updated_at->toIso8601String()
+                    ]);
+                    flush();
+                    
+                    // Small delay to ensure complete event is sent before closing connection
+                    usleep(200000); // 200ms
+                    
+                    Log::info('Stream completed successfully', [
+                        'message_id' => $message->id
                     ]);
                 }
 
@@ -172,9 +186,8 @@ class ChatController extends Controller
                     'trace' => $e->getTraceAsString()
                 ]);
                 $this->handleStreamError($message, 'Erro interno do servidor');
+                flush();
             }
-            
-            flush();
             
         }, 200, $headers);
     }
