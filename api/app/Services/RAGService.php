@@ -15,12 +15,14 @@ class RAGService
         $this->embeddingClient = $embeddingClient;
     }
 
-    public function retrieveRelevantChunks(string $query, ?string $kbId, int $topK = 5, float $threshold = 0.3): array
+    public function retrieveRelevantChunks(string $query, ?string $kbId, int $topK = 5, float $threshold = null): array
     {
         if (!$kbId) {
             Log::info('No knowledge base provided for RAG retrieval');
             return [];
         }
+
+        $threshold = $threshold ?? config('search.scoring.rag_threshold', 0.2);
 
         try {
             Log::info('RAG retrieval started', [
@@ -39,9 +41,9 @@ class RAGService
 
             $queryEmbedding = $queryEmbeddings[0];
             
-            $semanticWeight = config('search.scoring.semantic_weight', 0.7);
-            $lexicalWeight = config('search.scoring.lexical_weight', 0.3);
-            $maxChunks = 50; // Reasonable limit for RAG context
+            $semanticWeight = config('search.scoring.semantic_weight', 0.6);
+            $lexicalWeight = config('search.scoring.lexical_weight', 0.4);
+            $maxChunks = 50;
 
             $chunks = $this->executeHybridSearch(
                 $kbId,
@@ -75,12 +77,12 @@ class RAGService
 
     public function buildRAGPrompt(string $userMessage, array $chunks, ?string $personaInstructions = null): string
     {
-        $prompt  = "Você deve formular uma resposta à pergunta do usuário usando EXCLUSIVAMENTE informações fornecidas no contexto abaixo.";
+        $prompt  = "Você deve formular uma resposta à pergunta do usuário usando EXCLUSIVAMENTE informações fornecidas no contexto abaixo e sempre em português do Brasil.";
 
         if ($personaInstructions) {
             $prompt .= "=== INSTRUÇÕES DO SISTEMA ===\n";
             $prompt .= $personaInstructions . "\n\n";
-            $prompt .= "---\n\n";
+            $prompt .= "=== FIM DAS INSTRUÇÕES DO SISTEMA ===\n\n";
         }
 
         if (!empty($chunks)) {
@@ -105,11 +107,13 @@ class RAGService
         $prompt .= "=== FIM DA PERGUNTA ===\n\n";
 
         $prompt .= "=== INSTRUÇÕES DE RESPOSTA ===\n";
+
         if (!empty($chunks)) {
             $prompt .= "1. Formule a sua resposta utilizando apenas informações fornecidas no contexto acima\n";
-            $prompt .= "2. Se a resposta estiver no contexto, forneça uma resposta clara, direta e completa\n";
-            $prompt .= "3. Se o contexto não contiver informação suficiente para responder, diga claramente: \"Não encontrei informações suficientes na base de conhecimento para responder essa pergunta\"\n";
-            $prompt .= "4. NÃO invente, extrapole ou use conhecimento externo ao contexto fornecido\n";
+            $prompt .= "2. Se a pergunta for apenas uma saudação, responda de forma amigável e ofereça ajuda adicional.\n";
+            $prompt .= "3. Se a resposta estiver no contexto, forneça uma resposta clara, direta e completa\n";
+            $prompt .= "4. Se o contexto não contiver informação suficiente para responder, diga claramente: \"Não encontrei informações suficientes na base de conhecimento para responder essa pergunta\"\n";
+            $prompt .= "5. NÃO invente, extrapole ou use conhecimento externo ao contexto fornecido\n";
         } else {
             $prompt .= "Não foram encontradas informações relevantes na base de conhecimento.\n";
             $prompt .= "Informe ao usuário que não há informações disponíveis sobre este assunto na base de conhecimento atual.\n";
@@ -129,8 +133,8 @@ class RAGService
         int $maxChunks
     ) {
         $embeddingStr = '[' . implode(',', $queryEmbedding) . ']';
-        $minSemanticScore = 0.2;
-        $minLexicalScore = 0.01;
+        $minSemanticScore = config('search.scoring.min_semantic_score', 0.1);
+        $minLexicalScore = config('search.scoring.min_lexical_score', 0.005);
 
         $sql = "
             WITH semantic_search AS (
@@ -173,7 +177,7 @@ class RAGService
                     lexical_score,
                     CASE 
                         WHEN MAX(lexical_score) OVER () > 0 
-                        THEN lexical_score / MAX(lexical_score) OVER ()
+                        THEN POWER(lexical_score / MAX(lexical_score) OVER (), 0.7)
                         ELSE 0.0
                     END AS normalized_lexical_score
                 FROM lexical_search

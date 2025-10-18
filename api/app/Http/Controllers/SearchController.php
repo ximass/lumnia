@@ -38,8 +38,8 @@ class SearchController extends Controller
             $queryEmbedding = $queryEmbeddings[0];
             
             // Get search configuration
-            $semanticWeight = config('search.scoring.semantic_weight', 0.7);
-            $lexicalWeight = config('search.scoring.lexical_weight', 0.3);
+            $semanticWeight = config('search.scoring.semantic_weight', 0.6);
+            $lexicalWeight = config('search.scoring.lexical_weight', 0.4);
             $maxChunks = config('search.scoring.max_chunks', 100);
             $enableReranking = config('search.scoring.enable_reranking', false);
             $rerankTopK = config('search.scoring.rerank_top_k', 10);
