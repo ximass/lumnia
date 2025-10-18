@@ -20,7 +20,7 @@
       <!-- Filters -->
       <v-col cols="12">
         <v-row>
-          <v-col cols="12" md="3">
+          <v-col cols="12" md="4">
             <v-text-field
               v-model="filters.search"
               label="Pesquisar (usuário)"
@@ -32,7 +32,7 @@
             />
           </v-col>
 
-          <v-col cols="12" md="3">
+          <v-col cols="12" md="4">
             <v-menu v-model="dateMenu" :close-on-content-click="false" transition="scale-transition" offset-y>
               <template #activator="{ props }">
                 <v-text-field v-bind="props" v-model="dateRangeLabel" label="Período" readonly variant="outlined" density="compact" />
@@ -49,7 +49,7 @@
             </v-menu>
           </v-col>
 
-          <v-col cols="12" md="3">
+          <v-col cols="12" md="4">
             <v-select
               v-model="filters.rating"
               :items="levels"
@@ -77,14 +77,14 @@
 
           <v-col cols="12" md="4">
             <v-card class="pa-4">
-              <div class="text-h6">Curtidas</div>
+              <div class="text-h6">Positivas</div>
               <div class="text-h4 text-success">{{ stats.likes }}</div>
             </v-card>
           </v-col>
 
           <v-col cols="12" md="4">
             <v-card class="pa-4">
-              <div class="text-h6">Não gostou</div>
+              <div class="text-h6">Negativas</div>
               <div class="text-h4 text-error">{{ stats.dislikes }}</div>
             </v-card>
           </v-col>
@@ -158,7 +158,7 @@
 
             <template #item.rating="{ item }">
               <v-chip :color="ratingColor(item.rating)" small dark>
-                {{ (item.rating || '').toUpperCase() }}
+                {{ ratingLabel(item.rating) }}
               </v-chip>
             </template>
 
@@ -232,14 +232,19 @@ export default defineComponent({
     const loading = ref(false)
     const filters = ref({ search: '', rating: null as MessageRating['rating'] | null })
 
+    const ratingLabels = {
+      like: 'Positiva',
+      dislike: 'Negativa'
+    } as Record<string, string>
+
     const levels = ref([
-      { title: 'Like', value: 'like' },
-      { title: 'Dislike', value: 'dislike' },
+      { title: 'Positivas', value: 'like' },
+      { title: 'Negativas', value: 'dislike' },
     ])
 
     const headers = ref([
-      { title: 'Chat id', key: 'chat_id', value: 'chat_id' },
-      { title: 'Message id', key: 'message_id', value: 'message_id' },
+      { title: 'Chat', key: 'chat_id', value: 'chat_id' },
+      { title: 'Mensagem', key: 'message_id', value: 'message_id' },
       { title: 'Usuário', key: 'user', value: 'user' },
       { title: 'Avaliação', key: 'rating', value: 'rating' },
       { title: 'Data', key: 'created_at', value: 'created_at' },
@@ -258,6 +263,11 @@ export default defineComponent({
 
     function ratingColor(r: MessageRating['rating'] | undefined) {
       return r === 'like' ? 'green' : r === 'dislike' ? 'red' : 'grey'
+    }
+
+    function ratingLabel(r: MessageRating['rating'] | undefined) {
+      if (!r) return ''
+      return ratingLabels[r] || r
     }
 
     // Stats for dashboard
@@ -296,7 +306,7 @@ export default defineComponent({
       pieChart = new Chart(pieCanvas.value.getContext('2d') as CanvasRenderingContext2D, {
         type: 'pie',
         data: {
-          labels: ['Like', 'Dislike'],
+          labels: [ratingLabels.like + 's', ratingLabels.dislike + 's'],
           datasets: [{ data, backgroundColor: ['#4caf50', '#f44336'] }]
         },
         options: { responsive: true, maintainAspectRatio: false }
@@ -431,7 +441,7 @@ export default defineComponent({
           `"${(item.message?.metadata ? JSON.stringify(item.message.metadata) : '').replace(/"/g, '""')}"`,
           `"${((item.message?.text || item.message?.answer) || '').replace(/"/g, '""')}"`,
           `"${(item.user?.name || '').replace(/"/g, '""')}"`,
-          item.rating,
+          `"${(ratingLabel(item.rating) || '').replace(/"/g, '""')}"`,
           item.created_at || ''
         ].join(','))
       ]
@@ -465,7 +475,7 @@ export default defineComponent({
       if (lineChart) { lineChart.destroy(); lineChart = null }
     }
 
-    return { items, headers, filters, levels, pagination, pages, total, loading, dateMenu, dateRange, dateRangeLabel, ratingColor, fetchData, exportCsv, formatDateTime, stats, pieCanvas, barCanvas, lineCanvas, onFilterChange, clearFilters, debouncedFetch, messageDialog, selectedMessage, showMessageDetails }
+    return { items, headers, filters, levels, pagination, pages, total, loading, dateMenu, dateRange, dateRangeLabel, ratingColor, ratingLabel, fetchData, exportCsv, formatDateTime, stats, pieCanvas, barCanvas, lineCanvas, onFilterChange, clearFilters, debouncedFetch, messageDialog, selectedMessage, showMessageDetails }
   },
 })
 </script>
