@@ -37,5 +37,11 @@ return [
         
         // Enable cross-encoder reranking
         'enable_reranking' => env('SEARCH_ENABLE_RERANKING', false),
+        
+        // Use batch reranking
+        'rerank_use_batch' => env('SEARCH_RERANK_USE_BATCH', true),
+        
+        // Batch size for reranking
+        'rerank_batch_size' => env('SEARCH_RERANK_BATCH_SIZE', 5),
     ],
 ];

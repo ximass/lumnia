@@ -55,10 +55,11 @@ return [
             'enabled' => env('OLLAMA_ENABLED', true),
             'base_url' => env('OLLAMA_BASE_URL', 'http://localhost:11434'),
             'chat_endpoint' => '/api/generate',
-            'model' => env('OLLAMA_MODEL', 'llama2'),
+            'model' => env('OLLAMA_MODEL', 'llama3.2'),
             'context_format' => env('OLLAMA_CONTEXT_FORMAT', 'conversational'),
             'timeout' => env('OLLAMA_TIMEOUT', 100),
             'temperature' => env('OLLAMA_TEMPERATURE', 0.7),
+            'max_tokens' => env('OLLAMA_MAX_TOKENS', 30000),
         ],
     ],
 

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Services\EmbeddingClient;
+use App\Services\RerankingService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
@@ -11,10 +12,12 @@ use Illuminate\Support\Facades\Log;
 class SearchController extends Controller
 {
     protected EmbeddingClient $embeddingClient;
+    protected RerankingService $rerankingService;
 
-    public function __construct(EmbeddingClient $embeddingClient)
+    public function __construct(EmbeddingClient $embeddingClient, RerankingService $rerankingService)
     {
         $this->embeddingClient = $embeddingClient;
+        $this->rerankingService = $rerankingService;
     }
 
     public function search(Request $request): JsonResponse
@@ -192,17 +195,24 @@ class SearchController extends Controller
      */
     private function applyReranking(string $query, $chunks, int $topK): array
     {
-        // For now, just return the original chunks as reranking would require
-        // a separate service/client for cross-encoder models
-        // This is a placeholder for future implementation
-        
-        Log::info('Reranking requested but not implemented', [
-            'query' => $query,
-            'chunk_count' => count($chunks),
-            'top_k' => $topK
-        ]);
-
-        return array_slice($chunks, 0, $topK);
+        try {
+            $useBatchReranking = config('search.scoring.rerank_use_batch', true);
+            $batchSize = config('search.scoring.rerank_batch_size', 5);
+            
+            if ($useBatchReranking) {
+                return $this->rerankingService->rerankBatch($query, $chunks, $topK, $batchSize);
+            } else {
+                return $this->rerankingService->rerank($query, $chunks, $topK);
+            }
+        } catch (\Exception $e) {
+            Log::error('Reranking failed, returning original chunks', [
+                'error' => $e->getMessage(),
+                'query' => $query,
+                'chunk_count' => count($chunks)
+            ]);
+            
+            return array_slice($chunks, 0, $topK);
+        }
     }
 
     /**

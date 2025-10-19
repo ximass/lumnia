@@ -3,16 +3,19 @@
 namespace App\Services;
 
 use App\Services\EmbeddingClient;
+use App\Services\RerankingService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class RAGService
 {
     protected EmbeddingClient $embeddingClient;
+    protected RerankingService $rerankingService;
 
-    public function __construct(EmbeddingClient $embeddingClient)
+    public function __construct(EmbeddingClient $embeddingClient, RerankingService $rerankingService)
     {
         $this->embeddingClient = $embeddingClient;
+        $this->rerankingService = $rerankingService;
     }
 
     public function retrieveRelevantChunks(string $query, ?string $kbId, int $topK = 5, float $threshold = null): array
@@ -56,11 +59,42 @@ class RAGService
 
             $relevantChunks = $chunks->filter(function ($chunk) use ($threshold) {
                 return $chunk->combined_score >= $threshold;
-            })->take($topK)->toArray();
+            })->values()->toArray();
+
+            $enableReranking = config('search.scoring.enable_reranking', false);
+            
+            if ($enableReranking && count($relevantChunks) > $topK) {
+                Log::info('Applying reranking for RAG', [
+                    'chunks_before' => count($relevantChunks),
+                    'target_top_k' => $topK
+                ]);
+                
+                try {
+                    $useBatchReranking = config('search.scoring.rerank_use_batch', true);
+                    $batchSize = config('search.scoring.rerank_batch_size', 5);
+                    
+                    if ($useBatchReranking) {
+                        $relevantChunks = $this->rerankingService->rerankBatch($query, $relevantChunks, $topK, $batchSize);
+                    } else {
+                        $relevantChunks = $this->rerankingService->rerank($query, $relevantChunks, $topK);
+                    }
+                    
+                    Log::info('Reranking applied successfully', [
+                        'chunks_after' => count($relevantChunks)
+                    ]);
+                } catch (\Exception $e) {
+                    Log::warning('Reranking failed in RAG, using original order', [
+                        'error' => $e->getMessage()
+                    ]);
+                    $relevantChunks = array_slice($relevantChunks, 0, $topK);
+                }
+            } else {
+                $relevantChunks = array_slice($relevantChunks, 0, $topK);
+            }
 
             Log::info('RAG retrieval completed', [
                 'found_chunks' => count($relevantChunks),
-                'scores' => array_map(fn($chunk) => $chunk->combined_score, $relevantChunks)
+                'scores' => array_map(fn($chunk) => $chunk->combined_score ?? $chunk->rerank_score ?? 0, $relevantChunks)
             ]);
 
             return $relevantChunks;
