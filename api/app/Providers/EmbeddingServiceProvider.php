@@ -6,6 +6,7 @@ use App\Contracts\EmbeddingProvider;
 use App\Services\EmbeddingClient;
 use App\Services\Providers\LocalEmbeddingProvider;
 use App\Services\Providers\RemoteEmbeddingProvider;
+use App\Services\Providers\GeminiEmbeddingProvider;
 use Illuminate\Support\ServiceProvider;
 
 class EmbeddingServiceProvider extends ServiceProvider
@@ -28,6 +29,14 @@ class EmbeddingServiceProvider extends ServiceProvider
                     maxRetries: $config['max_retries'],
                     retryDelay: $config['retry_delay'],
                     model: $config['model']
+                );
+            }
+
+            if ($provider === 'gemini') {
+                return new GeminiEmbeddingProvider(
+                    batchSize: $config['batch_size'],
+                    maxRetries: $config['max_retries'],
+                    retryDelay: $config['retry_delay']
                 );
             }
 

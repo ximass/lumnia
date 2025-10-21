@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Chat;
 use App\Services\RAGService;
+use App\Services\GeminiClient;
 use Illuminate\Http\Request;
 
 use Illuminate\Support\Facades\Http;
@@ -128,6 +129,9 @@ class LLMController extends Controller
             
             case 'ollama':
                 return $this->generateOllamaResponse($message, $persona, $conversationHistory, $provider, $stream, $callback);
+            
+            case 'gemini':
+                return $this->generateGeminiResponse($message, $persona, $conversationHistory, $provider, $stream, $callback);
             
             default:
                 Log::error("Unknown provider type: {$provider['type']}");
@@ -384,6 +388,51 @@ class LLMController extends Controller
         ]);
 
         return $fullResponse;
+    }
+
+    private function generateGeminiResponse(string $userMessage, $persona, array $conversationHistory, array $providerConfig, $stream = false, $callback = null): string
+    {
+        try {
+            $geminiClient = new GeminiClient();
+            
+            $messages = [];
+            
+            if ($persona) {
+                $systemMessage = $this->buildPersonaInstructions($persona);
+                $messages[] = ['role' => 'system', 'content' => $systemMessage];
+            }
+            
+            foreach ($conversationHistory as $historyMessage) {
+                $messages[] = ['role' => 'user', 'content' => $historyMessage['text']];
+                if (!empty($historyMessage['answer'])) {
+                    $messages[] = ['role' => 'assistant', 'content' => $historyMessage['answer']];
+                }
+            }
+            
+            $messages[] = ['role' => 'user', 'content' => $userMessage];
+            
+            $temperature = $persona ? ($persona->creativity ?? 0) : 0.7;
+
+            Log::info('Gemini request', [
+                'messages_count' => count($messages),
+                'temperature' => $temperature,
+                'stream' => $stream
+            ]);
+
+            $response = $geminiClient->generateContent($messages, $temperature, $stream, $callback);
+
+            Log::info('Gemini response received', [
+                'response_length' => strlen($response)
+            ]);
+
+            return $response;
+
+        } catch (\Exception $e) {
+            Log::error('Gemini Exception', [
+                'error' => $e->getMessage()
+            ]);
+            return false;
+        }
     }
 
     private function buildOllamaPrompt(string $userMessage, array $conversationHistory, $persona = null): string

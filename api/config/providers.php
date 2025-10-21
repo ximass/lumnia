@@ -8,7 +8,7 @@ return [
     |--------------------------------------------------------------------------
     |
     | This value determines which LLM provider will be used by default.
-    | Supported: "lm_studio", "ollama"
+    | Supported: "lm_studio", "ollama", "gemini"
     |
     */
 
@@ -20,7 +20,7 @@ return [
     |--------------------------------------------------------------------------
     |
     | This value determines which provider will be used for embeddings.
-    | Supported: "lm_studio", "ollama", "openai"
+    | Supported: "lm_studio", "ollama", "openai", "gemini"
     |
     */
 
@@ -60,6 +60,21 @@ return [
             'timeout' => env('OLLAMA_TIMEOUT', 100),
             'temperature' => env('OLLAMA_TEMPERATURE', 0.7),
             'max_tokens' => env('OLLAMA_MAX_TOKENS', 30000),
+        ],
+
+        'gemini' => [
+            'name' => 'Google Gemini',
+            'type' => 'gemini',
+            'enabled' => env('GEMINI_ENABLED', false),
+            'base_url' => env('GEMINI_BASE_URL', 'https://generativelanguage.googleapis.com'),
+            'chat_endpoint' => '/v1beta/models/{model}:generateContent',
+            'stream_endpoint' => '/v1beta/models/{model}:streamGenerateContent',
+            'api_key' => env('GEMINI_API_KEY'),
+            'model' => env('GEMINI_MODEL', 'gemini-2.5-flash'),
+            'max_tokens' => env('GEMINI_MAX_TOKENS', 30000),
+            'timeout' => env('GEMINI_TIMEOUT', 120),
+            'temperature' => env('GEMINI_TEMPERATURE', 0.7),
+            'verify_ssl' => env('GEMINI_VERIFY_SSL', true),
         ],
     ],
 
@@ -112,6 +127,22 @@ return [
             'max_retries' => env('EMBEDDING_MAX_RETRIES', 3),
             'retry_delay' => env('EMBEDDING_RETRY_DELAY', 2),
             'timeout' => env('OPENAI_TIMEOUT', 60),
+        ],
+
+        'gemini' => [
+            'name' => 'Google Gemini Embeddings',
+            'type' => 'gemini',
+            'enabled' => env('GEMINI_ENABLED', false),
+            'base_url' => env('GEMINI_BASE_URL', 'https://generativelanguage.googleapis.com'),
+            'endpoint' => '/v1beta/{model}:embedContent',
+            'api_key' => env('GEMINI_API_KEY'),
+            'model' => env('GEMINI_EMBEDDING_MODEL', 'models/gemini-embedding-001'),
+            'dimensions' => env('GEMINI_EMBEDDING_DIMENSIONS', 768),
+            'batch_size' => env('EMBEDDING_BATCH_SIZE', 10),
+            'max_retries' => env('EMBEDDING_MAX_RETRIES', 3),
+            'retry_delay' => env('EMBEDDING_RETRY_DELAY', 1),
+            'timeout' => env('GEMINI_TIMEOUT', 120),
+            'verify_ssl' => env('GEMINI_VERIFY_SSL', true),
         ],
     ],
 ];
