@@ -1,6 +1,6 @@
 <template>
   <v-app-bar app :color="isDark ? 'secundary' : 'white'" :dark="isDark">
-    <v-app-bar-nav-icon @click="toggleDrawer" />
+  <v-app-bar-nav-icon @click.stop="toggleDrawer" />
     <v-spacer />
     <div class="logo-header">
       <v-img src="/src/assets/images/logo_horizontal.png" alt="Logo" contain />
@@ -45,7 +45,7 @@
     components: {
       ProfileModal,
     },
-    emits: ['toggleDrawer'],
+  emits: ['toggle-drawer'],
     props: {
       user: {
         type: Object,
@@ -61,7 +61,7 @@
       const isDark = ref(theme.global.name.value === 'dark')
 
       const toggleDrawer = () => {
-        emit('toggleDrawer')
+        emit('toggle-drawer')
       }
 
       const onLogout = () => {
