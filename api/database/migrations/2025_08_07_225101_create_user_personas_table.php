@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('user_personas', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained();
+            $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->text('instructions');
             $table->text('response_format')->nullable();
             $table->decimal('creativity', 3, 2)->default(0.5);
