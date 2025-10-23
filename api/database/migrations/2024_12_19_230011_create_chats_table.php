@@ -12,8 +12,8 @@ class CreateChatsTable extends Migration
             $table->id();
             $table->uuid('kb_id');
             $table->string('name');
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->foreign('kb_id')->references('id')->on('knowledge_bases')->onDelete('cascade');
+            $table->foreignId('user_id');
+            $table->foreign('kb_id')->references('id')->on('knowledge_bases');
             $table->timestamps();
         });
     }
