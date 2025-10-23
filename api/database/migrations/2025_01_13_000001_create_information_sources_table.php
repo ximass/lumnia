@@ -11,7 +11,7 @@ class CreateInformationSourcesTable extends Migration
         Schema::create('information_sources', function (Blueprint $table) {
             $table->id();
             $table->text('content');
-            $table->foreignId('message_id')->constrained()->onDelete('cascade');
+            $table->foreignId('message_id')->constrained();
             $table->timestamps();
         });
     }

@@ -18,7 +18,7 @@ return new class extends Migration
             $table->jsonb('metadata')->nullable();
             $table->timestamps();
 
-            $table->foreign('kb_id')->references('id')->on('knowledge_bases')->onDelete('cascade');
+            $table->foreign('kb_id')->references('id')->on('knowledge_bases');
             $table->index('kb_id');
         });
     }
