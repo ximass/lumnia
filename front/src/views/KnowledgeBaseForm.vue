@@ -298,7 +298,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, watch, onMounted, computed } from 'vue'
+import { defineComponent, ref, watch, onMounted, onBeforeUnmount, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import axios from 'axios'
 import { useToast } from '@/composables/useToast'
@@ -320,6 +320,7 @@ export default defineComponent({
     const isProcessing = ref(false)
     const selectedFiles = ref<File[]>([])
     const sources = ref<Source[]>([])
+    const statusUpdateInterval = ref<number | null>(null)
 
     const deleteDialog = ref({
       show: false,
@@ -453,6 +454,44 @@ export default defineComponent({
       }
     }
 
+    const updateSourcesStatus = async () => {
+      if (!isEdit.value || !route.params.id) return
+
+      const hasProcessing = sources.value.some(source => 
+        ['uploaded', 'processing', 'chunked', 'embedding'].includes(source.status)
+      )
+
+      if (!hasProcessing) return
+
+      try {
+        const response = await axios.get<ApiResponse<KnowledgeBase>>(`/api/knowledge-bases/${route.params.id}`)
+        const kb = response.data.data
+
+        if (kb && kb.sources) {
+          sources.value = kb.sources
+        }
+      } catch (error: any) {
+        console.error('Erro ao atualizar status dos arquivos:', error)
+      }
+    }
+
+    const startStatusPolling = () => {
+      if (statusUpdateInterval.value) {
+        clearInterval(statusUpdateInterval.value)
+      }
+
+      statusUpdateInterval.value = window.setInterval(() => {
+        updateSourcesStatus()
+      }, 5000)
+    }
+
+    const stopStatusPolling = () => {
+      if (statusUpdateInterval.value) {
+        clearInterval(statusUpdateInterval.value)
+        statusUpdateInterval.value = null
+      }
+    }
+
     const save = async () => {
       const validation = await form.value?.validate()
       if (!validation.valid) return
@@ -531,7 +570,12 @@ export default defineComponent({
     onMounted(() => {
       if (isEdit.value) {
         loadKnowledgeBase()
+        startStatusPolling()
       }
+    })
+
+    onBeforeUnmount(() => {
+      stopStatusPolling()
     })
 
     return {

@@ -54,10 +54,10 @@
           await axios.get('/sanctum/csrf-cookie')
           await axios.post('/api/register', formData)
           
-          showToast('Registro realizado com sucesso!')
+          showToast('Registro realizado com sucesso!', 'success')
           router.push('/login')
         } catch (err: any) {
-          showToast('Erro ao se registrar: ' + (err.response?.data?.message || 'Erro desconhecido'))
+          showToast('Erro ao se registrar: ' + (err.response?.data?.message || 'Erro desconhecido'), 'error')
         } finally {
           loading.value = false
         }

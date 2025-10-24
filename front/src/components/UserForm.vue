@@ -40,7 +40,14 @@
               hide-selected
               :loading="loadingGroups"
             ></v-autocomplete>
-          <v-switch v-model="user.admin" label="Administrador"></v-switch>
+          <v-row dense>
+            <v-col cols="6">
+              <v-switch v-model="user.admin" label="Administrador"></v-switch>
+            </v-col>
+            <v-col cols="6">
+              <v-switch v-model="user.enabled" label="Habilitado"></v-switch>
+            </v-col>
+          </v-row>
         </v-form>
       </v-card-text>
       <v-card-actions>
@@ -82,7 +89,8 @@
         email: '', 
         password: '', 
         groups_ids: [], 
-        admin: false 
+        admin: false,
+        enabled: false
       })
 
       const groups = ref<Group[]>([])
@@ -99,6 +107,7 @@
               password: '',
               groups_ids: newData.groups?.map((group: Group) => group.id) || [],
               admin: newData.admin,
+              enabled: newData.enabled,
             }
           } else {
             user.value = { 
@@ -106,7 +115,8 @@
               email: '', 
               password: '', 
               groups_ids: [], 
-              admin: false 
+              admin: false ,
+              enabled: true
             }
           }
         },
@@ -144,6 +154,7 @@
             password: user.value.password,
             groups_ids: user.value.groups_ids,
             admin: user.value.admin,
+            enabled: user.value.enabled,
           }
 
           if (user.value.id) {

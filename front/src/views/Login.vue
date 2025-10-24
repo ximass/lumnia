@@ -59,9 +59,10 @@
             localStorage.setItem('user', JSON.stringify(user.value))
           }
           router.push('/')
-        } catch (err) {
+        } catch (err: any) {
           loading.value = false
-          showToast('Credenciais inválidas')
+
+          showToast('Erro ao fazer login: ' + (err.response?.data?.message || 'Erro desconhecido'), 'error')
         }
       }
 

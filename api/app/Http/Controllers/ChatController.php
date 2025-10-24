@@ -44,7 +44,7 @@ class ChatController extends Controller
 
     public function getChats(Request $request)
     {
-        $chats = Chat::with(['lastMessage', 'persona', 'user.userPersona'])
+        $chats = Chat::with(['lastMessage', 'persona', 'user.userPersona', 'knowledgeBase'])
             ->where('user_id', $request->user()->id)
             ->orderBy('updated_at', 'desc')
             ->get()
@@ -53,6 +53,9 @@ class ChatController extends Controller
                     'id' => $chat->id,
                     'name' => $chat->name,
                     'lastMessage' => $chat->lastMessage ? $chat->lastMessage->text : '',
+                    'kb_id' => $chat->kb_id,
+                    'persona_id' => $chat->persona_id,
+                    'knowledge_base' => $chat->knowledgeBase,
                 ];
             });
 
@@ -79,6 +82,13 @@ class ChatController extends Controller
         $request->validate([
             'text' => 'required|string|max:5000',
         ]);
+
+        if (!$chat->kb_id || !$chat->knowledgeBase) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'A base de conhecimento associada a este chat não está mais disponível.'
+            ], 400);
+        }
 
         $userText = trim($request->input('text'));
         
