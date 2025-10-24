@@ -18,10 +18,6 @@ use App\Http\Controllers\MessageController;
 use App\Http\Controllers\ErrorLogController;
 use App\Http\Controllers\PermissionController;
 
-Route::get('/status', function () {
-    return response()->json(['message' => 'API is running']);
-});
-
 
 Route::middleware('web')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
@@ -29,9 +25,6 @@ Route::middleware('web')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
 });
 
-Route::get('/avatars/{filename}', [UserController::class, 'serveAvatar']);
-Route::get('/personas/active', [PersonaController::class, 'getActivePersonas']);
-Route::post('/chunks/search', [ChunkController::class, 'search']);
 
 // Rotas protegidas com autenticação
 Route::middleware('auth:sanctum')->group(function () {
@@ -39,6 +32,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', function (Request $request) {
         return $request->user()->load(['userPersona', 'groups.permissions']);
     });
+
+    Route::get('/avatars/{filename}', [UserController::class, 'serveAvatar']);
+    Route::get('/personas/active', [PersonaController::class, 'getActivePersonas']);
+    Route::post('/chunks/search', [ChunkController::class, 'search']);
 
     // Chat routes
     Route::get('/chats', [ChatController::class, 'getChats']);
