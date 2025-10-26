@@ -18,7 +18,7 @@ return new class extends Migration
             $table->text('response_format')->nullable();
             $table->decimal('creativity', 3, 2)->default(0.5);
             $table->timestamps();
-            
+
             $table->unique('user_id');
         });
     }

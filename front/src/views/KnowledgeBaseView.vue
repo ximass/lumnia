@@ -243,7 +243,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, onMounted, computed } from 'vue'
+import { defineComponent, ref, onMounted, onBeforeUnmount, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
 import { useToast } from '@/composables/useToast'
@@ -262,6 +262,7 @@ export default defineComponent({
     const deleting = ref(false)
     const deleteDialog = ref(false)
     const search = ref('')
+    const statusUpdateInterval = ref<number | null>(null)
 
     const headers = [
       { title: 'Nome', value: 'name', sortable: true },
@@ -336,6 +337,40 @@ export default defineComponent({
         showToast(errorMsg)
       } finally {
         loading.value = false
+      }
+    }
+
+    const updateKnowledgeBasesStatus = async () => {
+      const hasProcessing = knowledgeBases.value.some(kb => 
+        kb.sources?.some(source => 
+          ['uploaded', 'processing', 'chunked', 'embedding'].includes(source.status)
+        )
+      )
+
+      if (!hasProcessing) return
+
+      try {
+        const response = await axios.get<ApiResponse<KnowledgeBase[]>>('/api/knowledge-bases')
+        knowledgeBases.value = response.data.data || []
+      } catch (error: any) {
+        console.error('Erro ao atualizar status das bases de conhecimento:', error)
+      }
+    }
+
+    const startStatusPolling = () => {
+      if (statusUpdateInterval.value) {
+        clearInterval(statusUpdateInterval.value)
+      }
+
+      statusUpdateInterval.value = window.setInterval(() => {
+        updateKnowledgeBasesStatus()
+      }, 5000)
+    }
+
+    const stopStatusPolling = () => {
+      if (statusUpdateInterval.value) {
+        clearInterval(statusUpdateInterval.value)
+        statusUpdateInterval.value = null
       }
     }
 
@@ -441,10 +476,14 @@ export default defineComponent({
       }
     }
 
-    onMounted(async () => {
-      // Ensure we have the current user before loading knowledge bases
-      await fetchUser()
-      await fetchKnowledgeBases()
+    onMounted(() => {
+      fetchUser()
+      fetchKnowledgeBases()
+      startStatusPolling()
+    })
+
+    onBeforeUnmount(() => {
+      stopStatusPolling()
     })
 
     return {

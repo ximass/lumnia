@@ -21,6 +21,12 @@ class AuthController extends Controller
 
         if (Auth::attempt($credentials, true)) {
             $user = Auth::user();
+            
+            if (!$user->enabled && !$user->admin) {
+                Auth::logout();
+                return response()->json(['message' => 'Usuário desabilitado. Entre em contato com o administrador.'], 403);
+            }
+
             $token = $user->createToken('login')->plainTextToken;
 
             return response()->json([

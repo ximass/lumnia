@@ -1,11 +1,11 @@
 <template>
   <v-navigation-drawer
-    app
-    :value="drawerOpen"
-    :mini-variant="!drawerOpen"
-    expand-on-hover
-    :rail="rail"
-    permanent
+  app
+  :model-value="isOpen"
+  :mini-variant="!isOpen"
+  expand-on-hover
+  :rail="rail"
+  :permanent="pinned"
   
   >
     <v-list-item nav>
@@ -23,8 +23,8 @@
       <v-list-item-title>{{ props.user?.name || 'Usuário' }}</v-list-item-title>
 
       <template #append>
-        <v-btn icon variant="text" @click.stop="rail = !rail">
-          <v-icon>mdi-chevron-left</v-icon>
+        <v-btn icon variant="text" @click.stop="togglePinned">
+          <v-icon size="18">{{ isOpen ? 'mdi-chevron-right' : 'mdi-chevron-left' }}</v-icon>
         </v-btn>
       </template>
 
@@ -137,8 +137,14 @@ export default defineComponent({
     },
   },
   setup(props) {
-    const rail = ref(true)
-    const router = useRouter()
+      const rail = ref(true)
+      const pinned = ref(false)
+      function togglePinned() {
+        pinned.value = !pinned.value
+        rail.value = !pinned.value
+      }
+      const router = useRouter()
+      const isOpen = computed(() => pinned.value || props.drawerOpen)
 
     const menuItems = importedMenuItems
 
@@ -216,6 +222,9 @@ export default defineComponent({
       reportsMenuItems,
       adminMenuItems,
       rail,
+      pinned,
+      togglePinned,
+      isOpen,
       props,
       navigate,
     }

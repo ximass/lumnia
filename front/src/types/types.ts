@@ -6,6 +6,7 @@ export interface User {
   admin: boolean
   avatar?: string
   user_persona?: UserPersona
+  enabled: boolean
 }
 
 export interface UserFormData {
@@ -16,6 +17,7 @@ export interface UserFormData {
   groups_ids: number[]
   admin: boolean
   avatar?: string
+  enabled: boolean
 }
 
 export interface Profile {
@@ -53,6 +55,7 @@ export interface Chat {
   user_id: number
   kb_id: string
   persona_id?: number
+  knowledge_base?: KnowledgeBase | null
 }
 
 export interface Message {
@@ -125,6 +128,15 @@ export interface SourceFormData {
   content_hash: string
   status: string
   metadata?: Record<string, any>
+}
+
+export interface SourcePreview {
+  source: Source
+  content?: string
+  file_size: number
+  original_filename: string
+  preview_type: 'text' | 'binary'
+  download_url?: string
 }
 
 // Chunk interfaces

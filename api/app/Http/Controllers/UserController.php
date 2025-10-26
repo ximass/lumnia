@@ -17,7 +17,8 @@ class UserController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'sometimes|email|max:255|unique:users,email',
-            'admin' => 'sometimes|boolean'
+            'admin' => 'sometimes|boolean',
+            'enabled' => 'sometimes|boolean'
         ]);
 
         // Update email only if provided
@@ -28,6 +29,11 @@ class UserController extends Controller
         // Update admin only if provided
         if ($request->has('admin')) {
             $updateData['admin'] = $request->input('admin');
+        }
+
+        // Update enabled only if provided
+        if ($request->has('enabled')) {
+            $updateData['enabled'] = $request->input('enabled');
         }
 
         $user = User::create($request->all());
@@ -69,6 +75,7 @@ class UserController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'sometimes|email|max:255|unique:users,email,' . $user->id,
             'admin' => 'sometimes|boolean',
+            'enabled' => 'sometimes|boolean',
             'avatar' => 'nullable|file|image|mimes:jpeg,png,jpg,gif|max:5120' // 5MB max
         ]);
 
@@ -85,6 +92,11 @@ class UserController extends Controller
         // Update admin only if provided
         if ($request->has('admin')) {
             $updateData['admin'] = $request->input('admin');
+        }
+
+        // Update enabled only if provided
+        if ($request->has('enabled')) {
+            $updateData['enabled'] = $request->input('enabled');
         }
 
         // Handle avatar upload if provided

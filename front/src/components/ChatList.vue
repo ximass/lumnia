@@ -12,7 +12,22 @@
       <v-list-item v-for="chat in chats" :key="chat.id" @click="selectChat(chat)" class="chat-item">
         <v-row>
           <v-col cols="10">
-            <v-list-item-title>{{ chat.name }}</v-list-item-title>
+            <div class="d-flex align-center">
+              <v-list-item-title>{{ chat.name }}</v-list-item-title>
+              <v-tooltip v-if="!chat.knowledge_base" location="top">
+                <template v-slot:activator="{ props }">
+                  <v-icon 
+                    v-bind="props" 
+                    color="warning" 
+                    size="small" 
+                    class="ml-2"
+                  >
+                    mdi-alert
+                  </v-icon>
+                </template>
+                <span>Base de conhecimento não disponível</span>
+              </v-tooltip>
+            </div>
             <v-list-item-subtitle>{{ chat.lastMessage }}</v-list-item-subtitle>
           </v-col>
           <v-col cols="2" class="d-flex justify-end">

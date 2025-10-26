@@ -23,7 +23,7 @@ class Chat extends Model
 
     public function knowledgeBase()
     {
-        return $this->belongsTo(KnowledgeBase::class);
+        return $this->belongsTo(KnowledgeBase::class, 'kb_id');
     }
 
     public function user()

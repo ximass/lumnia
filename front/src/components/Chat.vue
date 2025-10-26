@@ -17,6 +17,17 @@
         class="message-container ma-2"
         style="flex: 1; overflow-y: auto"
       >
+        <v-alert
+          v-if="!currentChat.knowledge_base"
+          type="warning"
+          variant="tonal"
+          class="mb-4"
+          prominent
+        >
+          <v-alert-title>Base de conhecimento não disponível</v-alert-title>
+          A base de conhecimento associada a este chat foi removida. Você não pode mais enviar mensagens, mas ainda pode visualizar o histórico.
+        </v-alert>
+        
         <v-list>
           <v-list-item v-for="(message, index) in messages" :key="index" message>
             <v-list-item-title>
@@ -183,16 +194,16 @@
           @keydown.enter="handleEnterKey"
           append-icon=""
           class="w-100"
-          :disabled="isLoading"
+          :disabled="isLoading || !currentChat.knowledge_base"
           rows="1"
           auto-grow
           max-rows="4"
           persistent-hint
-          hint="Enter para enviar, Shift+Enter para nova linha"
+          :hint="!currentChat.knowledge_base ? 'Base de conhecimento não disponível' : 'Enter para enviar, Shift+Enter para nova linha'"
         ></v-textarea>
         <v-btn
           @click="handleSendMessage"
-          :disabled="isLoading || !newMessage.trim()"
+          :disabled="isLoading || !newMessage.trim() || !currentChat.knowledge_base"
           color="primary"
           icon="mdi-send"
           class="ml-2"
@@ -259,6 +270,11 @@
       )
 
       const handleSendMessage = async () => {
+        if (!props.currentChat.knowledge_base) {
+          showToast('A base de conhecimento não está mais disponível.', 'error')
+          return
+        }
+
         if (newMessage.value.trim() === '') {
           showToast('A mensagem não pode estar vazia.')
           return
@@ -439,12 +455,15 @@
       }
 
       const handleEnterKey = (event: KeyboardEvent) => {
-        // Se Shift+Enter, permite quebra de linha
+        if (!props.currentChat.knowledge_base) {
+          event.preventDefault()
+          return
+        }
+        
         if (event.shiftKey) {
           return
         }
         
-        // Se apenas Enter, previne quebra de linha e envia mensagem
         event.preventDefault()
         handleSendMessage()
       }

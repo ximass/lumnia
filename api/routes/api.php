@@ -18,20 +18,14 @@ use App\Http\Controllers\MessageController;
 use App\Http\Controllers\ErrorLogController;
 use App\Http\Controllers\PermissionController;
 
-Route::get('/status', function () {
-    return response()->json(['message' => 'API is running']);
-});
-
 
 Route::middleware('web')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::post('/register', [AuthController::class, 'register']);
+    Route::get('/sources/{source}/download', [SourceController::class, 'download'])->name('source.download');
 });
 
-Route::get('/avatars/{filename}', [UserController::class, 'serveAvatar']);
-Route::get('/personas/active', [PersonaController::class, 'getActivePersonas']);
-Route::post('/chunks/search', [ChunkController::class, 'search']);
 
 // Rotas protegidas com autenticação
 Route::middleware('auth:sanctum')->group(function () {
@@ -39,6 +33,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', function (Request $request) {
         return $request->user()->load(['userPersona', 'groups.permissions']);
     });
+
+    Route::get('/avatars/{filename}', [UserController::class, 'serveAvatar']);
+    Route::get('/personas/active', [PersonaController::class, 'getActivePersonas']);
+    Route::post('/chunks/search', [ChunkController::class, 'search']);
 
     // Chat routes
     Route::get('/chats', [ChatController::class, 'getChats']);
@@ -75,6 +73,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/sources/{source}/process', [SourceProcessingController::class, 'processExisting']);
     Route::get('/sources/{source}/status', [SourceProcessingController::class, 'getStatus']);
     Route::post('/sources/{source}/retry', [SourceProcessingController::class, 'retry']);
+    Route::get('/sources/{source}/preview', [SourceController::class, 'preview']);
+    Route::get('/sources/{source}/preview-url', [SourceController::class, 'getPreviewUrl']);
+    Route::get('/sources/{source}/download-url', [SourceController::class, 'getDownloadUrl']);
 
     // Search route
     Route::post('/search', [SearchController::class, 'search']);
