@@ -220,6 +220,32 @@
                             icon
                             size="small"
                             variant="text"
+                            color="primary"
+                            @click="previewSource(source)"
+                            :disabled="!canPreview(source)"
+                          >
+                            <v-icon size="20">mdi-eye</v-icon>
+                            <v-tooltip activator="parent" location="top">
+                              {{ canPreview(source) ? 'Visualizar arquivo' : 'Preview não disponível para este tipo de arquivo' }}
+                            </v-tooltip>
+                          </v-btn>
+                          <v-btn
+                            icon
+                            size="small"
+                            variant="text"
+                            color="secondary"
+                            @click="downloadSource(source)"
+                            :disabled="isProcessing"
+                          >
+                            <v-icon size="20">mdi-download</v-icon>
+                            <v-tooltip activator="parent" location="top">
+                              Baixar arquivo
+                            </v-tooltip>
+                          </v-btn>
+                          <v-btn
+                            icon
+                            size="small"
+                            variant="text"
                             color="error"
                             @click="deleteSource(source)"
                             :disabled="isProcessing"
@@ -253,6 +279,122 @@
         </v-row>
       </v-container>
     </v-main>
+
+    <!-- Preview Dialog -->
+    <v-dialog v-model="previewDialog.show" :max-width="$vuetify.display.mdAndUp ? '900' : '95vw'" :fullscreen="$vuetify.display.smAndDown" scrollable>
+      <v-card>
+        <v-card-title :class="$vuetify.display.smAndDown ? 'text-subtitle-1 pa-4' : 'text-h6 pa-6'" class="d-flex align-center border-b">
+          <v-icon :class="$vuetify.display.smAndDown ? 'me-2' : 'me-3'" color="primary">
+            {{ previewDialog.source ? getFileIcon(previewDialog.source.source_type) : 'mdi-file' }}
+          </v-icon>
+          <span class="text-truncate flex-grow-1">{{ previewDialog.originalFilename }}</span>
+          <v-btn
+            icon
+            variant="text"
+            size="small"
+            @click="closePreview"
+            :class="$vuetify.display.smAndDown ? 'ms-2' : 'ms-3'"
+          >
+            <v-icon>mdi-close</v-icon>
+          </v-btn>
+        </v-card-title>
+        
+        <v-card-text :class="$vuetify.display.smAndDown ? 'pa-4' : 'pa-6'" style="min-height: 400px; max-height: 70vh;">
+          <div v-if="previewDialog.loading" class="d-flex flex-column align-center justify-center" style="min-height: 400px;">
+            <v-progress-circular indeterminate color="primary" :size="$vuetify.display.smAndDown ? 50 : 70" />
+            <p :class="$vuetify.display.smAndDown ? 'text-body-2 mt-3' : 'text-body-1 mt-4'" class="text-grey">Carregando preview...</p>
+          </div>
+
+          <v-alert v-else-if="previewDialog.error" type="error" variant="tonal" class="mb-0">
+            {{ previewDialog.error }}
+          </v-alert>
+
+          <div v-else-if="previewDialog.previewType === 'text' && previewDialog.content" class="preview-content">
+            <div class="d-flex justify-space-between align-items-center mb-4">
+              <div>
+                <div :class="$vuetify.display.smAndDown ? 'text-caption' : 'text-body-2'" class="text-grey">
+                  <strong>Tamanho:</strong> {{ formatFileSize(previewDialog.fileSize) }}
+                </div>
+                <div :class="$vuetify.display.smAndDown ? 'text-caption' : 'text-body-2'" class="text-grey">
+                  <strong>Tipo:</strong> {{ previewDialog.source?.source_type.toUpperCase() }}
+                </div>
+              </div>
+            </div>
+
+            <v-divider class="mb-4" />
+
+            <div class="preview-text-container">
+              <pre class="preview-text"><code>{{ previewDialog.content }}</code></pre>
+            </div>
+          </div>
+
+          <div v-else-if="previewDialog.previewType === 'binary' && previewDialog.downloadUrl" class="preview-content">
+            <div class="d-flex justify-space-between align-items-center mb-4">
+              <div>
+                <div :class="$vuetify.display.smAndDown ? 'text-caption' : 'text-body-2'" class="text-grey">
+                  <strong>Tamanho:</strong> {{ formatFileSize(previewDialog.fileSize) }}
+                </div>
+                <div :class="$vuetify.display.smAndDown ? 'text-caption' : 'text-body-2'" class="text-grey">
+                  <strong>Tipo:</strong> {{ previewDialog.source?.source_type.toUpperCase() }}
+                </div>
+              </div>
+            </div>
+
+            <v-divider class="mb-4" />
+
+            <div class="preview-document-container">
+              <iframe 
+                v-if="previewDialog.source?.source_type.toLowerCase() === 'pdf'"
+                :src="previewDialog.downloadUrl" 
+                class="preview-iframe"
+                frameborder="0"
+              ></iframe>
+              <div v-else class="preview-document-message">
+                <v-icon size="80" color="grey-lighten-1" class="mb-4">
+                  {{ getFileIcon(previewDialog.source?.source_type || '') }}
+                </v-icon>
+                <h3 class="text-h6 mb-4">Preview não disponível</h3>
+                <p class="text-body-2 text-grey mb-6">
+                  Arquivos {{ previewDialog.source?.source_type.toUpperCase() }} não podem ser visualizados diretamente no navegador.
+                  Faça o download do arquivo para visualizá-lo.
+                </p>
+                <v-btn 
+                  color="primary" 
+                  variant="flat"
+                  :href="previewDialog.downloadUrl"
+                  download
+                  prepend-icon="mdi-download"
+                >
+                  Baixar arquivo
+                </v-btn>
+              </div>
+            </div>
+          </div>
+        </v-card-text>
+
+        <v-card-actions :class="$vuetify.display.smAndDown ? 'px-4 pb-4' : 'px-6 pb-6'" class="border-t">
+          <v-btn
+            v-if="previewDialog.downloadUrl"
+            variant="text"
+            color="primary"
+            :href="previewDialog.downloadUrl"
+            download
+            prepend-icon="mdi-download"
+            :size="$vuetify.display.smAndDown ? 'small' : 'default'"
+          >
+            Baixar
+          </v-btn>
+          <v-spacer />
+          <v-btn
+            variant="outlined"
+            @click="closePreview"
+            :size="$vuetify.display.smAndDown ? 'small' : 'default'"
+          >
+            Fechar
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
 
     <!-- Delete Confirmation Dialog -->
     <v-dialog v-model="deleteDialog.show" :max-width="$vuetify.display.smAndDown ? '90vw' : '500'" :fullscreen="$vuetify.display.xs">
@@ -304,7 +446,7 @@ import axios from 'axios'
 import { useToast } from '@/composables/useToast'
 import { useAuth } from '@/composables/auth'
 import { useFileUpload } from '@/composables/useFileUpload'
-import type { KnowledgeBase, KnowledgeBaseFormData, Source, ApiResponse } from '@/types/types'
+import type { KnowledgeBase, KnowledgeBaseFormData, Source, ApiResponse, SourcePreview } from '@/types/types'
 
 export default defineComponent({
   name: 'KnowledgeBaseCreateView',
@@ -326,6 +468,18 @@ export default defineComponent({
       show: false,
       source: null as Source | null,
       loading: false
+    })
+
+    const previewDialog = ref({
+      show: false,
+      source: null as Source | null,
+      content: '',
+      fileSize: 0,
+      originalFilename: '',
+      loading: false,
+      error: '',
+      previewType: 'text' as 'text' | 'binary',
+      downloadUrl: ''
     })
 
     const isEdit = computed(() => !!route.params.id)
@@ -567,6 +721,85 @@ export default defineComponent({
       router.push('/knowledge-bases')
     }
 
+    const downloadSource = async (source: Source) => {
+      try {
+        const response = await axios.get<ApiResponse<{ download_url: string }>>(`/api/sources/${source.id}/download-url`)
+        
+        if (response.data.status === 'success' && response.data.data?.download_url) {
+          const downloadUrl = response.data.data.download_url
+          const filename = source.metadata?.original_filename || `file.${source.source_type}`
+          
+          const link = document.createElement('a')
+          link.href = downloadUrl
+          link.download = filename
+          link.setAttribute('target', '_blank')
+          document.body.appendChild(link)
+          link.click()
+          document.body.removeChild(link)
+          
+          showToast('Download iniciado com sucesso!', 'success')
+        }
+      } catch (error: any) {
+        const errorMsg = error.response?.data?.message || 'Erro ao baixar o arquivo'
+        showToast(errorMsg, 'error')
+      }
+    }
+
+    const canPreview = (source: Source): boolean => {
+      const previewableTypes = ['txt', 'json', 'jsonl', 'csv', 'text', 'pdf', 'doc', 'docx', 'odt']
+      return previewableTypes.includes(source.source_type.toLowerCase())
+    }
+
+    const previewSource = async (source: Source) => {
+      if (!canPreview(source)) {
+        showToast('Preview não disponível para este tipo de arquivo', 'warning')
+        return
+      }
+
+      previewDialog.value.show = true
+      previewDialog.value.source = source
+      previewDialog.value.originalFilename = source.metadata?.original_filename || source.source_identifier
+      previewDialog.value.loading = true
+      previewDialog.value.error = ''
+      previewDialog.value.content = ''
+      previewDialog.value.downloadUrl = ''
+
+      try {
+        const response = await axios.get<ApiResponse<SourcePreview>>(`/api/sources/${source.id}/preview`)
+        
+        if (response.data.status === 'success' && response.data.data) {
+          const data = response.data.data
+          previewDialog.value.fileSize = data.file_size
+          previewDialog.value.originalFilename = data.original_filename
+          previewDialog.value.previewType = data.preview_type
+          
+          if (data.preview_type === 'text') {
+            previewDialog.value.content = data.content || ''
+          } else if (data.preview_type === 'binary') {
+            previewDialog.value.downloadUrl = data.download_url || ''
+          }
+        }
+      } catch (error: any) {
+        const errorMsg = error.response?.data?.message || 'Erro ao carregar preview do arquivo'
+        previewDialog.value.error = errorMsg
+        showToast(errorMsg, 'error')
+      } finally {
+        previewDialog.value.loading = false
+      }
+    }
+
+    const closePreview = () => {
+      previewDialog.value.show = false
+      previewDialog.value.source = null
+      previewDialog.value.content = ''
+      previewDialog.value.fileSize = 0
+      previewDialog.value.originalFilename = ''
+      previewDialog.value.loading = false
+      previewDialog.value.error = ''
+      previewDialog.value.previewType = 'text'
+      previewDialog.value.downloadUrl = ''
+    }
+
     onMounted(() => {
       if (isEdit.value) {
         loadKnowledgeBase()
@@ -586,6 +819,7 @@ export default defineComponent({
       sources,
       uploadProgress,
       deleteDialog,
+      previewDialog,
       isEdit,
       formData,
       nameRules,
@@ -598,7 +832,11 @@ export default defineComponent({
       save,
       deleteSource,
       confirmDeleteSource,
-      handleCancel
+      handleCancel,
+      downloadSource,
+      canPreview,
+      previewSource,
+      closePreview
     }
   }
 })
@@ -924,4 +1162,110 @@ export default defineComponent({
   scrollbar-width: thin;
   scrollbar-color: rgba(var(--v-theme-primary), 0.5) rgba(var(--v-theme-surface-variant), 0.3);
 }
+
+/* Preview content styling */
+.preview-content {
+  width: 100%;
+}
+
+.preview-text-container {
+  background-color: rgb(var(--v-theme-surface-variant));
+  border-radius: 8px;
+  padding: 16px;
+  overflow-x: auto;
+  max-height: calc(70vh - 200px);
+}
+
+.preview-text {
+  margin: 0;
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  color: rgb(var(--v-theme-on-surface));
+}
+
+.preview-text code {
+  font-family: inherit;
+  background: transparent;
+  padding: 0;
+}
+
+/* Mobile preview adjustments */
+@media (max-width: 600px) {
+  .preview-text-container {
+    padding: 12px;
+    max-height: calc(70vh - 180px);
+  }
+  
+  .preview-text {
+    font-size: 12px;
+    line-height: 1.5;
+  }
+}
+
+/* Preview scrollbar */
+.preview-text-container::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.preview-text-container::-webkit-scrollbar-track {
+  background: rgba(var(--v-theme-surface), 0.3);
+  border-radius: 4px;
+}
+
+.preview-text-container::-webkit-scrollbar-thumb {
+  background: rgba(var(--v-theme-primary), 0.5);
+  border-radius: 4px;
+}
+
+.preview-text-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(var(--v-theme-primary), 0.7);
+}
+
+/* Preview document styling */
+.preview-document-container {
+  width: 100%;
+  height: 100%;
+  min-height: 500px;
+  background-color: rgb(var(--v-theme-surface-variant));
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.preview-iframe {
+  width: 100%;
+  height: 600px;
+  border: none;
+  border-radius: 8px;
+}
+
+.preview-document-message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 2rem;
+  text-align: center;
+  min-height: 500px;
+}
+
+/* Mobile preview document adjustments */
+@media (max-width: 600px) {
+  .preview-document-container {
+    min-height: 400px;
+  }
+  
+  .preview-iframe {
+    height: 400px;
+  }
+  
+  .preview-document-message {
+    padding: 2rem 1rem;
+    min-height: 400px;
+  }
+}
+
 </style>

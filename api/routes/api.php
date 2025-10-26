@@ -23,6 +23,7 @@ Route::middleware('web')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::post('/register', [AuthController::class, 'register']);
+    Route::get('/sources/{source}/download', [SourceController::class, 'download'])->name('source.download');
 });
 
 
@@ -72,6 +73,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/sources/{source}/process', [SourceProcessingController::class, 'processExisting']);
     Route::get('/sources/{source}/status', [SourceProcessingController::class, 'getStatus']);
     Route::post('/sources/{source}/retry', [SourceProcessingController::class, 'retry']);
+    Route::get('/sources/{source}/preview', [SourceController::class, 'preview']);
+    Route::get('/sources/{source}/preview-url', [SourceController::class, 'getPreviewUrl']);
+    Route::get('/sources/{source}/download-url', [SourceController::class, 'getDownloadUrl']);
 
     // Search route
     Route::post('/search', [SearchController::class, 'search']);

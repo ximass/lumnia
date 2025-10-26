@@ -130,6 +130,15 @@ export interface SourceFormData {
   metadata?: Record<string, any>
 }
 
+export interface SourcePreview {
+  source: Source
+  content?: string
+  file_size: number
+  original_filename: string
+  preview_type: 'text' | 'binary'
+  download_url?: string
+}
+
 // Chunk interfaces
 export interface Chunk {
   id: string
