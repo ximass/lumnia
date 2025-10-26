@@ -247,6 +247,7 @@ import { defineComponent, ref, onMounted, onBeforeUnmount, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
 import { useToast } from '@/composables/useToast'
+import { useAuth } from '@/composables/auth'
 import type { KnowledgeBase, ApiResponse } from '@/types/types'
 
 export default defineComponent({
@@ -273,22 +274,44 @@ export default defineComponent({
     ]
 
     // Computed properties
+    const { user, fetchUser } = useAuth()
+
+    const visibleKnowledgeBases = computed(() => {
+      const u = user.value
+      // If user not fetched yet, show nothing to avoid leaking data
+      if (!u) return []
+
+      // Admins see all
+      if (u.admin) return knowledgeBases.value
+
+      // Regular users: owner or group membership
+      return knowledgeBases.value.filter(kb => {
+        if (kb.owner_id === u.id) return true
+        // if backend provides groups on knowledge base, allow access when any group matches
+        if ((kb as any).groups && Array.isArray((kb as any).groups) && (kb as any).groups.length > 0) {
+          return (kb as any).groups.some((g: any) => u.groups?.some(ug => ug.id === g.id))
+        }
+        return false
+      })
+    })
+
     const filteredKnowledgeBases = computed(() => {
-      if (!search.value) return knowledgeBases.value
-      return knowledgeBases.value.filter(kb => 
+      const list = visibleKnowledgeBases.value
+      if (!search.value) return list
+      return list.filter(kb => 
         kb.name.toLowerCase().includes(search.value.toLowerCase()) ||
         (kb.description && kb.description.toLowerCase().includes(search.value.toLowerCase()))
       )
     })
 
     const totalSources = computed(() => {
-      return knowledgeBases.value.reduce((total, kb) => 
+      return visibleKnowledgeBases.value.reduce((total, kb) => 
         total + (kb.sources?.length || 0), 0
       )
     })
 
     const processingCount = computed(() => {
-      return knowledgeBases.value.filter(kb => {
+      return visibleKnowledgeBases.value.filter(kb => {
         if (!kb.sources || kb.sources.length === 0) return false
         return kb.sources.some(source => 
           ['uploaded', 'processing', 'embedding'].includes(source.status)
@@ -297,7 +320,7 @@ export default defineComponent({
     })
 
     const completedCount = computed(() => {
-      return knowledgeBases.value.filter(kb => {
+      return visibleKnowledgeBases.value.filter(kb => {
         if (!kb.sources || kb.sources.length === 0) return false
         return kb.sources.every(source => source.status === 'processed')
       }).length
@@ -454,6 +477,7 @@ export default defineComponent({
     }
 
     onMounted(() => {
+      fetchUser()
       fetchKnowledgeBases()
       startStatusPolling()
     })
