@@ -413,11 +413,26 @@ class ParseSourceJob implements ShouldQueue
                     case 'PhpOffice\PhpWord\Element\ListItem':
                         $text .= "• " . $this->extractTextFromContainer($element) . "\n";
                         break;
+                    case 'PhpOffice\PhpWord\Element\Table':
+                        foreach ($element->getRows() as $row) {
+                            foreach ($row->getCells() as $cell) {
+                                $text .= $this->extractTextFromContainer($cell) . " | ";
+                            }
+                            $text .= "\n";
+                        }
+                        break;
                     default:
                         if (method_exists($element, 'getElements')) {
                             $text .= $this->extractTextFromContainer($element) . " ";
                         } elseif (method_exists($element, 'getText')) {
-                            $text .= $element->getText() . " ";
+                            try {
+                                $text .= $element->getText() . " ";
+                            } catch (\Throwable $e) {
+                                Log::warning('Failed to extract text from element', [
+                                    'element_class' => $elementClass,
+                                    'error' => $e->getMessage()
+                                ]);
+                            }
                         }
                         break;
                 }
