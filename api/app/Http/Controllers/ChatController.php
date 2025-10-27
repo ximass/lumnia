@@ -39,7 +39,16 @@ class ChatController extends Controller
             'persona_id' => $request->input('persona_id'),
         ]);
 
-        return response()->json($chat);
+        $chat->load('knowledgeBase');
+
+        return response()->json([
+            'id' => $chat->id,
+            'name' => $chat->name,
+            'lastMessage' => '',
+            'kb_id' => $chat->kb_id,
+            'persona_id' => $chat->persona_id,
+            'knowledge_base' => $chat->knowledgeBase,
+        ]);
     }
 
     public function getChats(Request $request)
