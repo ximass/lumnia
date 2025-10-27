@@ -284,15 +284,8 @@ export default defineComponent({
       // Admins see all
       if (u.admin) return knowledgeBases.value
 
-      // Regular users: owner or group membership
-      return knowledgeBases.value.filter(kb => {
-        if (kb.owner_id === u.id) return true
-        // if backend provides groups on knowledge base, allow access when any group matches
-        if ((kb as any).groups && Array.isArray((kb as any).groups) && (kb as any).groups.length > 0) {
-          return (kb as any).groups.some((g: any) => u.groups?.some(ug => ug.id === g.id))
-        }
-        return false
-      })
+      // Regular users: only show bases they own
+      return knowledgeBases.value.filter(kb => kb.owner_id === u.id)
     })
 
     const filteredKnowledgeBases = computed(() => {
@@ -331,7 +324,22 @@ export default defineComponent({
       loading.value = true
       try {
         const response = await axios.get<ApiResponse<KnowledgeBase[]>>('/api/knowledge-bases')
-        knowledgeBases.value = response.data.data || []
+        const responseData = response.data.data
+        if (Array.isArray(responseData)) {
+          knowledgeBases.value = responseData.map(item => ({
+            id: item.id,
+            name: item.name,
+            description: item.description,
+            owner_id: item.owner_id,
+            created_at: item.created_at,
+            updated_at: item.updated_at,
+            sources: item.sources || [],
+            chunks: item.chunks || []
+          }))
+        } else {
+          console.error('Unexpected response format:', responseData)
+          knowledgeBases.value = []
+        }
       } catch (error: any) {
         const errorMsg = error.response?.data?.message || 'Erro ao buscar bases de conhecimento'
         showToast(errorMsg)
@@ -585,8 +593,8 @@ export default defineComponent({
 
 /* Status chip colors */
 .v-chip--color-success {
-  background: rgba(76, 175, 80, 0.1) !important;
-  color: rgb(76, 175, 80) !important;
+  background: rgba(76, 175, 76, 0.1) !important;
+  color: rgb(76, 175, 76) !important;
 }
 
 .v-chip--color-warning {
