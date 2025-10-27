@@ -25,8 +25,11 @@ class KnowledgeBaseController extends Controller
         if ($userId) {
             // Buscar apenas as bases de conhecimento vinculadas a grupos nos quais o usuário está cadastrado
             $knowledgeBases = KnowledgeBase::with(['owner', 'sources'])
-                ->whereHas('groups.users', function ($q) use ($userId) {
-                    $q->where('users.id', $userId);
+                ->where(function ($query) use ($userId) {
+                    $query->whereHas('groups.users', function ($q) use ($userId) {
+                        $q->where('users.id', $userId);
+                    })
+                    ->orWhere('owner_id', $userId); // Adiciona bases criadas pelo usuário
                 })
                 ->get();
         }
