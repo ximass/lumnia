@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Group;
+use App\Models\KnowledgeBase;
 
 class GroupController extends Controller
 {
@@ -81,5 +82,39 @@ class GroupController extends Controller
                      ->get();
 
         return response()->json($groups);
+    }
+
+    public function addKnowledgeBaseToGroups(Request $request)
+    {
+        $request->validate([
+            'knowledge_base_id' => 'required|exists:knowledge_bases,id',
+            'group_ids' => 'required|array',
+            'group_ids.*' => 'exists:groups,id',
+        ]);
+
+        $knowledgeBaseId = $request->knowledge_base_id;
+        $groupIds = $request->group_ids;
+
+        foreach ($groupIds as $groupId) {
+            $group = Group::find($groupId);
+            if ($group) {
+                $group->knowledgeBases()->syncWithoutDetaching([$knowledgeBaseId]);
+            }
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Knowledge base added to groups successfully',
+        ]);
+    }
+
+    public function removeKnowledgeBaseFromGroup(Group $group, KnowledgeBase $knowledgeBase)
+    {
+        $group->knowledgeBases()->detach($knowledgeBase->id);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Knowledge base removed from group successfully',
+        ]);
     }
 }

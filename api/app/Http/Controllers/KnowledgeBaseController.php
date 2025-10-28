@@ -105,4 +105,21 @@ class KnowledgeBaseController extends Controller
             'message' => 'Knowledge base deleted successfully'
         ]);
     }
+
+    public function getGroups(KnowledgeBase $knowledgeBase)
+    {
+        $groups = $knowledgeBase->groups()->get();
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $groups
+        ]);
+    }
+
+    public function getAssociatedGroups(KnowledgeBase $knowledgeBase)
+    {
+        $groups = $knowledgeBase->groups; // Assuming the relationship is defined in the KnowledgeBase model
+
+        return response()->json($groups);
+    }
 }

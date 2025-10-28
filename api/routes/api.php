@@ -63,10 +63,13 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Group routes
     Route::get('/groups/search', [GroupController::class, 'search']);
+    Route::post('/groups/add-knowledge-base', [GroupController::class, 'addKnowledgeBaseToGroups']);
+    Route::delete('/groups/{group}/knowledge-base/{knowledgeBase}', [GroupController::class, 'removeKnowledgeBaseFromGroup']);
 
     // Knowledge Base routes
     Route::put('/knowledge-base/{knowledgeBase}', [KnowledgeBaseController::class, 'updateKnowledgeBase']);
     Route::get('/knowledge-bases-user', [KnowledgeBaseController::class, 'getKnowledgeBases']);
+    Route::get('/knowledge-bases/{knowledgeBase}/groups', [KnowledgeBaseController::class, 'getAssociatedGroups']);
 
     // Source processing routes
     Route::post('/sources/upload', [SourceProcessingController::class, 'uploadAndProcess']);
@@ -105,4 +108,5 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('/knowledge-bases', KnowledgeBaseController::class);
     Route::apiResource('/sources', SourceController::class);
     Route::apiResource('/chunks', ChunkController::class);
+
 });
