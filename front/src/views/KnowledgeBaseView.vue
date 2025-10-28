@@ -12,10 +12,8 @@
           </div>
           <v-btn 
             color="primary" 
-            :size="$vuetify.display.xs ? 'default' : 'large'"
             @click="createKnowledgeBase"
             prepend-icon="mdi-plus"
-            :block="$vuetify.display.xs"
           >
             <span class="d-none d-sm-inline">Nova base de conhecimento</span>
             <span class="d-inline d-sm-none">Nova base</span>
@@ -28,28 +26,28 @@
     <v-row class="mb-4 mb-sm-6">
       <v-col cols="6" sm="6" md="3">
         <v-card class="text-center pa-3 pa-sm-4" color="primary-lighten-5">
-          <v-icon :size="$vuetify.display.xs ? 32 : 40" color="primary" class="mb-2">mdi-database</v-icon>
+          <v-icon size="40" color="primary" class="mb-2">mdi-database</v-icon>
           <div class="text-h6 text-sm-h5 font-weight-bold">{{ knowledgeBases.length }}</div>
           <div class="text-caption text-sm-body-2 text-medium-emphasis">Total de bases</div>
         </v-card>
       </v-col>
       <v-col cols="6" sm="6" md="3">
         <v-card class="text-center pa-3 pa-sm-4" color="success-lighten-5">
-          <v-icon :size="$vuetify.display.xs ? 32 : 40" color="success" class="mb-2">mdi-file-multiple</v-icon>
+          <v-icon size="40" color="success" class="mb-2">mdi-file-multiple</v-icon>
           <div class="text-h6 text-sm-h5 font-weight-bold">{{ totalSources }}</div>
           <div class="text-caption text-sm-body-2 text-medium-emphasis">Total de arquivos</div>
         </v-card>
       </v-col>
       <v-col cols="6" sm="6" md="3">
         <v-card class="text-center pa-3 pa-sm-4" color="warning-lighten-5">
-          <v-icon :size="$vuetify.display.xs ? 32 : 40" color="warning" class="mb-2">mdi-cog</v-icon>
+          <v-icon size="40" color="warning" class="mb-2">mdi-cog</v-icon>
           <div class="text-h6 text-sm-h5 font-weight-bold">{{ processingCount }}</div>
           <div class="text-caption text-sm-body-2 text-medium-emphasis">Processando</div>
         </v-card>
       </v-col>
       <v-col cols="6" sm="6" md="3">
         <v-card class="text-center pa-3 pa-sm-4" color="info-lighten-5">
-          <v-icon :size="$vuetify.display.xs ? 32 : 40" color="info" class="mb-2">mdi-check-circle</v-icon>
+          <v-icon size="40" color="info" class="mb-2">mdi-check-circle</v-icon>
           <div class="text-h6 text-sm-h5 font-weight-bold">{{ completedCount }}</div>
           <div class="text-caption text-sm-body-2 text-medium-emphasis">Concluídas</div>
         </v-card>
@@ -61,7 +59,7 @@
       <v-card-title class="pa-4 pa-sm-6 pb-4">
         <div class="d-flex flex-column flex-md-row align-start align-md-center justify-space-between w-100 gap-3">
           <div class="d-flex align-center">
-            <v-icon color="primary" class="me-2 me-sm-3" :size="$vuetify.display.xs ? 20 : 24">mdi-table</v-icon>
+            <v-icon color="primary" class="me-2 me-sm-3" size="24">mdi-table</v-icon>
             <span class="text-subtitle-1 text-sm-h6">Lista de bases de conhecimento</span>
           </div>
           <div class="d-flex align-center gap-3 gap-sm-3 w-100 w-md-auto">
@@ -74,14 +72,12 @@
               hide-details
               clearable
               class="flex-grow-1"
-              :style="$vuetify.display.mdAndUp ? 'min-width: 400px;' : ''"
             />
             <v-btn
               icon
               variant="text"
               @click="fetchKnowledgeBases"
               :loading="loading"
-              :size="$vuetify.display.xs ? 'small' : 'default'"
             >
               <v-icon>mdi-refresh</v-icon>
             </v-btn>
@@ -179,6 +175,12 @@
                   Excluir
                 </v-list-item-title>
               </v-list-item>
+              <v-list-item @click="openShareModal(item)">
+                <v-list-item-title>
+                  <v-icon>mdi-share</v-icon>
+                  Compartilhar
+                </v-list-item-title>
+              </v-list-item>
             </v-list>
           </v-menu>
         </template>
@@ -239,6 +241,14 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <!-- Share Modal -->
+    <ShareKnowledgeBaseModal
+      v-if="selectedKnowledgeBase"
+      :show="shareDialog"
+      :knowledge-base="selectedKnowledgeBase"
+      @close="shareDialog = false"
+    />
   </v-container>
 </template>
 
@@ -249,9 +259,13 @@ import axios from 'axios'
 import { useToast } from '@/composables/useToast'
 import { useAuth } from '@/composables/auth'
 import type { KnowledgeBase, ApiResponse } from '@/types/types'
+import ShareKnowledgeBaseModal from '@/components/ShareKnowledgeBaseModal.vue';
 
 export default defineComponent({
   name: 'KnowledgeBaseView',
+  components: {
+    ShareKnowledgeBaseModal
+  },
   setup() {
     const router = useRouter()
     const { showToast } = useToast()
@@ -263,6 +277,7 @@ export default defineComponent({
     const deleteDialog = ref(false)
     const search = ref('')
     const statusUpdateInterval = ref<number | null>(null)
+    const shareDialog = ref(false);
 
     const headers = [
       { title: 'Nome', value: 'name', sortable: true },
@@ -323,23 +338,12 @@ export default defineComponent({
     const fetchKnowledgeBases = async () => {
       loading.value = true
       try {
-        const response = await axios.get<ApiResponse<KnowledgeBase[]>>('/api/knowledge-bases')
+        const response = await axios.get<ApiResponse<KnowledgeBase>>('/api/knowledge-bases')
         const responseData = response.data.data
-        if (Array.isArray(responseData)) {
-          knowledgeBases.value = responseData.map(item => ({
-            id: item.id,
-            name: item.name,
-            description: item.description,
-            owner_id: item.owner_id,
-            created_at: item.created_at,
-            updated_at: item.updated_at,
-            sources: item.sources || [],
-            chunks: item.chunks || []
-          }))
-        } else {
-          console.error('Unexpected response format:', responseData)
-          knowledgeBases.value = []
-        }
+        const fetchedData = Array.isArray(response.data?.data)
+          ? (response.data.data as KnowledgeBase[])
+          : [];
+        knowledgeBases.value = fetchedData;
       } catch (error: any) {
         const errorMsg = error.response?.data?.message || 'Erro ao buscar bases de conhecimento'
         showToast(errorMsg)
@@ -358,8 +362,12 @@ export default defineComponent({
       if (!hasProcessing) return
 
       try {
-        const response = await axios.get<ApiResponse<KnowledgeBase[]>>('/api/knowledge-bases')
-        knowledgeBases.value = response.data.data || []
+        const response = await axios.get<ApiResponse<KnowledgeBase>>('/api/knowledge-bases')
+        const fetchedData = Array.isArray(response.data?.data)
+        ? (response.data.data as KnowledgeBase[])
+        : [];
+        knowledgeBases.value = fetchedData;
+
       } catch (error: any) {
         console.error('Erro ao atualizar status das bases de conhecimento:', error)
       }
@@ -412,6 +420,11 @@ export default defineComponent({
         deleting.value = false
       }
     }
+
+    const openShareModal = (knowledgeBase: KnowledgeBase) => {
+      selectedKnowledgeBase.value = knowledgeBase;
+      shareDialog.value = true;
+    };
 
     const getOverallStatusText = (knowledgeBase: KnowledgeBase): string => {
       if (!knowledgeBase.sources || knowledgeBase.sources.length === 0) {
@@ -511,6 +524,8 @@ export default defineComponent({
       editKnowledgeBase,
       confirmDelete,
       deleteKnowledgeBase,
+      shareDialog,
+      openShareModal,
       getOverallStatusText,
       getOverallStatusColor,
       getOverallStatusIcon,
