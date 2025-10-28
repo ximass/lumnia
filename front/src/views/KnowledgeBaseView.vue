@@ -163,6 +163,12 @@
               </v-btn>
             </template>
             <v-list>
+              <v-list-item @click="openShareModal(item)">
+                <v-list-item-title>
+                  <v-icon>mdi-share</v-icon>
+                  Compartilhar
+                </v-list-item-title>
+              </v-list-item>
               <v-list-item @click="editKnowledgeBase(item)">
                 <v-list-item-title>
                   <v-icon>mdi-pencil</v-icon>
@@ -173,12 +179,6 @@
                 <v-list-item-title>
                   <v-icon>mdi-delete</v-icon>
                   Excluir
-                </v-list-item-title>
-              </v-list-item>
-              <v-list-item @click="openShareModal(item)">
-                <v-list-item-title>
-                  <v-icon>mdi-share</v-icon>
-                  Compartilhar
                 </v-list-item-title>
               </v-list-item>
             </v-list>
