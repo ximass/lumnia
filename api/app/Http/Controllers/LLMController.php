@@ -87,9 +87,7 @@ class LLMController extends Controller
 
         $personaInstructions = $this->buildPersonaInstructions($persona);
         
-        // TODO: precisamos verificar melhor
-        // $conversationHistory = $this->getConversationHistory($chat);
-        $conversationHistory = [];
+        $conversationHistory = $this->getConversationHistory($chat);
 
         $ragPrompt = $this->ragService->buildRAGPrompt(
             $userMessage, 
