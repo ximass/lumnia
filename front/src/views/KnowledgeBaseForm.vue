@@ -354,7 +354,7 @@
                   {{ getFileIcon(previewDialog.source?.source_type || '') }}
                 </v-icon>
                 <h3 class="text-h6 mb-4">Preview não disponível</h3>
-                <p class="text-body-2 text-grey mb-6">
+                <p class="text-body-2 mb-6">
                   Arquivos {{ previewDialog.source?.source_type.toUpperCase() }} não podem ser visualizados diretamente no navegador.
                   Faça o download do arquivo para visualizá-lo.
                 </p>
