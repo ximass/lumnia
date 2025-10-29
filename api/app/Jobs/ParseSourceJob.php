@@ -22,7 +22,7 @@ class ParseSourceJob implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     protected string $sourceId;
-    
+
     public int $tries = 3;
     public int $backoff = 60;
 
@@ -34,7 +34,7 @@ class ParseSourceJob implements ShouldQueue
     public function handle(): void
     {
         $source = Source::findOrFail($this->sourceId);
-        
+
         if ($source->status === 'processed') {
             Log::info('Source already processed, skipping', ['source_id' => $this->sourceId]);
             return;
@@ -42,15 +42,15 @@ class ParseSourceJob implements ShouldQueue
 
         try {
             $source->update(['status' => 'processing']);
-            
+
             $text = $this->extractText($source);
-            
+
             if (empty(trim($text))) {
                 throw new \Exception('No text extracted from source');
             }
 
             $newContentHash = hash('sha256', $text);
-            
+
             if ($source->content_hash === $newContentHash) {
                 Log::info('Content unchanged, skipping processing', ['source_id' => $this->sourceId]);
                 $source->update(['status' => 'processed']);
@@ -58,7 +58,7 @@ class ParseSourceJob implements ShouldQueue
             }
 
             $sourceType = strtolower($source->source_type);
-            
+
             if ($sourceType === 'jsonl') {
                 $chunks = Chunker::chunkJsonl($text, $this->sourceId);
             } elseif ($sourceType === 'json') {
@@ -81,7 +81,9 @@ class ParseSourceJob implements ShouldQueue
                 'status' => 'chunked'
             ]);
 
-            ChunkAndEmbedJob::dispatch($this->sourceId, $chunks);
+            $sanitizedChunks = $this->sanitizeForJson($chunks);
+
+            ChunkAndEmbedJob::dispatch($this->sourceId, $sanitizedChunks);
 
             Log::info('Source parsed successfully', [
                 'source_id' => $this->sourceId,
@@ -102,13 +104,13 @@ class ParseSourceJob implements ShouldQueue
     private function extractText(Source $source): string
     {
         $filePath = $this->getFilePath($source);
-        
+
         if (!file_exists($filePath)) {
             throw new \Exception("Source file not found: {$filePath}");
         }
 
         $sourceType = strtolower($source->source_type);
-        
+
         return match ($sourceType) {
             'txt', 'text' => $this->extractFromTxt($filePath),
             'pdf' => $this->extractFromPdf($filePath),
@@ -132,7 +134,7 @@ class ParseSourceJob implements ShouldQueue
     private function extractFromTxt(string $filePath): string
     {
         $content = file_get_contents($filePath);
-        
+
         if ($content === false) {
             throw new \Exception("Failed to read text file: {$filePath}");
         }
@@ -150,7 +152,7 @@ class ParseSourceJob implements ShouldQueue
         try {
             $parser = new Parser();
             $pdf = $parser->parseFile($filePath);
-            
+
             $text = $pdf->getText();
 
             Log::info('Extracted text from PDF using Smalot', [
@@ -158,7 +160,7 @@ class ParseSourceJob implements ShouldQueue
                 'file' => $filePath,
                 'text_length' => strlen($text)
             ]);
-            
+
             if (empty(trim($text))) {
                 throw new \Exception("No text extracted from PDF");
             }
@@ -173,14 +175,14 @@ class ParseSourceJob implements ShouldQueue
     {
         try {
             $csv = Reader::createFromPath($filePath, 'r');
-            
+
             $csv->setHeaderOffset(0);
-            
+
             $headers = $csv->getHeader();
             $records = iterator_to_array($csv->getRecords());
-            
+
             $text = "Headers: " . implode(', ', $headers) . "\n\n";
-            
+
             foreach ($records as $offset => $record) {
                 $rowText = [];
                 foreach ($record as $key => $value) {
@@ -199,7 +201,7 @@ class ParseSourceJob implements ShouldQueue
                 'rows_count' => count($records),
                 'headers' => $headers
             ]);
-            
+
             if (empty(trim($text))) {
                 throw new \Exception("No text extracted from CSV");
             }
@@ -215,17 +217,17 @@ class ParseSourceJob implements ShouldQueue
         try {
             $headings = Excel::toArray(new HeadingRowImport, $filePath)[0];
             $data = Excel::toArray([], $filePath)[0];
-            
+
             if (empty($data)) {
                 throw new \Exception("No data found in Excel file");
             }
-            
+
             $headers = array_shift($data);
             $text = "Headers: " . implode(', ', array_filter($headers)) . "\n\n";
-            
+
             foreach ($data as $rowIndex => $row) {
                 if (empty(array_filter($row))) continue;
-                
+
                 $rowText = [];
                 foreach ($row as $colIndex => $value) {
                     $header = $headers[$colIndex] ?? "Column " . ($colIndex + 1);
@@ -233,7 +235,7 @@ class ParseSourceJob implements ShouldQueue
                         $rowText[] = "$header: $value";
                     }
                 }
-                
+
                 if (!empty($rowText)) {
                     $text .= "Row " . ($rowIndex + 1) . ": " . implode('; ', $rowText) . "\n";
                 }
@@ -244,7 +246,7 @@ class ParseSourceJob implements ShouldQueue
                 'text_length' => strlen($text),
                 'rows_count' => count($data)
             ]);
-            
+
             if (empty(trim($text))) {
                 throw new \Exception("No text extracted from Excel file");
             }
@@ -260,7 +262,7 @@ class ParseSourceJob implements ShouldQueue
         try {
             $phpWord = IOFactory::load($filePath);
             $text = '';
-            
+
             foreach ($phpWord->getSections() as $section) {
                 $text .= $this->extractTextFromContainer($section) . "\n";
             }
@@ -269,7 +271,7 @@ class ParseSourceJob implements ShouldQueue
                 'file' => $filePath,
                 'text_length' => strlen($text)
             ]);
-            
+
             if (empty(trim($text))) {
                 throw new \Exception("No text extracted from Word document");
             }
@@ -285,7 +287,7 @@ class ParseSourceJob implements ShouldQueue
         try {
             $phpWord = IOFactory::load($filePath, 'ODText');
             $text = '';
-            
+
             foreach ($phpWord->getSections() as $section) {
                 $text .= $this->extractTextFromContainer($section) . "\n";
             }
@@ -294,7 +296,7 @@ class ParseSourceJob implements ShouldQueue
                 'file' => $filePath,
                 'text_length' => strlen($text)
             ]);
-            
+
             if (empty(trim($text))) {
                 throw new \Exception("No text extracted from ODT document");
             }
@@ -309,13 +311,13 @@ class ParseSourceJob implements ShouldQueue
     {
         try {
             $content = file_get_contents($filePath);
-            
+
             if ($content === false) {
                 throw new \Exception("Failed to read JSON file: {$filePath}");
             }
 
             $data = json_decode($content, true);
-            
+
             if (json_last_error() !== JSON_ERROR_NONE) {
                 throw new \Exception("Invalid JSON format: " . json_last_error_msg());
             }
@@ -326,7 +328,7 @@ class ParseSourceJob implements ShouldQueue
                 'file' => $filePath,
                 'text_length' => strlen($text)
             ]);
-            
+
             if (empty(trim($text))) {
                 throw new \Exception("No text extracted from JSON");
             }
@@ -341,23 +343,23 @@ class ParseSourceJob implements ShouldQueue
     {
         try {
             $content = file_get_contents($filePath);
-            
+
             if ($content === false) {
                 throw new \Exception("Failed to read JSONL file: {$filePath}");
             }
 
             $lines = explode("\n", $content);
             $processedLines = [];
-            
+
             foreach ($lines as $lineNumber => $line) {
                 $line = trim($line);
-                
+
                 if (empty($line)) {
                     continue;
                 }
 
                 $data = json_decode($line, true);
-                
+
                 if (json_last_error() !== JSON_ERROR_NONE) {
                     Log::warning('Invalid JSON line in JSONL file', [
                         'file' => $filePath,
@@ -377,7 +379,7 @@ class ParseSourceJob implements ShouldQueue
                 'lines_count' => count($processedLines),
                 'text_length' => strlen($text)
             ]);
-            
+
             if (empty(trim($text))) {
                 throw new \Exception("No text extracted from JSONL");
             }
@@ -391,11 +393,11 @@ class ParseSourceJob implements ShouldQueue
     private function extractTextFromContainer($container): string
     {
         $text = '';
-        
+
         if (method_exists($container, 'getElements')) {
             foreach ($container->getElements() as $element) {
                 $elementClass = get_class($element);
-                
+
                 switch ($elementClass) {
                     case 'PhpOffice\PhpWord\Element\Text':
                         $text .= $element->getText() . " ";
@@ -438,8 +440,37 @@ class ParseSourceJob implements ShouldQueue
                 }
             }
         }
-        
+
         return $text;
+    }
+
+    private function sanitizeForJson($data)
+    {
+        if (is_array($data)) {
+            $out = [];
+            foreach ($data as $k => $v) {
+                $out[$k] = $this->sanitizeForJson($v);
+            }
+            return $out;
+        }
+
+        if (is_object($data)) {
+            try {
+                return $this->sanitizeForJson((array) $data);
+            } catch (\Throwable $e) {
+                return $data;
+            }
+        }
+
+        if (is_string($data)) {
+            $clean = @iconv('UTF-8', 'UTF-8//IGNORE', $data);
+            if ($clean === false || $clean === null) {
+                $clean = @mb_convert_encoding($data, 'UTF-8', mb_detect_encoding($data) ?: 'Windows-1252');
+            }
+            return $clean === false || $clean === null ? '' : $clean;
+        }
+
+        return $data;
     }
 
     private function cleanupTempDir(string $tempDir): void
@@ -463,7 +494,7 @@ class ParseSourceJob implements ShouldQueue
     public function failed(\Throwable $exception): void
     {
         Source::where('id', $this->sourceId)->update(['status' => 'failed']);
-        
+
         Log::error('ParseSourceJob failed permanently', [
             'source_id' => $this->sourceId,
             'error' => $exception->getMessage(),
