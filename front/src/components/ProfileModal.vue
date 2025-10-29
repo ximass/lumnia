@@ -13,18 +13,13 @@
               <v-container>
                 <v-row>
                   <v-col cols="12" md="4" class="text-center">
-                    <v-avatar size="120" class="mb-4">
+                    <v-avatar size="120" class="mb-4" color="primary">
                       <v-img
-                        v-if="previewImage || (form.avatar && form.avatar.length > 0)"
-                        :src="
-                          previewImage ||
-                          (form.avatar && form.avatar.length > 0
-                            ? `/api/avatars/${form.avatar.split('/').pop()}`
-                            : '')
-                        "
+                        v-if="previewImage || hasAvatar(form.avatar)"
+                        :src="previewImage || getAvatarUrl(form.avatar)!"
                         alt="Avatar"
                       />
-                      <v-icon v-else size="60">mdi-account-circle</v-icon>
+                      <span v-else class="text-h3 text-white">{{ getInitials(form.name) }}</span>
                     </v-avatar>
                   </v-col>
                   <v-col cols="12" md="8" class="d-flex align-center">
@@ -150,6 +145,7 @@
   import axios from 'axios'
   import { useAuth } from '@/composables/auth'
   import { useToast } from '@/composables/useToast'
+  import { useAvatar } from '@/composables/useAvatar'
   import type { User, Profile, UserPersona, UserPersonaFormData } from '@/types/types'
 
   export default defineComponent({
@@ -164,6 +160,7 @@
     setup(props, { emit }) {
       const { user, fetchUser } = useAuth()
       const { showSuccess, showError } = useToast()
+      const { getInitials, getAvatarUrl, hasAvatar } = useAvatar()
 
       const form = ref<Profile>({
         name: '',
@@ -492,6 +489,9 @@
         toggleUserPersonaActive,
         resetModalState,
         closeModal,
+        getInitials,
+        getAvatarUrl,
+        hasAvatar,
       }
     },
   })
