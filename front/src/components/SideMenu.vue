@@ -10,13 +10,13 @@
   >
     <v-list-item nav>
       <template #prepend>
-        <v-avatar size="40">
+        <v-avatar size="40" color="primary">
           <v-img
-            v-if="props.user?.avatar && props.user.avatar.length > 0"
-            :src="`/api/avatars/${props.user.avatar.split('/').pop()}`"
+            v-if="hasAvatar(props.user?.avatar)"
+            :src="getAvatarUrl(props.user?.avatar)!"
             alt="Avatar"
           />
-          <v-icon v-else>mdi-account</v-icon>
+          <span v-else class="text-white">{{ getInitials(props.user?.name) }}</span>
         </v-avatar>
       </template>
 
@@ -122,6 +122,7 @@
 import { defineComponent, computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { usePermissions } from '@/composables/usePermissions'
+import { useAvatar } from '@/composables/useAvatar'
 import { menuItems as importedMenuItems } from '@/constants/menu'
 
 export default defineComponent({
@@ -149,6 +150,7 @@ export default defineComponent({
     const menuItems = importedMenuItems
 
     const { hasPermission } = usePermissions()
+    const { getInitials, getAvatarUrl, hasAvatar } = useAvatar()
 
     const basicMenuItems = computed(() =>
       menuItems.filter(
@@ -227,6 +229,9 @@ export default defineComponent({
       isOpen,
       props,
       navigate,
+      getInitials,
+      getAvatarUrl,
+      hasAvatar,
     }
   },
 })

@@ -26,6 +26,7 @@ Route::middleware('web')->group(function () {
     Route::get('/sources/{source}/download', [SourceController::class, 'download'])->name('source.download');
 });
 
+Route::get('/avatars/{filename}', [UserController::class, 'serveAvatar']);
 
 // Rotas protegidas com autenticação
 Route::middleware('auth:sanctum')->group(function () {
@@ -34,7 +35,6 @@ Route::middleware('auth:sanctum')->group(function () {
         return $request->user()->load(['userPersona', 'groups.permissions']);
     });
 
-    Route::get('/avatars/{filename}', [UserController::class, 'serveAvatar']);
     Route::get('/personas/active', [PersonaController::class, 'getActivePersonas']);
     Route::post('/chunks/search', [ChunkController::class, 'search']);
 
@@ -58,6 +58,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/users/search', [UserController::class, 'search']);
     Route::put('/user/{user}', [UserController::class, 'updateUser']);
     Route::post('/user/{user}/profile', [UserController::class, 'updateProfile']);
+    Route::delete('/user/{user}/avatar', [UserController::class, 'removeAvatar']);
 
     // Group routes
     Route::get('/groups/search', [GroupController::class, 'search']);

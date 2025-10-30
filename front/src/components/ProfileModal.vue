@@ -10,44 +10,81 @@
         <v-tabs-window v-model="activeTab">
           <v-tabs-window-item value="general">
             <v-form ref="formRef" v-model="valid" @submit.prevent="updateProfile">
-              <v-container>
-                <v-row>
-                  <v-col cols="12" md="4" class="text-center">
-                    <v-avatar size="120" class="mb-4">
-                      <v-img
-                        v-if="previewImage || (form.avatar && form.avatar.length > 0)"
-                        :src="
-                          previewImage ||
-                          (form.avatar && form.avatar.length > 0
-                            ? `/api/avatars/${form.avatar.split('/').pop()}`
-                            : '')
-                        "
-                        alt="Avatar"
-                      />
-                      <v-icon v-else size="60">mdi-account-circle</v-icon>
-                    </v-avatar>
+              <v-container class="py-6">
+                <v-row justify="center" class="mb-6">
+                  <v-col cols="12" class="text-center">
+                    <div class="position-relative d-inline-block">
+                      <v-avatar 
+                        size="140" 
+                        class="avatar-container elevation-4"
+                        :class="{ 'avatar-hover': !loading }"
+                      >
+                        <v-img
+                          v-if="previewImage || hasAvatar(form.avatar)"
+                          :src="previewImage || getAvatarUrl(form.avatar)!"
+                          alt="Avatar"
+                          cover
+                        />
+                        <span v-else class="text-h2 text-white font-weight-medium">
+                          {{ getInitials(form.name) }}
+                        </span>
+                      </v-avatar>
+                      
+                      <v-btn
+                        v-if="hasAvatar(form.avatar) || previewImage"
+                        icon
+                        size="small"
+                        color="error"
+                        class="avatar-delete-btn elevation-2"
+                        @click="removeAvatar"
+                        :disabled="loading"
+                      >
+                        <v-icon size="20">mdi-close</v-icon>
+                      </v-btn>
+                    </div>
+                    
+                    <div class="mt-4">
+                      <v-file-input
+                        ref="fileInput"
+                        v-model="selectedFile"
+                        accept="image/*"
+                        label="Selecionar avatar"
+                        prepend-icon="mdi-camera"
+                        variant="outlined"
+                        density="comfortable"
+                        @change="onFileSelected"
+                        :rules="avatarRules"
+                        :disabled="loading"
+                        hide-details="auto"
+                        class="mx-auto"
+                        style="max-width: 400px;"
+                      >
+                        <template #prepend-inner>
+                          <v-icon color="primary">mdi-image-outline</v-icon>
+                        </template>
+                      </v-file-input>
+                      <p class="text-caption text-medium-emphasis mt-2">
+                        Tamanho máximo: 5MB. Formatos aceitos: JPG, JPEG, PNG e GIF
+                      </p>
+                    </div>
                   </v-col>
-                  <v-col cols="12" md="8" class="d-flex align-center">
-                    <v-file-input
-                      ref="fileInput"
-                      v-model="selectedFile"
-                      accept="image/*"
-                      label="Selecionar avatar"
-                      prepend-icon="mdi-camera"
-                      variant="outlined"
-                      density="compact"
-                      @change="onFileSelected"
-                      :rules="avatarRules"
-                      class="flex-grow-1"
-                    />
-                  </v-col>
-                  <v-col cols="12">
+                </v-row>
+
+                <v-divider class="my-6" />
+
+                <v-row justify="center">
+                  <v-col cols="12" md="8">
                     <v-text-field
                       v-model="form.name"
-                      label="Nome"
+                      label="Nome completo"
+                      placeholder="Digite seu nome"
                       variant="outlined"
+                      density="comfortable"
                       :rules="nameRules"
+                      :disabled="loading"
+                      prepend-inner-icon="mdi-account-outline"
                       required
+                      hide-details="auto"
                     />
                   </v-col>
                 </v-row>
@@ -150,6 +187,7 @@
   import axios from 'axios'
   import { useAuth } from '@/composables/auth'
   import { useToast } from '@/composables/useToast'
+  import { useAvatar } from '@/composables/useAvatar'
   import type { User, Profile, UserPersona, UserPersonaFormData } from '@/types/types'
 
   export default defineComponent({
@@ -164,6 +202,7 @@
     setup(props, { emit }) {
       const { user, fetchUser } = useAuth()
       const { showSuccess, showError } = useToast()
+      const { getInitials, getAvatarUrl, hasAvatar } = useAvatar()
 
       const form = ref<Profile>({
         name: '',
@@ -377,6 +416,38 @@
         }
       }
 
+      const removeAvatar = async () => {
+        if (!user.value) return
+
+        if (previewImage.value) {
+          previewImage.value = ''
+          selectedFile.value = []
+          return
+        }
+
+        if (!hasAvatar(form.value.avatar)) return
+
+        loading.value = true
+        try {
+          await axios.delete(`/api/user/${user.value.id}/avatar`)
+          form.value.avatar = ''
+          previewImage.value = ''
+          selectedFile.value = []
+
+          await fetchUser()
+
+          showSuccess('Avatar removido com sucesso!')
+        } catch (error: any) {
+          if (error.response?.data?.message) {
+            showError(error.response.data.message)
+          } else {
+            showError('Erro ao remover avatar. Tente novamente.')
+          }
+        } finally {
+          loading.value = false
+        }
+      }
+
       const updateProfile = async () => {
         if (!user.value) return
 
@@ -487,18 +558,44 @@
         userPersonaInstructionsRules,
         userPersonaResponseFormatRules,
         onFileSelected,
+        removeAvatar,
         updateProfile,
         saveOrUpdateUserPersona,
         toggleUserPersonaActive,
         resetModalState,
         closeModal,
+        getInitials,
+        getAvatarUrl,
+        hasAvatar,
       }
     },
   })
 </script>
 
 <style scoped>
-  .v-avatar {
-    border: 2px solid rgba(0, 0, 0, 0.12);
+  .avatar-container {
+    border: 4px solid rgba(var(--v-theme-primary), 0.1);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    background: linear-gradient(135deg, rgb(var(--v-theme-primary)) 0%, rgb(var(--v-theme-secondary)) 100%);
+  }
+
+  .avatar-hover:hover {
+    transform: scale(1.05);
+    border-color: rgba(var(--v-theme-primary), 0.3);
+  }
+
+  .avatar-delete-btn {
+    position: absolute;
+    top: 0;
+    right: 0;
+    transform: translate(25%, -25%);
+  }
+
+  .position-relative {
+    position: relative;
+  }
+
+  .d-inline-block {
+    display: inline-block;
   }
 </style>
