@@ -174,6 +174,28 @@ class UserController extends Controller
         return response()->json($user);
     }
 
+    public function removeAvatar(Request $request, User $user)
+    {
+        if ($request->user()->id !== $user->id) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Não autorizado.'
+            ], 403);
+        }
+
+        if ($user->avatar && file_exists(public_path($user->avatar))) {
+            unlink(public_path($user->avatar));
+        }
+
+        $user->update(['avatar' => null]);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Avatar removido com sucesso.',
+            'data' => $user
+        ]);
+    }
+
     public function serveAvatar($filename)
     {
         $path = public_path('avatars/' . $filename);
