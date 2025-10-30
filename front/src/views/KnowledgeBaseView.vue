@@ -296,11 +296,11 @@ export default defineComponent({
       // If user not fetched yet, show nothing to avoid leaking data
       if (!u) return []
 
-      // Admins see all
-      if (u.admin) return knowledgeBases.value
-
-      // Regular users: only show bases they own
-      return knowledgeBases.value.filter(kb => kb.owner_id === u.id)
+      // knowledgeBases.value is populated differently for admins vs regular users:
+      // - admins: we fetch all bases from /api/knowledge-bases
+      // - regular users: we fetch bases they have access to from /api/knowledge-bases-user
+      // So it's safe to return the fetched list directly here.
+      return knowledgeBases.value
     })
 
     const filteredKnowledgeBases = computed(() => {
@@ -338,8 +338,21 @@ export default defineComponent({
     const fetchKnowledgeBases = async () => {
       loading.value = true
       try {
-        const response = await axios.get<ApiResponse<KnowledgeBase>>('/api/knowledge-bases')
-        const responseData = response.data.data
+        // Choose endpoint depending on user's role. Admins get all bases,
+        // regular users get the bases they have access to.
+        const u = user.value
+        let response
+
+        if (u && u.admin) {
+          response = await axios.get<ApiResponse<KnowledgeBase>>('/api/knowledge-bases')
+        } else {
+          // Use the user-specific endpoint. The backend expects user_id as param in other places.
+          const userId = u?.id ?? JSON.parse(localStorage.getItem('user') || '{}')?.id
+          response = await axios.get<ApiResponse<KnowledgeBase>>('/api/knowledge-bases-user', {
+            params: { user_id: userId }
+          })
+        }
+
         const fetchedData = Array.isArray(response.data?.data)
           ? (response.data.data as KnowledgeBase[])
           : [];
@@ -362,10 +375,20 @@ export default defineComponent({
       if (!hasProcessing) return
 
       try {
-        const response = await axios.get<ApiResponse<KnowledgeBase>>('/api/knowledge-bases')
+        const u = user.value
+        let response
+        if (u && u.admin) {
+          response = await axios.get<ApiResponse<KnowledgeBase>>('/api/knowledge-bases')
+        } else {
+          const userId = u?.id ?? JSON.parse(localStorage.getItem('user') || '{}')?.id
+          response = await axios.get<ApiResponse<KnowledgeBase>>('/api/knowledge-bases-user', {
+            params: { user_id: userId }
+          })
+        }
+
         const fetchedData = Array.isArray(response.data?.data)
-        ? (response.data.data as KnowledgeBase[])
-        : [];
+          ? (response.data.data as KnowledgeBase[])
+          : [];
         knowledgeBases.value = fetchedData;
 
       } catch (error: any) {
@@ -497,9 +520,11 @@ export default defineComponent({
       }
     }
 
-    onMounted(() => {
-      fetchUser()
-      fetchKnowledgeBases()
+    onMounted(async () => {
+      // Ensure we fetch the current user before requesting knowledge bases so
+      // we can decide which endpoint to call (admin vs user-specific).
+      await fetchUser()
+      await fetchKnowledgeBases()
       startStatusPolling()
     })
 
