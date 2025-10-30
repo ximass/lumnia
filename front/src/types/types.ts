@@ -271,14 +271,6 @@ export interface ChatContextInfo {
   context_messages: number
 }
 
-export interface ClearContextResponse {
-  status: 'success' | 'error'
-  message: string
-  data?: {
-    messages_deleted: number
-  }
-}
-
 export interface MessageRating {
   id: number
   message_id: number
