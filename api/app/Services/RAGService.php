@@ -191,14 +191,30 @@ class RAGService
                     source_id,
                     text,
                     metadata,
-                    ts_rank_cd(
-                        tsv, 
-                        plainto_tsquery(?, ?),
-                        32
+                    GREATEST(
+                        ts_rank_cd(
+                            tsv, 
+                            websearch_to_tsquery(?, ?),
+                            32
+                        ),
+                        ts_rank_cd(
+                            tsv, 
+                            phraseto_tsquery(?, ?),
+                            32
+                        ),
+                        ts_rank_cd(
+                            tsv, 
+                            to_tsquery(?, regexp_replace(?, '\s+', ' & ', 'g')),
+                            32
+                        )
                     ) AS lexical_score
                 FROM chunks 
                 WHERE kb_id = ? 
-                    AND tsv @@ plainto_tsquery(?, ?)
+                    AND (
+                        tsv @@ websearch_to_tsquery(?, ?)
+                        OR tsv @@ phraseto_tsquery(?, ?)
+                        OR tsv @@ to_tsquery(?, regexp_replace(?, '\s+', ' & ', 'g'))
+                    )
                 ORDER BY lexical_score DESC
                 LIMIT ?
             ),
@@ -262,11 +278,19 @@ class RAGService
             $minSemanticScore,          // semantic search min threshold
             $embeddingStr,              // semantic search embedding 3 (for ORDER BY)
             $maxChunks,                 // semantic search limit
-            config('search.language'),  // lexical search language 1
-            $query,                     // lexical search query 1
+            config('search.language'),  // lexical search language 1 (websearch)
+            $query,                     // lexical search query 1 (websearch)
+            config('search.language'),  // lexical search language 2 (phrase)
+            $query,                     // lexical search query 2 (phrase)
+            config('search.language'),  // lexical search language 3 (to_tsquery)
+            $query,                     // lexical search query 3 (to_tsquery)
             $kbId,                      // lexical search kb_id
-            config('search.language'),  // lexical search language 2
-            $query,                     // lexical search query 2
+            config('search.language'),  // lexical WHERE language 1 (websearch)
+            $query,                     // lexical WHERE query 1 (websearch)
+            config('search.language'),  // lexical WHERE language 2 (phrase)
+            $query,                     // lexical WHERE query 2 (phrase)
+            config('search.language'),  // lexical WHERE language 3 (to_tsquery)
+            $query,                     // lexical WHERE query 3 (to_tsquery)
             $maxChunks,                 // lexical search limit
             $minLexicalScore,           // lexical search min threshold
             $semanticWeight,            // weight for combined_score calculation 1

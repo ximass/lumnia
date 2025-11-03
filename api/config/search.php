@@ -21,13 +21,13 @@ return [
         'lexical_weight' => env('SEARCH_LEXICAL_WEIGHT', 0.4),
         
         // Minimum semantic similarity score (0.0 to 1.0)
-        'min_semantic_score' => env('SEARCH_MIN_SEMANTIC_SCORE', 0.1),
+        'min_semantic_score' => env('SEARCH_MIN_SEMANTIC_SCORE', 0.05),
         
         // Minimum lexical score (0.0 to 1.0)
-        'min_lexical_score' => env('SEARCH_MIN_LEXICAL_SCORE', 0.005),
+        'min_lexical_score' => env('SEARCH_MIN_LEXICAL_SCORE', 0.001),
         
         // Minimum combined score threshold for RAG retrieval
-        'rag_threshold' => env('SEARCH_RAG_THRESHOLD', 0.2),
+        'rag_threshold' => env('SEARCH_RAG_THRESHOLD', 0.15),
         
         // Maximum number of chunks to return before reranking
         'max_chunks' => env('SEARCH_MAX_CHUNKS', 100),
