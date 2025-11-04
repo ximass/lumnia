@@ -172,6 +172,17 @@
               </v-sheet>
             </template>
 
+            <template #bottom>
+              <div class="text-center pt-2">
+                <v-pagination
+                  v-model="pagination.page"
+                  :length="pages"
+                  :total-visible="7"
+                  @update:model-value="fetchData"
+                />
+              </div>
+            </template>
+
           </v-data-table>
         </v-card>
       </v-col>
@@ -363,35 +374,66 @@ export default defineComponent({
     async function fetchData() {
       loading.value = true
 
+      // params for paginated table request
       const params: any = {
         page: pagination.value.page,
         per_page: pagination.value.perPage,
       }
 
-  if (filters.value.search) params.user = filters.value.search
-      if (filters.value.rating) params.rating = filters.value.rating
+      // params for full dataset used by charts/stats
+      const paramsAll: any = {
+        page: 1,
+        // request a very large page size to get all matching records
+        per_page: 1000000,
+      }
+
+      if (filters.value.search) {
+        params.user = filters.value.search
+        paramsAll.user = filters.value.search
+      }
+      if (filters.value.rating) {
+        params.rating = filters.value.rating
+        paramsAll.rating = filters.value.rating
+      }
       if (dateRange.value && dateRange.value.length === 2) {
         params.date_from = dateRange.value[0]
         params.date_to = dateRange.value[1]
+        paramsAll.date_from = dateRange.value[0]
+        paramsAll.date_to = dateRange.value[1]
       }
 
       try {
-        const resp = await axios.get('/api/message-ratings', { params })
-        const data = resp.data
-        // Laravel paginator shape: data, total, per_page, current_page
-        items.value = data.data || []
-        total.value = data.total || 0
-        computeStats(items.value)
+        // fetch table page + full dataset in parallel
+        const [pageResp, allResp] = await Promise.all([
+          axios.get('/api/message-ratings', { params }),
+          axios.get('/api/message-ratings', { params: paramsAll }),
+        ])
 
-        // rebuild charts after DOM updates
+        const pageData = pageResp.data || {}
+        const allData = allResp.data || {}
+
+        // paginated table items
+        items.value = pageData.data || []
+        total.value = pageData.total || 0
+
+        // compute stats and charts from full dataset (if backend returns paginator shape, data is in data)
+        const fullList: MessageRating[] = Array.isArray(allData.data) ? allData.data : (Array.isArray(allData) ? allData : [])
+        computeStats(fullList)
+
+        // rebuild charts after DOM updates using full dataset
         await nextTick()
-        buildPie(items.value)
-        buildBar(items.value)
-        buildLine(items.value)
+        buildPie(fullList)
+        buildBar(fullList)
+        buildLine(fullList)
       } catch (err) {
         items.value = []
         total.value = 0
         computeStats([])
+        // destroy charts to avoid stale data
+        await nextTick()
+        buildPie([])
+        buildBar([])
+        buildLine([])
       } finally {
         loading.value = false
       }
@@ -467,13 +509,6 @@ export default defineComponent({
     onMounted(() => {
       fetchData()
     })
-
-    // cleanup charts on unmount
-    function destroyCharts() {
-      if (pieChart) { pieChart.destroy(); pieChart = null }
-      if (barChart) { barChart.destroy(); barChart = null }
-      if (lineChart) { lineChart.destroy(); lineChart = null }
-    }
 
     return { items, headers, filters, levels, pagination, pages, total, loading, dateMenu, dateRange, dateRangeLabel, ratingColor, ratingLabel, fetchData, exportCsv, formatDateTime, stats, pieCanvas, barCanvas, lineCanvas, onFilterChange, clearFilters, debouncedFetch, messageDialog, selectedMessage, showMessageDetails }
   },
