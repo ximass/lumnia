@@ -170,4 +170,36 @@ class MessageRatingController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Return statistics about dislikes that are for messages without information sources.
+     * Response: { neg_total: int, neg_without_sources: int }
+     */
+    public function dislikesWithoutSourcesStats(Request $request)
+    {
+        try {
+            $negTotal = DB::table('message_ratings')
+                ->where('rating', 'dislike')
+                ->distinct()
+                ->count('message_id');
+
+            $negWithoutSources = DB::table('message_ratings as mr')
+                ->leftJoin('information_sources as isrc', 'mr.message_id', '=', 'isrc.message_id')
+                ->where('mr.rating', 'dislike')
+                ->whereNull('isrc.message_id')
+                ->distinct()
+                ->count('mr.message_id');
+
+            return response()->json([
+                'neg_total' => $negTotal,
+                'neg_without_sources' => $negWithoutSources,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Exception in MessageRatingController::dislikesWithoutSourcesStats: ' . $e->getMessage());
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Erro ao calcular estatísticas de dislikes.'
+            ], 500);
+        }
+    }
 }

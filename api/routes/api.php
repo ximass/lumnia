@@ -84,6 +84,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Information Sources routes
     Route::get('/messages/{message}/information-sources', [MessageController::class, 'getInformationSources']);
+    // Messages that have information sources and stats
+    Route::get('/messages/with-information-sources', [MessageController::class, 'withInformationSources']);
+    Route::get('/messages/with-information-sources/stats', [MessageController::class, 'withInformationSourcesStats']);
 
     // Message Rating routes
     Route::get('/messages/{message}/rating', [MessageRatingController::class, 'show']);
@@ -91,6 +94,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/messages/{message}/rating', [MessageRatingController::class, 'destroy']);
     // List message ratings for reports
     Route::get('/message-ratings', [MessageRatingController::class, 'index']);
+    // Dislikes without sources stats (IRFC)
+    Route::get('/message-ratings/dislikes/no-sources/stats', [MessageRatingController::class, 'dislikesWithoutSourcesStats']);
 
     Route::get('/error-logs/statistics', [ErrorLogController::class, 'statistics']);
     Route::delete('/error-logs/destroy-all', [ErrorLogController::class, 'destroyAll']);

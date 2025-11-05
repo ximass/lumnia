@@ -12,6 +12,7 @@ import PermissionsView from '@/views/Permissions.vue'
 import ReportsAnswers from '@/views/ReportsAnswers.vue'
 import { useAuth } from '@/composables/auth'
 import ErrorLogsView from '../views/ErrorLogsView.vue';
+import ReportsMetrics from '@/views/ReportsMetrics.vue'
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -48,7 +49,13 @@ const routes: Array<RouteRecordRaw> = [
     path: '/reports-answers',
     name: 'ReportsAnswers',
     component: ReportsAnswers,
-    meta: { requiresAuth: true, permission: 'view_reports' },
+    meta: { requiresAuth: true, permission: 'view_reports_answers' },
+  },
+  {
+    path: '/reports-metrics',
+    name: 'ReportsMetrics',
+    component: ReportsMetrics,
+    meta: { requiresAuth: true, permission: 'view_reports_metrics' },
   },
   {
     path: '/personas',

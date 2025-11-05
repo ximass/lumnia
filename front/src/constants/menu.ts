@@ -69,7 +69,15 @@ export const menuItems: MenuItem[] = [
     route: '/reports-answers',
     class: 'reports',
     admin: true,
-    permission: 'view_reports',
+    permission: 'view_reports_answers',
     icon: 'mdi-file-chart',
+  },
+  {
+    title: 'Métricas de uso',
+    route: '/reports-metrics',
+    class: 'reports',
+    admin: true,
+    permission: 'view_reports_metrics',
+    icon: 'mdi-chart-bar',
   }
 ]
