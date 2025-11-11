@@ -412,7 +412,16 @@ class ParseSourceJob implements ShouldQueue
                     case 'PhpOffice\PhpWord\Element\TextBreak':
                         $text .= "\n";
                         break;
+                    case 'PhpOffice\PhpWord\Element\Title':
+                        $text .= $this->extractTextFromContainer($element) . "\n";
+                        break;
+                    case 'PhpOffice\PhpWord\Element\Heading':
+                        $text .= $this->extractTextFromContainer($element) . "\n";
+                        break;
                     case 'PhpOffice\PhpWord\Element\ListItem':
+                        $text .= "• " . $this->extractTextFromContainer($element) . "\n";
+                        break;
+                    case 'PhpOffice\PhpWord\Element\ListItemRun':
                         $text .= "• " . $this->extractTextFromContainer($element) . "\n";
                         break;
                     case 'PhpOffice\PhpWord\Element\Table':
@@ -423,18 +432,60 @@ class ParseSourceJob implements ShouldQueue
                             $text .= "\n";
                         }
                         break;
-                    default:
-                        if (method_exists($element, 'getElements')) {
+                    case 'PhpOffice\PhpWord\Element\Row':
+                        foreach ($element->getCells() as $cell) {
+                            $text .= $this->extractTextFromContainer($cell) . " | ";
+                        }
+                        $text .= "\n";
+                        break;
+                    case 'PhpOffice\PhpWord\Element\Cell':
+                        $text .= $this->extractTextFromContainer($element) . " ";
+                        break;
+                    case 'PhpOffice\PhpWord\Element\Footer':
+                    case 'PhpOffice\PhpWord\Element\Header':
+                        $text .= $this->extractTextFromContainer($element) . "\n";
+                        break;
+                    case 'PhpOffice\PhpWord\Element\Footnote':
+                    case 'PhpOffice\PhpWord\Element\Endnote':
+                        $text .= " [" . $this->extractTextFromContainer($element) . "] ";
+                        break;
+                    case 'PhpOffice\PhpWord\Element\Link':
+                        if (method_exists($element, 'getText')) {
+                            $text .= $element->getText() . " ";
+                        } else {
                             $text .= $this->extractTextFromContainer($element) . " ";
-                        } elseif (method_exists($element, 'getText')) {
-                            try {
-                                $text .= $element->getText() . " ";
-                            } catch (\Throwable $e) {
-                                Log::warning('Failed to extract text from element', [
-                                    'element_class' => $elementClass,
-                                    'error' => $e->getMessage()
-                                ]);
+                        }
+                        break;
+                    case 'PhpOffice\PhpWord\Element\PreserveText':
+                        if (method_exists($element, 'getText')) {
+                            $text .= $element->getText() . " ";
+                        }
+                        break;
+                    case 'PhpOffice\PhpWord\Element\Image':
+                    case 'PhpOffice\PhpWord\Element\Object':
+                    case 'PhpOffice\PhpWord\Element\Chart':
+                    case 'PhpOffice\PhpWord\Element\Shape':
+                        break;
+                    case 'PhpOffice\PhpWord\Element\Section':
+                        $text .= $this->extractTextFromContainer($element) . "\n";
+                        break;
+                    default:
+                        try {
+                            if (method_exists($element, 'getElements')) {
+                                $text .= $this->extractTextFromContainer($element) . " ";
+                            } elseif (method_exists($element, 'getText')) {
+                                $elementText = $element->getText();
+                                if (is_string($elementText)) {
+                                    $text .= $elementText . " ";
+                                } elseif (is_object($elementText) && method_exists($elementText, '__toString')) {
+                                    $text .= (string)$elementText . " ";
+                                }
                             }
+                        } catch (\Throwable $e) {
+                            Log::warning('Failed to extract text from element', [
+                                'element_class' => $elementClass,
+                                'error' => $e->getMessage()
+                            ]);
                         }
                         break;
                 }
